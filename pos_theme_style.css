@@ -1,0 +1,442 @@
+/* =============================================================================
+   ORACLE APEX CUSTOM THEME: POS COMMERCIAL RETAIL STYLE
+   Matches the Modern Retail POS Visual Reference Layout
+   ============================================================================= */
+
+:root {
+  --pos-primary: #1e40af;       /* Deep POS Corporate Blue */
+  --pos-primary-hover: #1d4ed8;
+  --pos-secondary: #0f172a;     /* Slate Dark */
+  --pos-accent: #0284c7;        /* Sky Blue */
+  --pos-success: #10b981;       /* POS Checkout Green */
+  --pos-success-hover: #059669;
+  --pos-warning: #f59e0b;       /* Amber */
+  --pos-danger: #ef4444;        /* Crimson Red */
+  --pos-bg-light: #f8fafc;      /* Clean App Background */
+  --pos-card-bg: #ffffff;
+  --pos-border: #e2e8f0;
+  --pos-text-main: #1e293b;
+  --pos-text-muted: #64748b;
+  --pos-radius: 8px;
+  --pos-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --pos-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Base Body and Global Typography */
+body.t-PageBody {
+  background-color: var(--pos-bg-light);
+  color: var(--pos-text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header & Store Identification Bar */
+.pos-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--pos-border);
+  box-shadow: var(--pos-shadow);
+}
+
+.pos-store-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pos-store-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--pos-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pos-store-info h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--pos-secondary);
+}
+
+.pos-branch-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* KPI Metric Cards (Dashboard Page 2) */
+.pos-kpi-card {
+  background: #ffffff;
+  border-radius: var(--pos-radius);
+  padding: 20px;
+  border: 1px solid var(--pos-border);
+  box-shadow: var(--pos-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+}
+
+.pos-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pos-shadow-lg);
+}
+
+.pos-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pos-kpi-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pos-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.pos-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--pos-secondary);
+  line-height: 1.2;
+}
+
+.pos-kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pos-kpi-trend.up {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pos-kpi-trend.down {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Product Card Grid (Page 3 - POS / New Sale) */
+.pos-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.pos-product-card {
+  background: #ffffff;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pos-product-card:hover {
+  border-color: var(--pos-primary);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.15);
+  transform: translateY(-3px);
+}
+
+.pos-product-image-wrap {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pos-product-image {
+  max-height: 80px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.pos-product-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--pos-secondary);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.pos-product-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.pos-product-price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--pos-primary);
+}
+
+.pos-product-stock-tag {
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: var(--pos-text-muted);
+}
+
+/* Category Filter Chips */
+.pos-category-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0 16px 0;
+  scrollbar-width: thin;
+}
+
+.pos-chip {
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid var(--pos-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pos-text-main);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-chip.active, .pos-chip:hover {
+  background: var(--pos-primary);
+  color: #ffffff;
+  border-color: var(--pos-primary);
+}
+
+/* POS Cart Sidebar (Right Panel) */
+.pos-cart-panel {
+  background: #ffffff;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  position: sticky;
+  top: 80px;
+  box-shadow: var(--pos-shadow);
+}
+
+.pos-cart-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--pos-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-cart-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pos-secondary);
+}
+
+.pos-cart-items-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.pos-cart-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px dashed var(--pos-border);
+}
+
+.pos-cart-item-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--pos-secondary);
+}
+
+.pos-cart-qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pos-qty-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--pos-border);
+  background: #f8fafc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.pos-cart-totals {
+  padding: 16px;
+  background: #f8fafc;
+  border-top: 1px solid var(--pos-border);
+}
+
+.pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+  color: var(--pos-text-muted);
+}
+
+.pos-total-row.grand-total {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--pos-secondary);
+  border-top: 2px solid var(--pos-border);
+  padding-top: 10px;
+  margin-top: 8px;
+}
+
+.pos-checkout-btn {
+  background: var(--pos-success);
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 14px;
+  border: none;
+  border-radius: var(--pos-radius);
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+  transition: background 0.2s ease;
+}
+
+.pos-checkout-btn:hover {
+  background: var(--pos-success-hover);
+}
+
+/* Payment Mode Cards (Page 5 Modal) */
+.pos-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pos-payment-card {
+  padding: 16px;
+  border: 2px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  text-align: center;
+  font-weight: 700;
+  cursor: pointer;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.pos-payment-card.active, .pos-payment-card:hover {
+  border-color: var(--pos-primary);
+  background: #eff6ff;
+  color: var(--pos-primary);
+}
+
+/* Status Badges */
+.pos-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pos-badge.active, .pos-badge.ok, .pos-badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pos-badge.low_stock, .pos-badge.warning, .pos-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pos-badge.out_of_stock, .pos-badge.cancelled, .pos-badge.expired {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Keyboard Shortcut Pills */
+.pos-shortcut-bar {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  margin-top: 12px;
+}
+
+.pos-kbd-pill {
+  background: #334155;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+/* Thermal Printable Receipt (Page 6) */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .pos-printable-receipt, .pos-printable-receipt * {
+    visibility: visible;
+  }
+  .pos-printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 10px;
+    font-size: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

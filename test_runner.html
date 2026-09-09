@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>POS Authentication Test Suite</title>
+</head>
+<body>
+  <div id="test-results">Running tests...</div>
+  <iframe id="test-frame" src="http://localhost:8080/index.html" style="width:1000px; height:800px;"></iframe>
+
+  <script>
+    const iframe = document.getElementById('test-frame');
+    iframe.onload = () => {
+      const win = iframe.contentWindow;
+      const doc = iframe.contentDocument;
+      const results = [];
+
+      function assert(condition, message) {
+        if (condition) {
+          results.push(`PASS: ${message}`);
+        } else {
+          results.push(`FAIL: ${message}`);
+        }
+      }
+
+      try {
+        // Test 1: App starts on login screen and isAuthenticated is false
+        assert(win.posState.isAuthenticated === false, "App starts unauthenticated");
+        assert(win.posState.activeScreen === 'login', "Active screen is 'login'");
+        assert(doc.getElementById('screen-login').classList.contains('active'), "Login screen has active class");
+
+        // Test 2: Unauthenticated navigation is blocked
+        const navRes = win.navigateToScreen('inventory');
+        assert(win.posState.activeScreen === 'login', "Navigation blocked without login");
+
+        // Test 3: Wrong password causes error
+        doc.getElementById('login-user').value = 'admin';
+        doc.getElementById('login-pass').value = 'wrongpassword';
+        win.handleLogin();
+        assert(win.posState.isAuthenticated === false, "Failed login leaves user unauthenticated");
+        const errMsg = doc.getElementById('login-error-msg');
+        assert(errMsg.style.display !== 'none' && errMsg.textContent.includes('Incorrect password'), "Error message displayed for wrong password");
+
+        // Test 4: Correct login succeeds
+        doc.getElementById('login-pass').value = 'password123';
+        win.handleLogin();
+        assert(win.posState.isAuthenticated === true, "Correct login sets isAuthenticated to true");
+        assert(win.posState.currentUser.username === 'admin', "Logged in as admin");
+        assert(win.posState.activeScreen === 'dashboard', "Navigates to dashboard upon login");
+
+        // Test 5: Admin navigates to Screen 20 (Users & Roles)
+        win.navigateToScreen('users');
+        assert(win.posState.activeScreen === 'users', "Admin can access Users & Roles screen");
+        const userRows = doc.querySelectorAll('#users-table-body tr');
+        assert(userRows.length >= 4, `Users table rendered ${userRows.length} rows`);
+
+        // Test 6: Admin creates new user with specific password
+        win.openAddUserModal();
+        doc.getElementById('user-fullname').value = 'Test Cashier';
+        doc.getElementById('user-username').value = 'testcashier';
+        doc.getElementById('user-role-select').value = 'CASHIER';
+        doc.getElementById('user-password').value = 'Cashier@2026';
+        win.saveUser();
+
+        const createdUser = win.posState.users.find(u => u.username === 'testcashier');
+        assert(!!createdUser, "New user 'testcashier' created in posState.users");
+        assert(createdUser && createdUser.password === 'Cashier@2026', "Password 'Cashier@2026' stored for new user");
+        assert(createdUser && createdUser.role === 'CASHIER', "Role 'CASHIER' assigned to new user");
+
+        // Test 7: Logout
+        win.handleLogout();
+        assert(win.posState.isAuthenticated === false, "Logout sets isAuthenticated to false");
+        assert(win.posState.activeScreen === 'login', "Logout redirects to login screen");
+
+        // Test 8: New user cannot login with wrong password
+        doc.getElementById('login-user').value = 'testcashier';
+        doc.getElementById('login-pass').value = 'WrongPass123';
+        win.handleLogin();
+        assert(win.posState.isAuthenticated === false, "New user cannot login with wrong password");
+
+        // Test 9: New user logs in successfully with Admin-provided password
+        doc.getElementById('login-pass').value = 'Cashier@2026';
+        win.handleLogin();
+        assert(win.posState.isAuthenticated === true, "New user logged in successfully with admin-provided password!");
+        assert(win.posState.currentUser.username === 'testcashier', "Current user is 'testcashier'");
+        assert(win.posState.currentUser.role === 'CASHIER', "Current role is 'CASHIER'");
+
+        // Test 10: Cashier is blocked from admin screen (Users)
+        const cashierAccess = win.navigateToScreen('users');
+        assert(win.posState.activeScreen !== 'users', "Cashier cannot access Users & Roles screen");
+
+      } catch (err) {
+        results.push(`EXCEPTION: ${err.message}`);
+      }
+
+      document.getElementById('test-results').innerHTML = `
+        <h2>TEST RESULTS</h2>
+        <pre id="output">${results.join('\n')}</pre>
+      `;
+      console.log("=== TESTS COMPLETE ===");
+      console.log(results.join('\n'));
+    };
+  </script>
+</body>
+</html>
