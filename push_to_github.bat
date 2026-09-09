@@ -1,32 +1,42 @@
 @echo off
-title Push MyPOS to GitHub (SEE-VAM/POS)
+title Pushing MyPOS Retail Application to GitHub
+color 0b
 echo ========================================================
 echo   Pushing MyPOS Retail Project to GitHub
 echo   Repository: https://github.com/SEE-VAM/POS.git
 echo ========================================================
 echo.
 
-set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%PATH%"
+set "GIT_PATH=%LOCALAPPDATA%\Programs\Git\cmd\git.exe"
 
-echo Checking remote configuration...
-git remote -v
+if not exist "%GIT_PATH%" (
+    echo [ERROR] Git was not found at %GIT_PATH%
+    pause
+    exit /b 1
+)
+
+echo [1/2] Connecting to GitHub remote...
+"%GIT_PATH%" remote -v
 echo.
 
-echo Pushing main branch to origin...
-git push -u origin main
+echo [2/2] Pushing branch 'main' to origin...
+echo (A browser window will open shortly to authorize your GitHub account if not already signed in)
+echo.
+"%GIT_PATH%" push -u origin main
 
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ========================================================
     echo   [SUCCESS] Code successfully pushed to GitHub!
-    echo   View online: https://github.com/SEE-VAM/POS
+    echo   Check your repository at:
+    echo   https://github.com/SEE-VAM/POS
     echo ========================================================
 ) else (
     echo.
     echo ========================================================
-    echo   [NOTE] If authentication is required:
-    echo   1. Sign in via your browser when prompted, OR
-    echo   2. Enter your GitHub Username and Personal Access Token (PAT).
+    echo   [NOTE] If authentication failed:
+    echo   Make sure you are logged into GitHub account 'SEE-VAM'
+    echo   in your default browser, or enter a Personal Access Token.
     echo ========================================================
 )
 
