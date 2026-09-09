@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyPOS - Commercial Retail POS System</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- =============================================================================
+       TOP APPLICATION BAR & QUICK SCREEN SWITCHER
+       ============================================================================= -->
+  <header class="app-topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span>MyPOS</span>
+      </div>
+      <div class="topbar-store-info">
+        <strong class="app-store-name">ABC Retail Store</strong> &bull; Main Branch
+      </div>
+    </div>
+
+    <!-- Quick Screen Switcher -->
+    <div class="screen-switcher-bar">
+      <label for="quick-screen-select">Switch Screen:</label>
+      <select id="quick-screen-select" class="screen-select" onchange="navigateToScreen(this.value)">
+        <option value="login">1. Login Screen</option>
+        <option value="dashboard" selected>2. Dashboard</option>
+        <option value="pos">3. POS / New Sale</option>
+        <option value="product-search">4. Product Search / Barcode</option>
+        <option value="receipt">6. Invoice / Receipt</option>
+        <option value="products">7. Product Master</option>
+        <option value="categories">8. Category Master</option>
+        <option value="inventory">9. Inventory / Stock</option>
+        <option value="purchase">10. Purchase Entry</option>
+        <option value="customers">11. Customer Master</option>
+        <option value="suppliers">12. Supplier Master</option>
+        <option value="sales-return">13. Sales Return</option>
+        <option value="purchase-return">14. Purchase Return</option>
+        <option value="stock-transfer">15. Stock Transfer</option>
+        <option value="ledger">16. Customer / Supplier Ledger</option>
+        <option value="sales-history">17. Sales History</option>
+        <option value="sales-reports">18. Sales Reports</option>
+        <option value="profit-report">19. Profit Report</option>
+        <option value="users">20. User & Role Management</option>
+        <option value="audit-log">22. Audit Log</option>
+        <option value="settings">23. Company Settings</option>
+        <option value="branches">24. Branch Management</option>
+      </select>
+    </div>
+
+    <div class="topbar-user">
+      <div style="display:flex; align-items:center; gap:6px; margin-right:6px;">
+        <label for="active-user-switch" style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Active User:</label>
+        <select id="active-user-switch" class="screen-select" onchange="switchActiveUser(this.value)" style="padding:4px 8px; font-size:0.8rem; font-weight:700;">
+          <option value="admin">admin (ADMIN)</option>
+          <option value="manager">manager (MANAGER)</option>
+          <option value="cashier1">cashier1 (CASHIER)</option>
+          <option value="cashier2">cashier2 (CASHIER)</option>
+        </select>
+      </div>
+      <div class="user-badge">
+        <span id="current-username">admin</span>
+        <span class="role-tag" id="current-role">ADMIN</span>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- =============================================================================
+       MAIN APP CONTAINER (SIDEBAR + CONTENT CANVAS)
+       ============================================================================= -->
+  <div class="app-container">
+
+    <!-- APEX Universal Theme Sidebar Navigation -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <ul class="sidebar-nav">
+        <li class="nav-item active" data-screen="dashboard" onclick="navigateToScreen('dashboard')">
+          <span class="nav-icon">📊</span> <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-screen="pos" onclick="navigateToScreen('pos')">
+          <span class="nav-icon">🛒</span> <span>POS / Billing</span>
+        </li>
+        <li class="nav-item" data-screen="products" onclick="navigateToScreen('products')">
+          <span class="nav-icon">📦</span> <span>Products</span>
+        </li>
+        <li class="nav-item" data-screen="categories" onclick="navigateToScreen('categories')">
+          <span class="nav-icon">🏷️</span> <span>Categories</span>
+        </li>
+        <li class="nav-item" data-screen="inventory" onclick="navigateToScreen('inventory')">
+          <span class="nav-icon">📈</span> <span>Inventory</span>
+        </li>
+        <li class="nav-item" data-screen="purchase" onclick="navigateToScreen('purchase')">
+          <span class="nav-icon">📥</span> <span>Purchase</span>
+        </li>
+        <li class="nav-item" data-screen="sales-history" onclick="navigateToScreen('sales-history')">
+          <span class="nav-icon">🧾</span> <span>Sales History</span>
+        </li>
+        <li class="nav-item" data-screen="sales-return" onclick="navigateToScreen('sales-return')">
+          <span class="nav-icon">🔄</span> <span>Returns</span>
+        </li>
+        <li class="nav-item" data-screen="stock-transfer" onclick="navigateToScreen('stock-transfer')">
+          <span class="nav-icon">🚚</span> <span>Stock Transfer</span>
+        </li>
+        <li class="nav-item" data-screen="sales-reports" onclick="navigateToScreen('sales-reports')">
+          <span class="nav-icon">📑</span> <span>Reports</span>
+        </li>
+        <li class="nav-item" data-screen="customers" onclick="navigateToScreen('customers')">
+          <span class="nav-icon">👥</span> <span>Customers</span>
+        </li>
+        <li class="nav-item" data-screen="suppliers" onclick="navigateToScreen('suppliers')">
+          <span class="nav-icon">🏭</span> <span>Suppliers</span>
+        </li>
+        <li class="nav-item" data-screen="users" onclick="navigateToScreen('users')">
+          <span class="nav-icon">🛡️</span> <span>Users & Roles</span>
+        </li>
+        <li class="nav-item" data-screen="branches" onclick="navigateToScreen('branches')">
+          <span class="nav-icon">🏢</span> <span>Branches</span>
+        </li>
+        <li class="nav-item" data-screen="settings" onclick="navigateToScreen('settings')">
+          <span class="nav-icon">⚙️</span> <span>Settings</span>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT CANVAS (23 SCREENS) -->
+    <main class="app-main">
+
+      <!-- =======================================================================
+           SCREEN 1: LOGIN (AUTHENTICATION GATEWAY)
+           ======================================================================= -->
+      <section id="screen-login" class="screen-view">
+        <div class="login-backdrop">
+          <div class="login-card" id="login-card-box">
+            <div class="login-brand">🛒 MyPOS</div>
+            <h3 style="color:var(--secondary); font-weight:700; margin-bottom:4px;">Account Sign In</h3>
+            <p class="login-subtitle">Enter your user credentials created by Administrator</p>
+
+            <!-- Dynamic Error Banner -->
+            <div id="login-error-msg" class="login-error-box" style="display:none;"></div>
+
+            <form onsubmit="handleLogin(event)">
+              <div class="form-group">
+                <label class="form-label">Username *</label>
+                <input type="text" id="login-user" class="form-input" placeholder="e.g. admin or cashier1" required autocomplete="username" value="admin" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password *</label>
+                <div style="position:relative;">
+                  <input type="password" id="login-pass" class="form-input" placeholder="Enter account password" required autocomplete="current-password" value="password123" style="padding-right:38px;" />
+                  <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('login-pass', this)" title="Show/Hide Password">👁️</button>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; font-size:0.8rem;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="checkbox" id="login-remember" checked />
+                  <span>Remember me</span>
+                </label>
+                <a href="#" style="color:var(--primary); text-decoration:none; font-weight:600;" onclick="showForgotPasswordHelp()">Forgot Password?</a>
+              </div>
+
+              <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width:100%; padding:11px; font-size:0.95rem; font-weight:700;">
+                Sign In to System
+              </button>
+            </form>
+
+            <div class="login-quick-roles" style="margin-top:20px; border-top:1px dashed var(--border-color); padding-top:14px;">
+              <span style="font-weight:700; font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Default System Accounts (Password: <code>password123</code>):</span>
+              <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('admin', 'password123')">admin (ADMIN)</button>
+                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('manager', 'password123')">manager (MANAGER)</button>
+                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('cashier1', 'password123')">cashier1 (CASHIER)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 2: DASHBOARD
+           ======================================================================= -->
+      <section id="screen-dashboard" class="screen-view active">
+        <!-- 4 Top KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Today Sales</span> <span>🛒</span></div>
+            <div class="kpi-value">₹ 85,450</div>
+            <div class="kpi-trend up">▲ +12%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Today Profit</span> <span>📈</span></div>
+            <div class="kpi-value">₹ 17,320</div>
+            <div class="kpi-trend up">▲ +8%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Total Bills</span> <span>📄</span></div>
+            <div class="kpi-value">124</div>
+            <div class="kpi-trend up">▲ +15%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Low Stock Items</span> <span>⚠️</span></div>
+            <div class="kpi-value" style="color:var(--danger)">18</div>
+            <div class="kpi-trend down">▼ -3%</div>
+          </div>
+        </div>
+
+        <div class="dashboard-split">
+          <!-- Sales Overview Chart -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Sales Overview</span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline btn-sm">Today</button>
+                <button class="btn btn-primary btn-sm">7 Days</button>
+                <button class="btn btn-outline btn-sm">30 Days</button>
+              </div>
+            </div>
+            <!-- SVG Area Chart -->
+            <div style="height:210px; width:100%;">
+              <svg width="100%" height="100%" viewBox="0 0 500 180" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,150 Q70,90 140,110 T280,60 T420,80 T500,30 L500,180 L0,180 Z" fill="url(#chartGrad)" />
+                <path d="M0,150 Q70,90 140,110 T280,60 T420,80 T500,30" fill="none" stroke="#2563eb" stroke-width="3" />
+                <circle cx="140" cy="110" r="4" fill="#2563eb"/>
+                <circle cx="280" cy="60" r="4" fill="#2563eb"/>
+                <circle cx="420" cy="80" r="4" fill="#2563eb"/>
+                <circle cx="500" cy="30" r="4" fill="#2563eb"/>
+              </svg>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+          </div>
+
+          <!-- Top Selling Products -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Top Selling Products</span>
+            </div>
+            <table class="data-table">
+              <thead><tr><th>Product</th><th style="text-align:right">Qty</th></tr></thead>
+              <tbody>
+                <tr><td>🥛 Milk</td><td style="text-align:right; font-weight:700">45</td></tr>
+                <tr><td>🍞 Bread</td><td style="text-align:right; font-weight:700">32</td></tr>
+                <tr><td>🍪 Biscuits</td><td style="text-align:right; font-weight:700">28</td></tr>
+                <tr><td>🥤 Soft Drink</td><td style="text-align:right; font-weight:700">26</td></tr>
+                <tr><td>🍜 Maggi</td><td style="text-align:right; font-weight:700">22</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 3: POS / NEW SALE (CORE BILLING)
+           ======================================================================= -->
+      <section id="screen-pos" class="screen-view">
+        <div class="pos-layout">
+          <!-- Left: Catalog & Search -->
+          <div class="pos-catalog-panel">
+            <div class="pos-search-header">
+              <select id="pos-customer-select" class="pos-customer-select">
+                <!-- Dynamically populated from posState.customers -->
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="openAddCustomerModal()">+ New</button>
+              <input type="text" id="pos-search-input" class="pos-search-input" placeholder="🔍 Scan / Search Product (F2)" oninput="renderPosProducts()" />
+              <button class="btn btn-primary btn-sm" onclick="navigateToScreen('product-search')">Browse (F4)</button>
+            </div>
+
+            <!-- Category Chips -->
+            <div class="category-chips" id="category-chips-container">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Product Cards Grid -->
+            <div id="pos-product-grid" class="product-grid">
+              <!-- Dynamically populated by app.js -->
+            </div>
+          </div>
+
+          <!-- Right: Cart Sidebar -->
+          <div class="pos-cart-panel">
+            <div class="cart-header">
+              <span>Current Cart (<span id="cart-count-badge">0</span>)</span>
+              <button class="btn btn-outline btn-sm" onclick="clearCart()">Clear</button>
+            </div>
+
+            <div id="cart-items-list" class="cart-items-container">
+              <!-- Dynamically populated by app.js -->
+            </div>
+
+            <div class="cart-summary">
+              <div class="summary-row">
+                <span>Sub Total:</span> <span id="cart-subtotal">₹ 0.00</span>
+              </div>
+              <div class="summary-row">
+                <span>GST (Est):</span> <span id="cart-tax">₹ 0.00</span>
+              </div>
+              <div class="summary-row total">
+                <span>Total:</span> <span id="cart-grand-total">₹ 0.00</span>
+              </div>
+            </div>
+
+            <div class="cart-action-buttons">
+              <button class="btn btn-outline" onclick="showToast('Active bill saved on Hold', 'info')">Hold</button>
+              <button class="btn btn-outline" onclick="clearCart()">Draft</button>
+              <button class="btn btn-success btn-lg" onclick="openPaymentModal()">Pay (F12)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 4: PRODUCT SEARCH / BARCODE
+           ======================================================================= -->
+      <section id="screen-product-search" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Product Search / Barcode</span>
+            <button class="btn btn-primary" onclick="showToast('Barcode Scanner initialized and active', 'info')">📷 Scan Barcode</button>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <input type="text" id="prod-search-filter-screen4" class="form-input" placeholder="Search by name, code, or barcode..." oninput="document.getElementById('pos-search-input').value = this.value; renderPosProducts();" />
+            <select class="form-input" style="width:180px;" onchange="filterCategory(this.value)">
+              <option value="ALL">All Categories</option>
+              <option value="Dairy">Dairy</option>
+              <option value="Bakery">Bakery</option>
+              <option value="Snacks">Snacks</option>
+              <option value="Food">Food</option>
+              <option value="Beverages">Beverages</option>
+            </select>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Icon</th><th>Product Name</th><th>Code</th><th>Barcode</th><th>Category</th><th>Price</th><th>Stock</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>🥛</td><td><strong>Milk (1 Ltr)</strong></td><td><code>P001</code></td><td>890100100001</td><td>Dairy</td><td>₹ 52.00</td><td>45</td><td><button class="btn btn-success btn-sm" onclick="addToCart(1); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+              <tr><td>🍞</td><td><strong>Bread (Pkt)</strong></td><td><code>P002</code></td><td>890100100002</td><td>Bakery</td><td>₹ 35.00</td><td>32</td><td><button class="btn btn-success btn-sm" onclick="addToCart(2); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+              <tr><td>🍪</td><td><strong>Biscuits</strong></td><td><code>P003</code></td><td>890100100003</td><td>Snacks</td><td>₹ 20.00</td><td>56</td><td><button class="btn btn-success btn-sm" onclick="addToCart(3); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+              <tr><td>🍜</td><td><strong>Maggi Noodles</strong></td><td><code>P004</code></td><td>890100100004</td><td>Food</td><td>₹ 15.00</td><td>40</td><td><button class="btn btn-success btn-sm" onclick="addToCart(4); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+              <tr><td>🥤</td><td><strong>Soft Drink (Can)</strong></td><td><code>P005</code></td><td>890100100005</td><td>Beverages</td><td>₹ 45.00</td><td>26</td><td><button class="btn btn-success btn-sm" onclick="addToCart(5); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+              <tr><td>🍟</td><td><strong>Potato Chips</strong></td><td><code>P006</code></td><td>890100100006</td><td>Snacks</td><td>₹ 25.00</td><td>35</td><td><button class="btn btn-success btn-sm" onclick="addToCart(6); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 6: INVOICE / RECEIPT
+           ======================================================================= -->
+      <section id="screen-receipt" class="screen-view">
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px;" class="no-print">
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Print Receipt</button>
+          <button class="btn btn-danger" onclick="showToast('PDF invoice downloaded successfully', 'success')">📥 Download PDF</button>
+          <button class="btn btn-outline" onclick="openModal('modal-email-receipt')">✉️ Email Receipt</button>
+          <button class="btn btn-success" onclick="navigateToScreen('pos')">+ New Sale</button>
+        </div>
+
+        <div class="receipt-wrapper">
+          <div class="receipt-header">
+            <h2 class="app-store-name">ABC Retail Store</h2>
+            <p>Shop No. 12, Green Park, New Delhi - 110016</p>
+            <p>GSTIN: 07ABCDE1234F1Z5 &bull; Phone: +91 98765 43210</p>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:10px;">
+            <div><strong>Invoice No:</strong> <span id="rcpt-inv-no">INV-08092025</span></div>
+            <div><strong>Date:</strong> <span id="rcpt-date">08-09-2025</span></div>
+          </div>
+          <div style="font-size:0.8rem; margin-bottom:12px;">
+            <div><strong>Customer:</strong> <span id="rcpt-customer">Walk-in Customer</span></div>
+            <div><strong>Cashier:</strong> Admin &bull; <strong>Mode:</strong> <span id="rcpt-payment-mode">Cash</span></div>
+          </div>
+
+          <table style="width:100%; font-size:0.8rem; border-collapse:collapse; margin-bottom:12px;">
+            <thead>
+              <tr style="border-bottom:1px solid #cbd5e1; text-align:left;">
+                <th>#</th><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="rcpt-items-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+
+          <div style="border-top:1px dashed #cbd5e1; padding-top:8px; font-size:0.85rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span>Sub Total:</span> <span id="rcpt-subtotal">₹ 142.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span>GST (18%):</span> <span id="rcpt-gst">₹ 25.56</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; border-top:1px solid #000; padding-top:6px; margin-top:4px;">
+              <span>Total Amount:</span> <span id="rcpt-total">₹ 167.56</span>
+            </div>
+          </div>
+
+          <div style="text-align:center; margin-top:16px; font-size:0.8rem; color:var(--text-muted);">
+            <p>Thank you for shopping with us!</p>
+            <div class="receipt-barcode">||| | |||| ||| ||||||| ||</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 7: PRODUCT MASTER
+           ======================================================================= -->
+      <section id="screen-products" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Product Master Catalog</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportProductsCSV()">📥 Export CSV</button>
+              <button class="btn btn-primary" onclick="openAddProductModal()">+ Add Product</button>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <input type="text" id="prod-search-filter" class="form-input" placeholder="🔍 Search product by name, SKU, or category..." oninput="renderProductMaster()" />
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Icon</th><th>Name</th><th>Code</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="product-master-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 8: CATEGORY MASTER
+           ======================================================================= -->
+      <section id="screen-categories" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Category Master</span>
+            <button class="btn btn-primary" onclick="openAddCategoryModal()">+ Add Category</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Category Name</th><th>Description</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="category-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 9: INVENTORY / STOCK
+           ======================================================================= -->
+      <section id="screen-inventory" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Live Stock Ledger & Inventory</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary btn-sm">Stock Summary</button>
+              <button class="btn btn-outline btn-sm" onclick="navigateToScreen('purchase')">+ Intake Stock</button>
+              <button class="btn btn-outline btn-sm" onclick="navigateToScreen('stock-transfer')">Transfer</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Product (SKU)</th><th>Category</th><th>Available Stock</th><th>Reorder Level</th><th>Ledger Status</th></tr>
+            </thead>
+            <tbody id="inventory-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 10: PURCHASE ENTRY
+           ======================================================================= -->
+      <section id="screen-purchase" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Purchase Bill & Stock Intake</span>
+            <button class="btn btn-outline btn-sm" onclick="openAddSupplierModal()">+ New Supplier</button>
+          </div>
+          <div class="form-grid-3" style="margin-bottom:16px;">
+            <div>
+              <label class="form-label">Supplier *</label>
+              <select id="purchase-supplier-select" class="form-input">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Purchase Date</label>
+              <input type="date" class="form-input" value="2025-09-08" />
+            </div>
+            <div>
+              <label class="form-label">Purchase Order No</label>
+              <input type="text" class="form-input" value="PUR-000125" readonly />
+            </div>
+          </div>
+
+          <div class="panel-header" style="margin-bottom:8px;">
+            <span style="font-weight:700; font-size:0.9rem;">Purchase Items</span>
+            <button class="btn btn-primary btn-sm" onclick="addPurchaseRow()">+ Add Item Line</button>
+          </div>
+
+          <table class="data-table" style="margin-bottom:16px;">
+            <thead>
+              <tr><th>Product</th><th>Qty</th><th>Purchase Rate (₹)</th><th style="text-align:right">Line Total</th><th></th></tr>
+            </thead>
+            <tbody id="purchase-items-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+
+          <div style="display:flex; justify-content:flex-end; gap:24px; font-size:0.95rem; margin-bottom:18px; padding-top:10px; border-top:1px solid var(--border-color);">
+            <div>Subtotal: <strong id="purchase-subtotal">₹ 0.00</strong></div>
+            <div>GST (18%): <strong id="purchase-gst">₹ 0.00</strong></div>
+            <div style="font-size:1.15rem; color:var(--primary)">Bill Total: <strong id="purchase-total">₹ 0.00</strong></div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-outline" onclick="navigateToScreen('dashboard')">Cancel</button>
+            <button class="btn btn-success" onclick="savePurchase()">Save & Intake Stock</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 11: CUSTOMER MASTER
+           ======================================================================= -->
+      <section id="screen-customers" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Customer Master Directory</span>
+            <button class="btn btn-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Customer Name</th><th>Mobile</th><th>GSTIN</th><th>Current Balance</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="customer-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 12: SUPPLIER MASTER
+           ======================================================================= -->
+      <section id="screen-suppliers" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Supplier Master Directory</span>
+            <button class="btn btn-primary" onclick="openAddSupplierModal()">+ Add Supplier</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Supplier Name</th><th>Contact Person</th><th>Mobile</th><th>GSTIN</th><th>Outstanding</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="supplier-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 13: SALES RETURN
+           ======================================================================= -->
+      <section id="screen-sales-return" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Sales Return & Restocking</span>
+          </div>
+          <div style="display:flex; gap:12px; margin-bottom:16px;">
+            <input type="text" id="return-inv-input" class="form-input" placeholder="Enter Invoice No (e.g. INV-0000125)" value="INV-0000125" />
+            <button class="btn btn-primary" onclick="lookupSaleForReturn()">Search Invoice</button>
+          </div>
+          <table class="data-table" style="margin-bottom:16px;">
+            <thead>
+              <tr><th>Product</th><th>Qty Sold</th><th>Return Qty</th><th>Rate</th><th>Status</th></tr>
+            </thead>
+            <tbody id="return-items-container">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted)">Search an invoice to load items</td></tr>
+            </tbody>
+          </table>
+          <div id="return-action-bar" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; gap:10px; align-items:center;">
+                <label class="form-label" style="margin:0">Reason:</label>
+                <select class="form-input" style="width:200px;">
+                  <option>Damaged Product</option>
+                  <option>Expired Item</option>
+                  <option>Customer Exchange</option>
+                </select>
+              </div>
+              <button class="btn btn-success" onclick="processReturn()">Process Return & Restock</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 14: PURCHASE RETURN
+           ======================================================================= -->
+      <section id="screen-purchase-return" class="screen-view">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Purchase Return & Debit Note</span></div>
+          <div style="display:flex; gap:12px; margin-bottom:16px;">
+            <input type="text" class="form-input" placeholder="Enter Purchase Order No" value="PUR-000124" />
+            <button class="btn btn-primary" onclick="showToast('Loaded items for purchase PUR-000124', 'info')">Search</button>
+          </div>
+          <table class="data-table" style="margin-bottom:16px;">
+            <thead><tr><th>Product</th><th>Qty Received</th><th>Return Qty</th><th>Rate</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr><td>Milk (1 Ltr)</td><td>10</td><td><input type="number" value="2" style="width:60px;" class="form-input" /></td><td>₹ 45.00</td><td>Quality Issue</td></tr>
+              <tr><td>Bread (Pkt)</td><td>20</td><td><input type="number" value="0" style="width:60px;" class="form-input" /></td><td>₹ 28.00</td><td>-</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-success" onclick="showToast('Purchase debit note generated! Supplier ledger debited.', 'success'); navigateToScreen('inventory');">Process Debit Note</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 15: STOCK TRANSFER
+           ======================================================================= -->
+      <section id="screen-stock-transfer" class="screen-view">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Inter-Branch Stock Transfer</span></div>
+          <div class="form-grid-2" style="margin-bottom:16px;">
+            <div>
+              <label class="form-label">From Branch (Origin)</label>
+              <select id="transfer-from" class="form-input">
+                <option value="Main Branch">Main Branch</option>
+                <option value="Branch 2">Branch 2 - Noida Sector 62</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">To Branch (Destination)</label>
+              <select id="transfer-to" class="form-input">
+                <option value="Branch 2">Branch 2 - Noida Sector 62</option>
+                <option value="Main Branch">Main Branch</option>
+                <option value="Branch 3">Branch 3 - Gurgaon Express</option>
+              </select>
+            </div>
+          </div>
+          <table class="data-table" style="margin-bottom:16px;">
+            <thead><tr><th>Product</th><th>Transfer Qty</th><th>Available in Source</th></tr></thead>
+            <tbody>
+              <tr><td>🥛 Milk</td><td><input type="number" value="10" class="form-input" style="width:80px;" /></td><td>50</td></tr>
+              <tr><td>🍞 Bread</td><td><input type="number" value="5" class="form-input" style="width:80px;" /></td><td>30</td></tr>
+              <tr><td>🍪 Biscuits</td><td><input type="number" value="8" class="form-input" style="width:80px;" /></td><td>40</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-outline" onclick="navigateToScreen('dashboard')">Cancel</button>
+            <button class="btn btn-success" onclick="executeTransfer()">Execute Transfer</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 16: LEDGER (CUSTOMER/SUPPLIER)
+           ======================================================================= -->
+      <section id="screen-ledger" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Customer / Supplier Financial Ledger</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary btn-sm">Customer Ledger</button>
+              <button class="btn btn-outline btn-sm">Supplier Ledger</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; margin-bottom:14px;">
+            <select class="form-input" style="width:280px;">
+              <option>Rohit Sharma (9876543210)</option>
+              <option>Priya Singh (9811122334)</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="showToast('Ledger refreshed', 'info')">Filter</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Date</th><th>Particulars</th><th>Debit</th><th>Credit</th><th>Running Balance</th></tr>
+            </thead>
+            <tbody id="ledger-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+          <div style="display:flex; justify-content:flex-end; margin-top:14px; font-weight:700;">
+            <span>Total Due: ₹ 0.00 &bull; <span class="badge badge-success">Status: Settled</span></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 17: SALES HISTORY
+           ======================================================================= -->
+      <section id="screen-sales-history" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Sales History & Invoice Archive</span>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <input type="date" class="form-input" value="2025-09-01" style="width:160px;" />
+            <input type="date" class="form-input" value="2025-09-08" style="width:160px;" />
+            <input type="text" class="form-input" placeholder="Search by customer or invoice..." />
+            <button class="btn btn-primary">Search</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Date</th><th>Invoice No</th><th>Customer</th><th>Amount</th><th>Payment Mode</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="sales-history-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 18: SALES REPORTS
+           ======================================================================= -->
+      <section id="screen-sales-reports" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Sales Reports & Analytics</span>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Sales report exported', 'success')">Export Report</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:18px;">
+            <div class="kpi-card"><div class="kpi-header">Total Sales</div><div class="kpi-value">₹ 58,420</div></div>
+            <div class="kpi-card"><div class="kpi-header">Total Bills</div><div class="kpi-value">86</div></div>
+            <div class="kpi-card"><div class="kpi-header">Avg. Bill Amount</div><div class="kpi-value">₹ 679</div></div>
+          </div>
+          <h4 style="margin-bottom:10px;">Daily Sales Trend</h4>
+          <div style="display:flex; align-items:flex-end; gap:14px; height:180px; padding:10px 0; border-bottom:1px solid var(--border-color);">
+            <div style="flex:1; background:var(--primary); height:60%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">01-09</div>
+            <div style="flex:1; background:var(--primary); height:80%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">02-09</div>
+            <div style="flex:1; background:var(--primary); height:45%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">03-09</div>
+            <div style="flex:1; background:var(--primary); height:90%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">04-09</div>
+            <div style="flex:1; background:var(--primary); height:100%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">05-09</div>
+            <div style="flex:1; background:var(--primary); height:75%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">06-09</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 19: PROFIT REPORT
+           ======================================================================= -->
+      <section id="screen-profit-report" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Gross Profit & Margin Report</span>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-header">Total Sales</div><div class="kpi-value">₹ 58,420</div></div>
+            <div class="kpi-card"><div class="kpi-header">Total Purchase Cost</div><div class="kpi-value">₹ 32,600</div></div>
+            <div class="kpi-card"><div class="kpi-header">Gross Profit</div><div class="kpi-value" style="color:var(--success)">₹ 25,820</div></div>
+            <div class="kpi-card"><div class="kpi-header">Profit Margin</div><div class="kpi-value">44.2%</div></div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Product</th><th>Sales Revenue</th><th>Purchase Cost</th><th>Profit</th><th>Profit Margin</th></tr>
+            </thead>
+            <tbody id="profit-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 20: USER & ROLE MANAGEMENT (ADMIN AUTHORIZATION & ROLE PERMISSION MATRIX)
+           ======================================================================= -->
+      <section id="screen-users" class="screen-view">
+        <div class="panel">
+          <div class="panel-header" style="flex-wrap:wrap; gap:10px;">
+            <div>
+              <span class="panel-title">👥 User & Role Management</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Manage system users, assign roles, and configure module permissions (Admin Authorized)</p>
+            </div>
+            <button id="btn-add-user-top" class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+          </div>
+
+          <!-- Non-Admin Restricted Alert Banner -->
+          <div id="users-access-banner" class="alert-banner" style="display:none; margin-bottom:16px; background:#fef2f2; border:1px solid #fecaca; border-left:4px solid #ef4444; padding:12px 16px; border-radius:var(--radius-sm); font-size:0.875rem; color:#991b1b;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">🔒</span>
+              <div>
+                <strong>Access Restricted (Read-Only View):</strong> You are currently operating as <code id="banner-curr-user">cashier1</code> with role <strong id="banner-curr-role">CASHIER</strong>.
+                <div style="font-size:0.8rem; margin-top:2px; color:#b91c1c;">Only <strong>ADMIN</strong> users have permission to create users, assign/change roles, or update the 14-Module Permission Matrix.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Table with Inline Role Selection and Admin Actions -->
+          <table class="data-table" style="margin-bottom:24px;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Assigned Role</th>
+                <th>Password</th>
+                <th>Assigned Branch</th>
+                <th>Status</th>
+                <th style="text-align:center;">Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <!-- Dynamically populated with role selector and edit/delete buttons -->
+            </tbody>
+          </table>
+
+          <!-- 14-Module Permission Matrix Panel -->
+          <div class="panel" style="background:#f8fafc; border:1px solid var(--border-color); margin-bottom:0; padding:18px;">
+            <div class="panel-header" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <span style="font-weight:800; font-size:1.05rem; color:var(--secondary);">14-Module Permission Matrix</span>
+                <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Configure which modules are accessible for each role (Only Admin can change and save)</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <label for="perm-role-select" style="font-size:0.85rem; font-weight:700;">Role to Configure:</label>
+                <select id="perm-role-select" class="form-input" onchange="onPermRoleChange(this.value)" style="width:140px; font-weight:700;">
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="CASHIER">CASHIER</option>
+                </select>
+                <button id="btn-save-perms" class="btn btn-primary" onclick="savePermissions()">
+                  💾 Save Permissions
+                </button>
+              </div>
+            </div>
+
+            <!-- Permission Selection Controls & Status -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.85rem; flex-wrap:wrap; gap:8px;">
+              <span id="perm-matrix-hint" style="color:var(--text-muted); font-size:0.85rem;">
+                Configuring permissions for role: <strong id="perm-role-label" style="color:var(--primary);">ADMIN</strong>
+              </span>
+              <div id="perm-quick-btns" style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="toggleAllPerms(true)">Select All</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="toggleAllPerms(false)">Deselect All</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="resetRoleDefaults()">Reset Defaults</button>
+              </div>
+            </div>
+
+            <!-- 14 Checkboxes Grid -->
+            <div id="permission-checkboxes-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; font-size:0.85rem; background:#ffffff; padding:16px; border-radius:var(--radius-sm); border:1px solid #e2e8f0;">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 22: AUDIT LOG
+           ======================================================================= -->
+      <section id="screen-audit-log" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">System Audit Log Trail</span>
+            <select class="form-input" style="width:140px;"><option>All Roles</option><option>Manager</option><option>Cashier</option></select>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Table</th><th>IP Address</th><th>Remarks</th></tr></thead>
+            <tbody>
+              <tr><td>08-09-2025 14:32</td><td>admin</td><td><span class="badge badge-info">LOGIN_SUCCESS</span></td><td>POS_USERS</td><td>127.0.0.1</td><td>User authenticated successfully</td></tr>
+              <tr><td>08-09-2025 14:28</td><td>cashier1</td><td><span class="badge badge-success">SALE</span></td><td>POS_SALES</td><td>192.168.1.15</td><td>Invoice INV-0000125 created</td></tr>
+              <tr><td>08-09-2025 13:10</td><td>manager</td><td><span class="badge badge-warning">STOCK_TRANSFER</span></td><td>POS_STOCK_TRANSFERS</td><td>192.168.1.10</td><td>Stock transferred to Branch 2</td></tr>
+              <tr><td>08-09-2025 11:45</td><td>admin</td><td><span class="badge badge-info">PRODUCT_CREATED</span></td><td>POS_PRODUCTS</td><td>127.0.0.1</td><td>Product P008 registered</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 23: COMPANY SETTINGS
+           ======================================================================= -->
+      <section id="screen-settings" class="screen-view">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Company & POS Configuration</span></div>
+          <form onsubmit="saveSettings(event)">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Store / Legal Name</label>
+                <input type="text" id="set-store-name" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Parent Company Name</label>
+                <input type="text" id="set-legal-name" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">GSTIN / Tax Registration</label>
+                <input type="text" id="set-gstin" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Phone</label>
+                <input type="text" id="set-phone" class="form-input" />
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label class="form-label">Store Address</label>
+                <input type="text" id="set-address" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Invoice Prefix</label>
+                <input type="text" id="set-prefix" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Currency Symbol</label>
+                <input type="text" id="set-currency" class="form-input" />
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label><input type="checkbox" id="set-negative-stock" /> Allow Negative Stock (Disabled by default for strict ledger integrity)</label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- =======================================================================
+           SCREEN 24: BRANCH MANAGEMENT
+           ======================================================================= -->
+      <section id="screen-branches" class="screen-view">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Branch Management Directory</span>
+            <button class="btn btn-primary" onclick="openAddBranchModal()">+ Add Branch</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Branch Name (Code)</th><th>Address</th><th>Phone</th><th>Status</th></tr></thead>
+            <tbody id="branches-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 1: ADD / EDIT PRODUCT
+       ============================================================================= -->
+  <div id="modal-add-product" class="modal-overlay">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h3 id="modal-product-title">Add New Product</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-product')">&times;</button>
+      </div>
+      <form id="prod-form" onsubmit="saveProduct(event)">
+        <div class="modal-body">
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label">Product SKU / Code *</label>
+              <input type="text" id="prod-code" class="form-input" required />
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">Product Name *</label>
+              <input type="text" id="prod-name" class="form-input" required />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="modal-prod-category" class="form-input" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Unit of Measure</label>
+              <select id="prod-unit" class="form-input">
+                <option value="Pkt">Packet (Pkt)</option>
+                <option value="Ltr">Liter (Ltr)</option>
+                <option value="Kg">Kilogram (Kg)</option>
+                <option value="Btl">Bottle (Btl)</option>
+                <option value="Pc">Piece (Pc)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">GST Tax Rate</label>
+              <select id="prod-tax" class="form-input">
+                <option value="0">0% (Exempt)</option>
+                <option value="5">5% GST</option>
+                <option value="12">12% GST</option>
+                <option value="18" selected>18% GST</option>
+                <option value="28">28% GST</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label">Cost / Purchase Price (₹)</label>
+              <input type="number" id="prod-cost" class="form-input" step="0.5" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Selling Price (₹) *</label>
+              <input type="number" id="prod-price" class="form-input" step="0.5" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Initial Stock</label>
+              <input type="number" id="prod-stock" class="form-input" value="10" />
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label">Reorder / Min Stock</label>
+              <input type="number" id="prod-min-stock" class="form-input" value="5" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Barcode / EAN-13</label>
+              <input type="text" id="prod-barcode" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Icon / Emoji</label>
+              <input type="text" id="prod-icon" class="form-input" value="📦" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-product')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 2: ADD / EDIT CATEGORY
+       ============================================================================= -->
+  <div id="modal-add-category" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-cat-title">Add New Category</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-category')">&times;</button>
+      </div>
+      <form id="cat-form" onsubmit="saveCategory(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Category Name *</label>
+            <input type="text" id="cat-name" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input type="text" id="cat-desc" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="cat-status" class="form-input">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-category')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 3: ADD / EDIT CUSTOMER
+       ============================================================================= -->
+  <div id="modal-add-customer" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-cust-title">Add Customer</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-customer')">&times;</button>
+      </div>
+      <form id="cust-form" onsubmit="saveCustomer(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Customer Name *</label>
+            <input type="text" id="cust-name" class="form-input" required />
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Mobile Number *</label>
+              <input type="tel" id="cust-mobile" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="cust-email" class="form-input" />
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">GSTIN (Optional)</label>
+              <input type="text" id="cust-gstin" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Credit Limit (₹)</label>
+              <input type="number" id="cust-credit" class="form-input" value="5000" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-customer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 4: ADD / EDIT SUPPLIER
+       ============================================================================= -->
+  <div id="modal-add-supplier" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-supp-title">Add Supplier</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-supplier')">&times;</button>
+      </div>
+      <form id="supp-form" onsubmit="saveSupplier(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Supplier / Company Name *</label>
+            <input type="text" id="supp-name" class="form-input" required />
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Contact Person</label>
+              <input type="text" id="supp-contact" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mobile Number *</label>
+              <input type="tel" id="supp-mobile" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="supp-email" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">GSTIN</label>
+              <input type="text" id="supp-gstin" class="form-input" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-supplier')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 5: ADD BRANCH
+       ============================================================================= -->
+  <div id="modal-add-branch" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Add New Branch</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-branch')">&times;</button>
+      </div>
+      <form id="branch-form" onsubmit="saveBranch(event)">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Branch Code *</label>
+              <input type="text" id="branch-code" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="text" id="branch-phone" class="form-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Branch Name *</label>
+            <input type="text" id="branch-name" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address</label>
+            <input type="text" id="branch-address" class="form-input" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-branch')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Branch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 6: ADD / EDIT USER & ASSIGN ROLE (ADMIN ONLY)
+       ============================================================================= -->
+  <div id="modal-add-user" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-user-title">Add New User</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-user')">&times;</button>
+      </div>
+      <form id="user-form" onsubmit="saveUser(event)">
+        <input type="hidden" id="user-edit-id" value="" />
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="user-fullname" class="form-input" required />
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Username *</label>
+              <input type="text" id="user-username" class="form-input" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assigned Role *</label>
+              <select id="user-role-select" class="form-input" style="font-weight:700;">
+                <option value="CASHIER">CASHIER (Counter & Billing)</option>
+                <option value="MANAGER">MANAGER (Operations & Inventory)</option>
+                <option value="ADMIN">ADMIN (Full Master Control)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="form-label" style="margin-bottom:0;">Login Password *</label>
+              <button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:0.75rem; border-color:#cbd5e1;" onclick="generateRandomUserPassword()">⚡ Auto Generate</button>
+            </div>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input type="password" id="user-password" class="form-input" placeholder="Set user password (e.g. Pass@123)" required style="padding-right:40px;" />
+              <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('user-password', this)" title="Show/Hide Password" style="position:absolute; right:8px; background:none; border:none; cursor:pointer; font-size:1.1rem; color:#64748b;">👁️</button>
+            </div>
+            <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:3px;">Admin creates this password and gives it to the user. User will use this to sign in.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assigned Branch</label>
+            <select id="user-branch-select" class="form-input">
+              <option value="Main Branch">Main Branch</option>
+              <option value="Branch 2 - Noida">Branch 2 - Noida</option>
+              <option value="Branch 3 - Gurgaon">Branch 3 - Gurgaon</option>
+              <option value="All Branches">All Branches (Head Office)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-user')">Cancel</button>
+          <button type="submit" id="btn-user-submit" class="btn btn-primary">Save User & Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL 7: EMAIL RECEIPT
+       ============================================================================= -->
+  <div id="modal-email-receipt" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Email Invoice / Receipt</h3>
+        <button class="modal-close" onclick="closeModal('modal-email-receipt')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Recipient Email Address *</label>
+          <input type="email" id="email-receipt-input" class="form-input" placeholder="customer@example.com" value="customer@example.com" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-email-receipt')">Cancel</button>
+        <button class="btn btn-primary" onclick="showToast('Receipt emailed successfully!', 'success'); closeModal('modal-email-receipt');">Send Email</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       PAYMENT MODAL DIALOG (SCREEN 5) - COMPLETE MULTI-MODE SETTLEMENT WITH UPI QR
+       ============================================================================= -->
+  <div id="payment-modal" class="modal-overlay">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin:0; font-size:1.15rem;">💳 Settle Payment & Complete Sale</h3>
+          <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Select payment method to finalize transaction</p>
+        </div>
+        <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+        <!-- Bill Overview Top Banner -->
+        <div class="pay-bill-banner">
+          <div>
+            <span class="pay-banner-label">Invoice Number</span>
+            <strong id="modal-bill-no" class="pay-banner-value">INV-0000125</strong>
+          </div>
+          <div style="text-align:right;">
+            <span class="pay-banner-label">Total Payable</span>
+            <strong id="modal-payable-total" class="pay-banner-amount">₹ 0.00</strong>
+          </div>
+        </div>
+
+        <label class="form-label" style="margin-top:14px; margin-bottom:8px;">Select Payment Mode:</label>
+        <div class="payment-grid">
+          <button type="button" class="pay-mode-btn active" data-mode="CASH" onclick="selectPaymentMode('CASH')">
+            <span class="mode-icon">💵</span>
+            <span>Cash</span>
+          </button>
+          <button type="button" class="pay-mode-btn" data-mode="UPI" onclick="selectPaymentMode('UPI')">
+            <span class="mode-icon">📱</span>
+            <span>UPI / QR</span>
+          </button>
+          <button type="button" class="pay-mode-btn" data-mode="CARD" onclick="selectPaymentMode('CARD')">
+            <span class="mode-icon">💳</span>
+            <span>Card / POS</span>
+          </button>
+          <button type="button" class="pay-mode-btn" data-mode="WALLET" onclick="selectPaymentMode('WALLET')">
+            <span class="mode-icon">👛</span>
+            <span>Wallet</span>
+          </button>
+          <button type="button" class="pay-mode-btn" data-mode="CREDIT" onclick="selectPaymentMode('CREDIT')">
+            <span class="mode-icon">📒</span>
+            <span>Credit / Khata</span>
+          </button>
+          <button type="button" class="pay-mode-btn" data-mode="SPLIT" onclick="selectPaymentMode('SPLIT')">
+            <span class="mode-icon">✂️</span>
+            <span>Split Pay</span>
+          </button>
+        </div>
+
+        <!-- 1. CASH PAYMENT SECTION -->
+        <div id="pay-section-cash" class="pay-mode-section active">
+          <div class="form-group">
+            <label class="form-label">Amount Received (₹) *</label>
+            <input type="number" id="pay-amount-received" class="form-input form-input-lg" oninput="calculateChange()" placeholder="0.00" />
+          </div>
+          <div class="quick-cash-btns">
+            <button type="button" class="quick-cash-pill" onclick="setCashExact()">Exact Amount</button>
+            <button type="button" class="quick-cash-pill" onclick="addCashPill(50)">+₹50</button>
+            <button type="button" class="quick-cash-pill" onclick="addCashPill(100)">+₹100</button>
+            <button type="button" class="quick-cash-pill" onclick="addCashPill(500)">+₹500</button>
+            <button type="button" class="quick-cash-pill" onclick="addCashPill(2000)">+₹2000</button>
+          </div>
+          <div class="change-box">
+            <span>Change to Return to Customer:</span>
+            <span id="modal-change-display" style="font-size:1.25rem; font-weight:800;">₹ 0.00</span>
+          </div>
+        </div>
+
+        <!-- 2. UPI / QR PAYMENT SECTION (SCANNABLE DYNAMIC QR) -->
+        <div id="pay-section-upi" class="pay-mode-section">
+          <div class="upi-card-container">
+            <div class="upi-qr-card">
+              <div class="upi-qr-header">
+                <span class="upi-live-badge"><span class="pulse-dot"></span> SCAN & PAY</span>
+                <span id="upi-payable-tag" class="upi-qr-amount">₹ 0.00</span>
+              </div>
+              
+              <!-- QR Code DOM Render Container -->
+              <div class="upi-qr-wrapper">
+                <div id="upi-qrcode-box" class="upi-qrcode-box"></div>
+              </div>
+
+              <div class="upi-apps-icons">
+                <span class="upi-app-chip">GPay</span>
+                <span class="upi-app-chip">PhonePe</span>
+                <span class="upi-app-chip">Paytm</span>
+                <span class="upi-app-chip">BHIM</span>
+                <span class="upi-app-chip">Any UPI</span>
+              </div>
+              <div class="upi-vpa-details">
+                <span>UPI ID: <strong id="upi-vpa-text">abcretail@icici</strong></span>
+                <button type="button" class="btn-copy-vpa" onclick="copyUpiId()">📋 Copy</button>
+              </div>
+            </div>
+
+            <!-- UPI Status & Verification Section -->
+            <div class="upi-verify-panel">
+              <div id="upi-status-indicator" class="upi-status-pill waiting">
+                <span class="status-icon">⏳</span>
+                <span id="upi-status-label">Waiting for customer scan & payment...</span>
+              </div>
+
+              <div class="form-group" style="margin-top:14px;">
+                <label class="form-label">UPI Reference / UTR Number (12 Digits)</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="upi-utr-input" class="form-input" placeholder="e.g. 423891029482" maxlength="16" />
+                  <button type="button" class="btn btn-primary btn-sm" onclick="verifyUpiManual()">Verify</button>
+                </div>
+              </div>
+
+              <div class="upi-quick-actions">
+                <button type="button" class="btn-simulate-upi" onclick="simulateUpiSuccess()">
+                  ⚡ Simulate Instant UPI Success
+                </button>
+                <p class="upi-note">Auto-fills 12-digit UTR & verifies payment for fast testing.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. CARD PAYMENT SECTION -->
+        <div id="pay-section-card" class="pay-mode-section">
+          <div class="card-pay-container">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Card Machine / Terminal</label>
+                <select id="card-terminal-select" class="form-input">
+                  <option value="T01">PineLabs Terminal 1 (Main POS Counter)</option>
+                  <option value="T02">EDC HDFC POS Swiper 2</option>
+                  <option value="T03">Paytm Soundbox Card Machine</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Card Network</label>
+                <select id="card-network-select" class="form-input">
+                  <option value="VISA">Visa</option>
+                  <option value="MASTERCARD">Mastercard</option>
+                  <option value="RUPAY">RuPay</option>
+                  <option value="AMEX">American Express</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Last 4 Digits of Card *</label>
+                <input type="text" id="card-last4-input" class="form-input" placeholder="e.g. 4582" maxlength="4" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Approval Code / Auth Code *</label>
+                <input type="text" id="card-auth-input" class="form-input" placeholder="e.g. APPR-9921" />
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="simulateCardSwipe()">💳 Swipe / Tap Card (Simulate)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. WALLET SECTION -->
+        <div id="pay-section-wallet" class="pay-mode-section">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Digital Wallet</label>
+              <select id="wallet-provider-select" class="form-input">
+                <option value="Paytm">Paytm Wallet</option>
+                <option value="PhonePe">PhonePe Wallet</option>
+                <option value="AmazonPay">Amazon Pay</option>
+                <option value="Mobikwik">MobiKwik</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Customer Mobile Number *</label>
+              <input type="tel" id="wallet-mobile-input" class="form-input" placeholder="10-digit mobile" maxlength="10" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Wallet Transaction / OTP Ref</label>
+            <input type="text" id="wallet-tx-input" class="form-input" placeholder="e.g. WAL-882190" />
+          </div>
+        </div>
+
+        <!-- 5. CREDIT / KHATA SECTION -->
+        <div id="pay-section-credit" class="pay-mode-section">
+          <div class="credit-khata-box">
+            <div style="font-weight:700; color:var(--secondary); margin-bottom:8px;">Customer Ledger / Credit Account Check</div>
+            <div class="credit-info-grid">
+              <div>
+                <span class="credit-meta-label">Selected Customer:</span>
+                <div id="credit-cust-name" style="font-weight:700;">Walk-in Customer</div>
+              </div>
+              <div>
+                <span class="credit-meta-label">Current Ledger Balance:</span>
+                <div id="credit-cust-balance" style="font-weight:700; color:var(--danger);">₹ 0.00</div>
+              </div>
+              <div>
+                <span class="credit-meta-label">Approved Credit Limit:</span>
+                <div id="credit-cust-limit" style="font-weight:700; color:var(--success);">₹ 0.00</div>
+              </div>
+              <div>
+                <span class="credit-meta-label">Balance After Bill:</span>
+                <div id="credit-cust-after" style="font-weight:700; color:var(--primary);">₹ 0.00</div>
+              </div>
+            </div>
+            <label class="credit-agree-label" style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:0.85rem; cursor:pointer;">
+              <input type="checkbox" id="credit-agree-chk" checked />
+              <span>Authorize sale on customer credit ledger (Khata account).</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 6. SPLIT PAYMENT SECTION -->
+        <div id="pay-section-split" class="pay-mode-section">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">1. Cash Component (₹)</label>
+              <input type="number" id="split-cash-input" class="form-input" oninput="calculateSplit()" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">2. UPI / Digital Component (₹)</label>
+              <input type="number" id="split-upi-input" class="form-input" oninput="calculateSplit()" placeholder="0.00" />
+            </div>
+          </div>
+          <div class="split-status-bar">
+            <div>Total Bill: <strong id="split-bill-total">₹ 0.00</strong></div>
+            <div>Split Paid: <strong id="split-sum-paid" style="color:var(--primary);">₹ 0.00</strong></div>
+            <div>Remaining Due: <strong id="split-remaining" style="color:var(--danger);">₹ 0.00</strong></div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closePaymentModal()">Cancel</button>
+        <button id="btn-complete-sale" class="btn btn-success" onclick="completeSale()">
+          <span>✓</span> Complete Sale & Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
