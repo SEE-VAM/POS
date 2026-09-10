@@ -61,6 +61,17 @@ body {
   position: relative;
 }
 
+.btn-sidebar-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
 .topbar-brand {
   display: flex;
   align-items: center;
@@ -116,6 +127,22 @@ body {
   align-items: center;
   gap: 10px;
 }
+.topbar-quick-role-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+}
+.topbar-quick-role-switch label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.topbar-quick-role-switch select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 .user-badge {
   display: flex;
   align-items: center;
@@ -166,6 +193,13 @@ body {
   flex-shrink: 0;
   overflow-y: auto;
   border-right: 1px solid #334155;
+}
+
+.sidebar-mobile-header {
+  display: none;
+}
+.sidebar-backdrop {
+  display: none;
 }
 
 .sidebar-nav {
@@ -322,7 +356,9 @@ body {
    ============================================================================= */
 body.not-authenticated .screen-switcher-bar,
 body.not-authenticated .topbar-user,
-body.not-authenticated .app-sidebar {
+body.not-authenticated .app-sidebar,
+body.not-authenticated .btn-sidebar-toggle,
+body.not-authenticated .sidebar-backdrop {
   display: none !important;
 }
 
@@ -1411,5 +1447,601 @@ body.not-authenticated .app-main {
   background: #e2e8f0;
 }
 
+/* =============================================================================
+   12. MOBILE & TABLET RESPONSIVE DESIGN (DRAWER NAVIGATION & ADAPTIVE LAYOUTS)
+   ============================================================================= */
+body.no-anim *,
+body.no-anim .app-sidebar,
+body.no-anim .sidebar-backdrop {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (max-width: 900px) {
+  /* Canvas & Viewport Flexibility */
+  html, body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: calc(100vh - 54px) !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+  .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 10px !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  /* Responsive Topbar */
+  .app-topbar {
+    padding: 0 12px !important;
+  }
+  .btn-sidebar-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .screen-switcher-bar {
+    display: none !important;
+  }
+  .topbar-store-info {
+    display: none !important;
+  }
+  .topbar-quick-role-switch {
+    display: none !important;
+  }
+  .topbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .topbar-logo {
+    font-size: 1.15rem !important;
+  }
+  .topbar-user {
+    gap: 6px !important;
+  }
+
+  /* Unauthenticated Mobile Login Alignment */
+  body.not-authenticated .app-main {
+    padding: 0 !important;
+  }
+  body.not-authenticated .login-backdrop {
+    padding: 24px 14px !important;
+  }
+  body.not-authenticated .login-card {
+    width: 100% !important;
+    max-width: 440px !important;
+    padding: 28px 20px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Off-Canvas Navigation Drawer */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 275px !important;
+    max-width: 85vw !important;
+    z-index: 1050 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .app-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-mobile-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 14px 16px !important;
+    background: #0f172a !important;
+    border-bottom: 1px solid #334155 !important;
+  }
+  .sidebar-mobile-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+  }
+  .btn-close-sidebar {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 1.6rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 2px 8px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+  .btn-close-sidebar:hover {
+    color: #ffffff !important;
+    background: #334155 !important;
+  }
+  .sidebar-nav {
+    padding: 8px 0 !important;
+  }
+  .nav-item {
+    padding: 12px 18px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Drawer Backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+    z-index: 1040 !important;
+    opacity: 0 !important;
+    transition: opacity 0.25s ease !important;
+  }
+  .sidebar-backdrop.active {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Dashboard Screen Adaptations */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .dashboard-split {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 14px !important;
+  }
+  .dashboard-split > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .chart-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-width: 100% !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Screen 3: POS Billing Screen Adaptations */
+  .pos-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    gap: 14px !important;
+  }
+  .pos-catalog-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 480px !important;
+    overflow: visible !important;
+  }
+  .pos-cart-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 380px !important;
+    overflow: visible !important;
+  }
+  .product-grid {
+    max-height: 420px !important;
+  }
+  .cart-items-container {
+    max-height: 280px !important;
+  }
+
+  /* Panels & Touch-Scroll Tables */
+  .panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 14px !important;
+  }
+  .panel-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .panel-actions {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .table-responsive {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+  .data-table {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  .table-responsive .data-table {
+    min-width: 520px !important;
+  }
+
+  /* Modals & Dialogs */
+  .modal-box {
+    width: 95% !important;
+    max-width: 95% !important;
+    max-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 10px !important;
+  }
+  .modal-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: calc(90vh - 120px) !important;
+    padding: 14px !important;
+  }
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-topbar {
+    height: 50px !important;
+    padding: 0 8px !important;
+  }
+  .topbar-logo svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .topbar-logo span {
+    font-size: 1.05rem !important;
+  }
+  .topbar-quick-role-switch {
+    display: none !important;
+  }
+  .topbar-user {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .user-badge {
+    padding: 3px 8px !important;
+    font-size: 0.75rem !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+  .user-badge .role-tag {
+    padding: 1px 5px !important;
+    font-size: 0.65rem !important;
+  }
+  .btn-logout {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Dashboard Phone Grid */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .kpi-card {
+    padding: 10px !important;
+  }
+  .kpi-header {
+    font-size: 0.72rem !important;
+  }
+  .kpi-value {
+    font-size: 1.18rem !important;
+    margin: 4px 0 !important;
+    word-break: break-all !important;
+  }
+  .kpi-trend {
+    font-size: 0.68rem !important;
+  }
+
+  /* POS Billing Phone Adaptation */
+  .pos-search-header {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .pos-customer-select {
+    flex: 1 1 calc(100% - 65px) !important;
+    width: auto !important;
+  }
+  .pos-search-input {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    order: 3 !important;
+  }
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .product-card {
+    padding: 8px !important;
+  }
+  .product-thumb {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.25rem !important;
+    margin-bottom: 4px !important;
+  }
+  .product-title {
+    font-size: 0.8rem !important;
+  }
+  .product-price {
+    font-size: 0.88rem !important;
+  }
+  .cart-action-buttons {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+  .cart-action-buttons .btn-lg {
+    grid-column: span 2 !important;
+  }
+  .payment-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .pay-mode-btn {
+    padding: 8px 4px !important;
+    font-size: 0.75rem !important;
+  }
+  .pay-mode-btn .mode-icon {
+    font-size: 1.1rem !important;
+  }
+
+  /* Login Screen Phone Adaptation */
+  .login-card {
+    padding: 24px 18px !important;
+    border-radius: 16px !important;
+    max-width: 95% !important;
+  }
+  .login-brand {
+    font-size: 1.8rem !important;
+  }
+  .login-subtitle {
+    font-size: 0.8rem !important;
+    margin-bottom: 16px !important;
+  }
+  .login-quick-roles {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  /* Toast & Notification */
+  #toast-container {
+    top: 56px !important;
+    left: 10px !important;
+    right: 10px !important;
+  }
+  .toast {
+    min-width: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .receipt-wrapper {
+    padding: 14px !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}
 
 
+
+
+
+/* =============================================================================
+   POS CUSTOMER QUICKBAR & EMPTY CART ENHANCEMENTS
+   ============================================================================= */
+.pos-customer-quickbar {
+  background: #f8fafc;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+.pos-customer-quickbar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.pos-customer-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.empty-cart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 15px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* =============================================================================
+   SCREEN 18: MASTER REPORTS CENTER STYLES
+   ============================================================================= */
+.report-export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.report-module-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 2px 12px 2px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-overflow-scrolling: touch;
+}
+.report-tab {
+  background: #f1f5f9;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.report-tab:hover {
+  background: #e2e8f0;
+}
+.report-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.report-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+.report-presets-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-preset {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-color);
+}
+.btn-preset:hover {
+  background: #f1f5f9;
+}
+.btn-preset.active {
+  background: var(--secondary);
+  color: #ffffff;
+  border-color: var(--secondary);
+}
+.report-date-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.date-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.date-field input {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  width: 125px;
+}
+.report-branch-field select,
+.report-secondary-field select {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  max-width: 165px;
+}
+.report-search-field {
+  flex: 1;
+  min-width: 150px;
+}
+.report-search-field input {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+@media print {
+  .no-print,
+  .topbar,
+  .sidebar,
+  .screen-switcher,
+  .report-filters-bar,
+  .report-module-tabs,
+  .report-export-buttons,
+  .modal-overlay {
+    display: none !important;
+  }
+  body, .main-layout, .content-container, .screen-view {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    width: 100% !important;
+  }
+  .panel {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .table-responsive {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #333333 !important;
+    color: #000000 !important;
+    font-size: 8.5pt !important;
+    padding: 4px 6px !important;
+  }
+}

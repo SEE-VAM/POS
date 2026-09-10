@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MyPOS - Commercial Retail POS System</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
 
@@ -13,6 +13,13 @@
        ============================================================================= -->
   <header class="app-topbar">
     <div class="topbar-brand">
+      <button class="btn-sidebar-toggle" id="btn-sidebar-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
       <div class="topbar-logo">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
@@ -55,9 +62,9 @@
     </div>
 
     <div class="topbar-user">
-      <div style="display:flex; align-items:center; gap:6px; margin-right:6px;">
-        <label for="active-user-switch" style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Active User:</label>
-        <select id="active-user-switch" class="screen-select" onchange="switchActiveUser(this.value)" style="padding:4px 8px; font-size:0.8rem; font-weight:700;">
+      <div class="topbar-quick-role-switch">
+        <label for="active-user-switch">Active User:</label>
+        <select id="active-user-switch" class="screen-select" onchange="switchActiveUser(this.value)">
           <option value="admin">admin (ADMIN)</option>
           <option value="manager">manager (MANAGER)</option>
           <option value="cashier1">cashier1 (CASHIER)</option>
@@ -79,6 +86,18 @@
 
     <!-- APEX Universal Theme Sidebar Navigation -->
     <aside class="app-sidebar" id="app-sidebar">
+      <!-- Mobile Drawer Close & Title Bar -->
+      <div class="sidebar-mobile-header">
+        <div class="sidebar-mobile-brand">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span>MyPOS Navigation</span>
+        </div>
+        <button class="btn-close-sidebar" onclick="closeMobileSidebar()" aria-label="Close menu">&times;</button>
+      </div>
+
       <ul class="sidebar-nav">
         <li class="nav-item active" data-screen="dashboard" onclick="navigateToScreen('dashboard')">
           <span class="nav-icon">📊</span> <span>Dashboard</span>
@@ -127,6 +146,9 @@
         </li>
       </ul>
     </aside>
+
+    <!-- Mobile Drawer Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
     <!-- CONTENT CANVAS (23 SCREENS) -->
     <main class="app-main">
@@ -269,7 +291,7 @@
           <!-- Left: Catalog & Search -->
           <div class="pos-catalog-panel">
             <div class="pos-search-header">
-              <select id="pos-customer-select" class="pos-customer-select">
+              <select id="pos-customer-select" class="pos-customer-select" onchange="onPosCustomerSelectChange()">
                 <!-- Dynamically populated from posState.customers -->
               </select>
               <button class="btn btn-outline btn-sm" onclick="openAddCustomerModal()">+ New</button>
@@ -293,6 +315,18 @@
             <div class="cart-header">
               <span>Current Cart (<span id="cart-count-badge">0</span>)</span>
               <button class="btn btn-outline btn-sm" onclick="clearCart()">Clear</button>
+            </div>
+
+            <!-- Customer Details Quick Bar -->
+            <div class="pos-customer-quickbar">
+              <div class="pos-customer-quickbar-header">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">👤 Customer Info</span>
+                <span id="pos-cust-status-badge" class="badge badge-info" style="font-size:0.7rem;">Walk-in</span>
+              </div>
+              <div class="pos-customer-inputs-grid">
+                <input type="text" id="pos-cust-name-input" class="form-input" style="padding:6px 8px; font-size:0.8rem;" placeholder="Customer Name *" value="Walk-in Customer" oninput="onPosCustomerInputChange()" />
+                <input type="tel" id="pos-cust-mobile-input" class="form-input" style="padding:6px 8px; font-size:0.8rem;" placeholder="Mobile (10 digits)" value="9999999999" maxlength="10" oninput="onPosCustomerInputChange()" />
+              </div>
             </div>
 
             <div id="cart-items-list" class="cart-items-container">
@@ -330,14 +364,9 @@
             <button class="btn btn-primary" onclick="showToast('Barcode Scanner initialized and active', 'info')">📷 Scan Barcode</button>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:14px;">
-            <input type="text" id="prod-search-filter-screen4" class="form-input" placeholder="Search by name, code, or barcode..." oninput="document.getElementById('pos-search-input').value = this.value; renderPosProducts();" />
-            <select class="form-input" style="width:180px;" onchange="filterCategory(this.value)">
+            <input type="text" id="prod-search-filter-screen4" class="form-input" placeholder="Search by name, code, or barcode..." oninput="renderProductSearch()" />
+            <select id="prod-search-category-screen4" class="form-input" style="width:180px;" onchange="renderProductSearch()">
               <option value="ALL">All Categories</option>
-              <option value="Dairy">Dairy</option>
-              <option value="Bakery">Bakery</option>
-              <option value="Snacks">Snacks</option>
-              <option value="Food">Food</option>
-              <option value="Beverages">Beverages</option>
             </select>
           </div>
           <table class="data-table">
@@ -346,13 +375,8 @@
                 <th>Icon</th><th>Product Name</th><th>Code</th><th>Barcode</th><th>Category</th><th>Price</th><th>Stock</th><th>Action</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td>🥛</td><td><strong>Milk (1 Ltr)</strong></td><td><code>P001</code></td><td>890100100001</td><td>Dairy</td><td>₹ 52.00</td><td>45</td><td><button class="btn btn-success btn-sm" onclick="addToCart(1); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
-              <tr><td>🍞</td><td><strong>Bread (Pkt)</strong></td><td><code>P002</code></td><td>890100100002</td><td>Bakery</td><td>₹ 35.00</td><td>32</td><td><button class="btn btn-success btn-sm" onclick="addToCart(2); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
-              <tr><td>🍪</td><td><strong>Biscuits</strong></td><td><code>P003</code></td><td>890100100003</td><td>Snacks</td><td>₹ 20.00</td><td>56</td><td><button class="btn btn-success btn-sm" onclick="addToCart(3); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
-              <tr><td>🍜</td><td><strong>Maggi Noodles</strong></td><td><code>P004</code></td><td>890100100004</td><td>Food</td><td>₹ 15.00</td><td>40</td><td><button class="btn btn-success btn-sm" onclick="addToCart(4); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
-              <tr><td>🥤</td><td><strong>Soft Drink (Can)</strong></td><td><code>P005</code></td><td>890100100005</td><td>Beverages</td><td>₹ 45.00</td><td>26</td><td><button class="btn btn-success btn-sm" onclick="addToCart(5); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
-              <tr><td>🍟</td><td><strong>Potato Chips</strong></td><td><code>P006</code></td><td>890100100006</td><td>Snacks</td><td>₹ 25.00</td><td>35</td><td><button class="btn btn-success btn-sm" onclick="addToCart(6); navigateToScreen('pos')">+ Add to Cart</button></td></tr>
+            <tbody id="product-search-table-body">
+              <!-- Dynamically populated by renderProductSearch() -->
             </tbody>
           </table>
         </div>
@@ -364,7 +388,7 @@
       <section id="screen-receipt" class="screen-view">
         <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px;" class="no-print">
           <button class="btn btn-primary" onclick="window.print()">🖨️ Print Receipt</button>
-          <button class="btn btn-danger" onclick="showToast('PDF invoice downloaded successfully', 'success')">📥 Download PDF</button>
+          <button class="btn btn-danger" onclick="downloadReceiptPdf()">📥 Download / Print PDF</button>
           <button class="btn btn-outline" onclick="openModal('modal-email-receipt')">✉️ Email Receipt</button>
           <button class="btn btn-success" onclick="navigateToScreen('pos')">+ New Sale</button>
         </div>
@@ -380,9 +404,10 @@
             <div><strong>Invoice No:</strong> <span id="rcpt-inv-no">INV-08092025</span></div>
             <div><strong>Date:</strong> <span id="rcpt-date">08-09-2025</span></div>
           </div>
-          <div style="font-size:0.8rem; margin-bottom:12px;">
-            <div><strong>Customer:</strong> <span id="rcpt-customer">Walk-in Customer</span></div>
-            <div><strong>Cashier:</strong> Admin &bull; <strong>Mode:</strong> <span id="rcpt-payment-mode">Cash</span></div>
+          <div style="font-size:0.8rem; margin-bottom:12px; line-height:1.5;">
+            <div><strong>Customer:</strong> <span id="rcpt-customer">Walk-in Customer</span> &bull; <strong>Phone:</strong> <span id="rcpt-customer-mobile">9999999999</span></div>
+            <div><strong>Cashier:</strong> <span id="rcpt-cashier">Admin</span> &bull; <strong>Branch:</strong> <span id="rcpt-branch">Main Branch</span></div>
+            <div><strong>Payment Mode:</strong> <span id="rcpt-payment-mode">Cash</span></div>
           </div>
 
           <table style="width:100%; font-size:0.8rem; border-collapse:collapse; margin-bottom:12px;">
@@ -644,35 +669,104 @@
            ======================================================================= -->
       <section id="screen-stock-transfer" class="screen-view">
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">Inter-Branch Stock Transfer</span></div>
+          <div class="panel-header">
+            <span class="panel-title">Inter-Branch Stock Transfer</span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Transfer stock seamlessly between company retail branches</span>
+          </div>
+
+          <!-- Branch Selectors -->
           <div class="form-grid-2" style="margin-bottom:16px;">
             <div>
               <label class="form-label">From Branch (Origin)</label>
-              <select id="transfer-from" class="form-input">
-                <option value="Main Branch">Main Branch</option>
-                <option value="Branch 2">Branch 2 - Noida Sector 62</option>
+              <select id="transfer-from" class="form-input" onchange="onTransferBranchChange()">
+                <!-- Populated dynamically -->
               </select>
             </div>
             <div>
               <label class="form-label">To Branch (Destination)</label>
-              <select id="transfer-to" class="form-input">
-                <option value="Branch 2">Branch 2 - Noida Sector 62</option>
-                <option value="Main Branch">Main Branch</option>
-                <option value="Branch 3">Branch 3 - Gurgaon Express</option>
+              <select id="transfer-to" class="form-input" onchange="onTransferBranchChange()">
+                <!-- Populated dynamically -->
               </select>
             </div>
           </div>
+
+          <!-- Dynamic Item Selector Bar -->
+          <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:14px; margin-bottom:18px;">
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:10px; color:var(--primary); display:flex; align-items:center; gap:6px;">
+              <span>📦 Select Products to Transfer</span>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+              <div style="flex:2; min-width:220px;">
+                <label class="form-label">Select Product</label>
+                <select id="transfer-product-select" class="form-input" onchange="onTransferProductChange()">
+                  <!-- Dynamically populated from posState.products -->
+                </select>
+              </div>
+              <div style="flex:1; min-width:120px;">
+                <label class="form-label">Source Available</label>
+                <input type="text" id="transfer-source-avail" class="form-input" readonly value="0" style="background:var(--bg-panel); font-weight:700; color:var(--primary);" />
+              </div>
+              <div style="flex:1; min-width:120px;">
+                <label class="form-label">Transfer Qty</label>
+                <input type="number" id="transfer-input-qty" class="form-input" min="1" value="1" />
+              </div>
+              <div style="margin-bottom:1px;">
+                <button type="button" class="btn btn-primary" onclick="addTransferItemRow()">+ Add to Manifest</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Transfer Manifest Table -->
+          <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px;">Transfer Manifest Items</div>
           <table class="data-table" style="margin-bottom:16px;">
-            <thead><tr><th>Product</th><th>Transfer Qty</th><th>Available in Source</th></tr></thead>
-            <tbody>
-              <tr><td>🥛 Milk</td><td><input type="number" value="10" class="form-input" style="width:80px;" /></td><td>50</td></tr>
-              <tr><td>🍞 Bread</td><td><input type="number" value="5" class="form-input" style="width:80px;" /></td><td>30</td></tr>
-              <tr><td>🍪 Biscuits</td><td><input type="number" value="8" class="form-input" style="width:80px;" /></td><td>40</td></tr>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Code</th>
+                <th>Category</th>
+                <th style="text-align:center;">Transfer Qty</th>
+                <th style="text-align:center;">Available in Source</th>
+                <th style="text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="transfer-items-table-body">
+              <!-- Dynamically populated rows -->
             </tbody>
           </table>
-          <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button class="btn btn-outline" onclick="navigateToScreen('dashboard')">Cancel</button>
-            <button class="btn btn-success" onclick="executeTransfer()">Execute Transfer</button>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:14px; margin-bottom:24px;">
+            <div>
+              <span style="font-weight:700; font-size:0.9rem;">Total Items: <span id="transfer-total-items" style="color:var(--primary);">0</span></span> &bull; 
+              <span style="font-weight:700; font-size:0.9rem;">Total Qty: <span id="transfer-total-qty" style="color:var(--success);">0</span></span>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-outline" onclick="clearTransferManifest()">Clear</button>
+              <button class="btn btn-success" onclick="executeTransfer()">🚀 Execute Transfer</button>
+            </div>
+          </div>
+
+          <!-- Stock Transfer History Ledger -->
+          <div style="border-top:2px solid var(--border-color); padding-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span class="panel-title" style="font-size:1rem;">Stock Transfer History Ledger</span>
+              <span class="badge badge-info">Real-Time Ledger</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transfer #</th>
+                  <th>Date</th>
+                  <th>From Branch</th>
+                  <th>To Branch</th>
+                  <th>Items Transferred</th>
+                  <th>Total Qty</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="transfer-history-table-body">
+                <!-- Dynamically populated from posState.transferHistory -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -738,25 +832,113 @@
       <!-- =======================================================================
            SCREEN 18: SALES REPORTS
            ======================================================================= -->
+            <!-- =======================================================================
+           SCREEN 18: MASTER REPORTS & ANALYTICS CENTER (11 BUSINESS MODULES)
+           ======================================================================= -->
       <section id="screen-sales-reports" class="screen-view">
         <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Sales Reports & Analytics</span>
-            <button class="btn btn-primary btn-sm" onclick="showToast('Sales report exported', 'success')">Export Report</button>
+          <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+            <div>
+              <span class="panel-title">📊 Master Reports & Analytics Center</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">
+                Unified live reporting across all 11 business modules with date filters, search, and local file exports
+              </p>
+            </div>
+            <div class="report-export-buttons">
+              <button class="btn btn-success btn-sm" onclick="exportReportToCsv()" title="Download CSV file directly to your computer">
+                📥 Export CSV / Excel
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="printReportPdf()" title="Print or save as PDF">
+                🖨️ Print / Save PDF
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="exportReportToJson()" title="Export JSON dataset">
+                📄 Export JSON
+              </button>
+            </div>
           </div>
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:18px;">
-            <div class="kpi-card"><div class="kpi-header">Total Sales</div><div class="kpi-value">₹ 58,420</div></div>
-            <div class="kpi-card"><div class="kpi-header">Total Bills</div><div class="kpi-value">86</div></div>
-            <div class="kpi-card"><div class="kpi-header">Avg. Bill Amount</div><div class="kpi-value">₹ 679</div></div>
+
+          <!-- 11 Master Module Navigation Tabs -->
+          <div class="report-module-tabs" id="report-module-tabs">
+            <button class="report-tab active" data-entity="billing" onclick="switchReportEntity('billing')">🧾 Billing / Sales</button>
+            <button class="report-tab" data-entity="products" onclick="switchReportEntity('products')">📦 Products</button>
+            <button class="report-tab" data-entity="categories" onclick="switchReportEntity('categories')">🏷️ Categories</button>
+            <button class="report-tab" data-entity="inventory" onclick="switchReportEntity('inventory')">📊 Live Inventory</button>
+            <button class="report-tab" data-entity="purchases" onclick="switchReportEntity('purchases')">🛒 Purchases</button>
+            <button class="report-tab" data-entity="returns" onclick="switchReportEntity('returns')">🔄 Returns</button>
+            <button class="report-tab" data-entity="transfer" onclick="switchReportEntity('transfer')">🚚 Stock Transfer</button>
+            <button class="report-tab" data-entity="customers" onclick="switchReportEntity('customers')">👥 Customers</button>
+            <button class="report-tab" data-entity="suppliers" onclick="switchReportEntity('suppliers')">🏭 Suppliers</button>
+            <button class="report-tab" data-entity="users" onclick="switchReportEntity('users')">👤 Users & Roles</button>
+            <button class="report-tab" data-entity="branches" onclick="switchReportEntity('branches')">🏢 Branches</button>
           </div>
-          <h4 style="margin-bottom:10px;">Daily Sales Trend</h4>
-          <div style="display:flex; align-items:flex-end; gap:14px; height:180px; padding:10px 0; border-bottom:1px solid var(--border-color);">
-            <div style="flex:1; background:var(--primary); height:60%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">01-09</div>
-            <div style="flex:1; background:var(--primary); height:80%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">02-09</div>
-            <div style="flex:1; background:var(--primary); height:45%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">03-09</div>
-            <div style="flex:1; background:var(--primary); height:90%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">04-09</div>
-            <div style="flex:1; background:var(--primary); height:100%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">05-09</div>
-            <div style="flex:1; background:var(--primary); height:75%; border-radius:4px 4px 0 0; text-align:center; color:#fff; font-size:0.75rem;">06-09</div>
+
+          <!-- Master Filters Toolbar -->
+          <div class="report-filters-bar">
+            <!-- Date Filter Presets -->
+            <div class="report-presets-group">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); align-self:center;">DATE:</span>
+              <button class="btn-preset active" data-preset="all" onclick="setReportDatePreset('all')">All Time</button>
+              <button class="btn-preset" data-preset="today" onclick="setReportDatePreset('today')">Today</button>
+              <button class="btn-preset" data-preset="yesterday" onclick="setReportDatePreset('yesterday')">Yesterday</button>
+              <button class="btn-preset" data-preset="7days" onclick="setReportDatePreset('7days')">Last 7 Days</button>
+              <button class="btn-preset" data-preset="month" onclick="setReportDatePreset('month')">This Month</button>
+            </div>
+
+            <!-- Custom Date Range -->
+            <div class="report-date-inputs">
+              <div class="date-field">
+                <label>From:</label>
+                <input type="date" id="report-date-from" class="form-input" onchange="applyReportFilters()" />
+              </div>
+              <div class="date-field">
+                <label>To:</label>
+                <input type="date" id="report-date-to" class="form-input" onchange="applyReportFilters()" />
+              </div>
+            </div>
+
+            <!-- Branch Filter -->
+            <div class="report-branch-field">
+              <select id="report-branch-select" class="form-input" onchange="applyReportFilters()">
+                <option value="ALL">All Branches</option>
+              </select>
+            </div>
+
+            <!-- Secondary Context Filter (Payment mode, Category, Role, etc.) -->
+            <div class="report-secondary-field">
+              <select id="report-secondary-select" class="form-input" onchange="applyReportFilters()">
+                <option value="ALL">All Categories / Types</option>
+              </select>
+            </div>
+
+            <!-- Keyword Search -->
+            <div class="report-search-field">
+              <input type="text" id="report-search-input" class="form-input" placeholder="🔍 Search records..." oninput="applyReportFilters()" />
+            </div>
+
+            <button class="btn btn-outline btn-sm" onclick="resetReportFilters()" title="Reset all filters">↺ Reset</button>
+          </div>
+
+          <!-- Dynamic KPI Summary Cards Grid -->
+          <div class="kpi-grid" id="report-kpi-cards" style="margin-bottom:16px;">
+            <!-- Dynamically populated based on active entity & filters -->
+          </div>
+
+          <!-- Dynamic Data Table with Sticky Header -->
+          <div class="table-responsive" style="max-height: 520px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+            <table class="data-table" id="report-master-table">
+              <thead id="report-table-head">
+                <!-- Dynamically populated -->
+              </thead>
+              <tbody id="report-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Footer Summary & Status -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:0.8rem; color:var(--text-muted);">
+            <span id="report-record-count-text">Showing 0 records</span>
+            <span id="report-generated-text">Generated: Just now</span>
           </div>
         </div>
       </section>
@@ -944,7 +1126,7 @@
             <button class="btn btn-primary" onclick="openAddBranchModal()">+ Add Branch</button>
           </div>
           <table class="data-table">
-            <thead><tr><th>Branch Name (Code)</th><th>Address</th><th>Phone</th><th>Status</th></tr></thead>
+            <thead><tr><th>Branch Name (Code)</th><th>Address</th><th>Phone</th><th>Status</th><th style="text-align:center;">Actions</th></tr></thead>
             <tbody id="branches-table-body">
               <!-- Dynamically populated -->
             </tbody>
@@ -1173,10 +1355,11 @@
   <div id="modal-add-branch" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>Add New Branch</h3>
+        <h3 id="modal-branch-title">Add New Branch</h3>
         <button class="modal-close" onclick="closeModal('modal-add-branch')">&times;</button>
       </div>
       <form id="branch-form" onsubmit="saveBranch(event)">
+        <input type="hidden" id="branch-edit-id" value="" />
         <div class="modal-body">
           <div class="form-grid-2">
             <div class="form-group">

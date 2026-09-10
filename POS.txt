@@ -1838,4 +1838,3 @@ values (1, 1, 'INVOICE_PREFIX', 'RP/B001/', 'Prefix for sales invoice numbers in
 /
 insert into pos_settings (company_id, branch_id, setting_key, setting_value, description)
 values (1, null, 'CURRENCY_CODE', 'INR', 'Default currency for the company')
-/

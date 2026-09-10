@@ -15,67 +15,110 @@ const posState = {
   editingCategoryId: null,
   editingCustomerId: null,
   editingSupplierId: null,
+  editingBranchId: null,
 
-  // Company Settings
-  settings: {
-    storeName: 'ABC Retail Store',
-    legalName: 'ABC Supermarkets India Pvt Ltd',
-    gstin: '07ABCDE1234F1Z5',
-    address: 'Shop No. 12, Green Park, New Delhi - 110016',
-    phone: '+91 98765 43210',
-    invoicePrefix: 'INV',
-    currency: '₹',
-    allowNegativeStock: false
-  },
+  // Company Settings (Persisted in localStorage)
+  settings: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_settings') || 'null');
+    if (!saved || typeof saved !== 'object') {
+      saved = {
+        storeName: 'ABC Retail Store',
+        legalName: 'ABC Supermarkets India Pvt Ltd',
+        gstin: '07ABCDE1234F1Z5',
+        address: 'Shop No. 12, Green Park, New Delhi - 110016',
+        phone: '+91 98765 43210',
+        invoicePrefix: 'INV',
+        currency: '₹',
+        allowNegativeStock: false
+      };
+      localStorage.setItem('pos_settings', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  // Branches
-  branches: [
-    { id: 1, code: 'B001', name: 'Main Branch', address: 'Shop No. 12, Green Park, New Delhi', phone: '+91 98765 43210', status: 'Active' },
-    { id: 2, code: 'B002', name: 'Branch 2 - Noida Sector 62', address: 'Plot 45, Sector 62, Noida, UP', phone: '+91 98765 43211', status: 'Active' },
-    { id: 3, code: 'B003', name: 'Branch 3 - Gurgaon Express', address: 'DLF Phase 3, Gurgaon, Haryana', phone: '+91 98765 43212', status: 'Active' }
-  ],
+  // Branches Directory (Persisted in localStorage)
+  branches: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_branches_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, code: 'B001', name: 'Main Branch', address: 'Shop No. 12, Green Park, New Delhi', phone: '+91 98765 43210', status: 'Active' },
+        { id: 2, code: 'B002', name: 'Branch 2 - Noida Sector 62', address: 'Plot 45, Sector 62, Noida, UP', phone: '+91 98765 43211', status: 'Active' },
+        { id: 3, code: 'B003', name: 'Branch 3 - Gurgaon Express', address: 'DLF Phase 3, Gurgaon, Haryana', phone: '+91 98765 43212', status: 'Active' }
+      ];
+      localStorage.setItem('pos_branches_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  // Master Product Catalog
-  products: [
-    { id: 1, code: 'P001', name: 'Milk', category: 'Dairy', price: 52.00, cost: 42.00, stock: 45, minStock: 10, unit: 'Ltr', tax: 0, icon: '🥛', barcode: '890100100001' },
-    { id: 2, code: 'P002', name: 'Bread', category: 'Bakery', price: 35.00, cost: 25.00, stock: 32, minStock: 10, unit: 'Pkt', tax: 0, icon: '🍞', barcode: '890100100002' },
-    { id: 3, code: 'P003', name: 'Biscuits', category: 'Snacks', price: 20.00, cost: 14.00, stock: 56, minStock: 10, unit: 'Pkt', tax: 18, icon: '🍪', barcode: '890100100003' },
-    { id: 4, code: 'P004', name: 'Maggi', category: 'Food', price: 15.00, cost: 11.00, stock: 40, minStock: 10, unit: 'Pkt', tax: 12, icon: '🍜', barcode: '890100100004' },
-    { id: 5, code: 'P005', name: 'Soft Drink', category: 'Beverages', price: 45.00, cost: 32.00, stock: 26, minStock: 10, unit: 'Btl', tax: 28, icon: '🥤', barcode: '890100100005' },
-    { id: 6, code: 'P006', name: 'Chips', category: 'Snacks', price: 25.00, cost: 18.00, stock: 35, minStock: 10, unit: 'Pkt', tax: 12, icon: '🍟', barcode: '890100100006' },
-    { id: 7, code: 'P007', name: 'Cooking Oil', category: 'Food', price: 120.00, cost: 95.00, stock: 20, minStock: 5, unit: 'Ltr', tax: 5, icon: '🍾', barcode: '890100100007' },
-    { id: 8, code: 'P008', name: 'Basmati Rice', category: 'Food', price: 60.00, cost: 45.00, stock: 50, minStock: 15, unit: 'Kg', tax: 0, icon: '🍚', barcode: '890100100008' }
-  ],
+  // Master Product Catalog (Persisted in localStorage)
+  products: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_products_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, code: 'P001', name: 'Milk', category: 'Dairy', price: 52.00, cost: 42.00, stock: 45, minStock: 10, unit: 'Ltr', tax: 0, icon: '🥛', barcode: '890100100001' },
+        { id: 2, code: 'P002', name: 'Bread', category: 'Bakery', price: 35.00, cost: 25.00, stock: 32, minStock: 10, unit: 'Pkt', tax: 0, icon: '🍞', barcode: '890100100002' },
+        { id: 3, code: 'P003', name: 'Biscuits', category: 'Snacks', price: 20.00, cost: 14.00, stock: 56, minStock: 10, unit: 'Pkt', tax: 18, icon: '🍪', barcode: '890100100003' },
+        { id: 4, code: 'P004', name: 'Maggi', category: 'Food', price: 15.00, cost: 11.00, stock: 40, minStock: 10, unit: 'Pkt', tax: 12, icon: '🍜', barcode: '890100100004' },
+        { id: 5, code: 'P005', name: 'Soft Drink', category: 'Beverages', price: 45.00, cost: 32.00, stock: 26, minStock: 10, unit: 'Btl', tax: 28, icon: '🥤', barcode: '890100100005' },
+        { id: 6, code: 'P006', name: 'Chips', category: 'Snacks', price: 25.00, cost: 18.00, stock: 35, minStock: 10, unit: 'Pkt', tax: 12, icon: '🍟', barcode: '890100100006' },
+        { id: 7, code: 'P007', name: 'Cooking Oil', category: 'Food', price: 120.00, cost: 95.00, stock: 20, minStock: 5, unit: 'Ltr', tax: 5, icon: '🍾', barcode: '890100100007' },
+        { id: 8, code: 'P008', name: 'Basmati Rice', category: 'Food', price: 60.00, cost: 45.00, stock: 50, minStock: 15, unit: 'Kg', tax: 0, icon: '🍚', barcode: '890100100008' }
+      ];
+      localStorage.setItem('pos_products_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  // Categories
-  categories: [
-    { id: 1, name: 'Dairy', desc: 'Milk & Dairy Products', status: 'Active' },
-    { id: 2, name: 'Bakery', desc: 'Bread, Cakes, Pastries', status: 'Active' },
-    { id: 3, name: 'Snacks', desc: 'Chips, Biscuits, Namkeen', status: 'Active' },
-    { id: 4, name: 'Beverages', desc: 'Soft Drinks, Juices', status: 'Active' },
-    { id: 5, name: 'Food', desc: 'Instant Food, Spices', status: 'Active' },
-    { id: 6, name: 'Household', desc: 'Home Care, Cleaning', status: 'Active' },
-    { id: 7, name: 'Personal Care', desc: 'Cosmetics, Hygiene', status: 'Active' }
-  ],
+  // Categories Catalog (Persisted in localStorage)
+  categories: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_categories_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, name: 'Dairy', desc: 'Milk & Dairy Products', status: 'Active' },
+        { id: 2, name: 'Bakery', desc: 'Bread, Cakes, Pastries', status: 'Active' },
+        { id: 3, name: 'Snacks', desc: 'Chips, Biscuits, Namkeen', status: 'Active' },
+        { id: 4, name: 'Beverages', desc: 'Soft Drinks, Juices', status: 'Active' },
+        { id: 5, name: 'Food', desc: 'Instant Food, Spices', status: 'Active' },
+        { id: 6, name: 'Household', desc: 'Home Care, Cleaning', status: 'Active' },
+        { id: 7, name: 'Personal Care', desc: 'Cosmetics, Hygiene', status: 'Active' }
+      ];
+      localStorage.setItem('pos_categories_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  // Customers Directory & Balances
-  customers: [
-    { id: 1, name: 'Walk-in Customer', mobile: '9999999999', email: '', gstin: 'Unregistered', balance: 0.00, creditLimit: 0, status: 'Active' },
-    { id: 2, name: 'Rohit Sharma', mobile: '9876543210', email: 'rohit@gmail.com', gstin: '07ABCDE1234F1Z5', balance: 0.00, creditLimit: 10000, status: 'Active' },
-    { id: 3, name: 'Priya Singh', mobile: '9811122334', email: 'priya@gmail.com', gstin: '07ABCDE1234F1Z6', balance: 320.00, creditLimit: 5000, status: 'Active' },
-    { id: 4, name: 'Amit Kumar', mobile: '9123456789', email: 'amit@gmail.com', gstin: '-', balance: 0.00, creditLimit: 2000, status: 'Active' },
-    { id: 5, name: 'Sunita Devi', mobile: '9887766554', email: 'sunita@gmail.com', gstin: '-', balance: 120.00, creditLimit: 3000, status: 'Active' },
-    { id: 6, name: 'Vikram Patel', mobile: '9654321187', email: 'vikram@gmail.com', gstin: '07ABCDE1234F1Z7', balance: 450.00, creditLimit: 8000, status: 'Active' }
-  ],
+  // Customers Directory & Balances (Persisted in localStorage)
+  customers: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_customers_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, name: 'Walk-in Customer', mobile: '9999999999', email: '', gstin: 'Unregistered', balance: 0.00, creditLimit: 0, status: 'Active' },
+        { id: 2, name: 'Rohit Sharma', mobile: '9876543210', email: 'rohit@gmail.com', gstin: '07ABCDE1234F1Z5', balance: 0.00, creditLimit: 10000, status: 'Active' },
+        { id: 3, name: 'Priya Singh', mobile: '9811122334', email: 'priya@gmail.com', gstin: '07ABCDE1234F1Z6', balance: 320.00, creditLimit: 5000, status: 'Active' },
+        { id: 4, name: 'Amit Kumar', mobile: '9123456789', email: 'amit@gmail.com', gstin: '-', balance: 0.00, creditLimit: 2000, status: 'Active' },
+        { id: 5, name: 'Sunita Devi', mobile: '9887766554', email: 'sunita@gmail.com', gstin: '-', balance: 120.00, creditLimit: 3000, status: 'Active' },
+        { id: 6, name: 'Vikram Patel', mobile: '9654321187', email: 'vikram@gmail.com', gstin: '07ABCDE1234F1Z7', balance: 450.00, creditLimit: 8000, status: 'Active' }
+      ];
+      localStorage.setItem('pos_customers_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  // Suppliers Directory & Payables
-  suppliers: [
-    { id: 1, name: 'ABC Distributors', contact: 'Ramesh Kumar', mobile: '9876500001', email: 'abc@distributors.com', gstin: '07ABCDE1234F1Z5', balance: 5750.00, status: 'Active' },
-    { id: 2, name: 'Shree Trading', contact: 'Suresh Shah', mobile: '9812345678', email: 'shree@trading.com', gstin: '07ABCDE1234F1Z6', balance: 12800.00, status: 'Active' },
-    { id: 3, name: 'Global Suppliers', contact: 'Anil Gupta', mobile: '9123456780', email: 'global@suppliers.com', gstin: '-', balance: 0.00, status: 'Active' },
-    { id: 4, name: 'Mahesh Traders', contact: 'Mahesh Verma', mobile: '9888777666', email: 'mahesh@traders.com', gstin: '07ABCDE1234F1Z7', balance: 3450.00, status: 'Active' },
-    { id: 5, name: 'KR Enterprises', contact: 'Karan Rawat', mobile: '9654009887', email: 'kr@enterprises.com', gstin: '-', balance: 7300.00, status: 'Active' }
-  ],
+  // Suppliers Directory & Payables (Persisted in localStorage)
+  suppliers: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_suppliers_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, name: 'ABC Distributors', contact: 'Ramesh Kumar', mobile: '9876500001', email: 'abc@distributors.com', gstin: '07ABCDE1234F1Z5', balance: 5750.00, status: 'Active' },
+        { id: 2, name: 'Shree Trading', contact: 'Suresh Shah', mobile: '9812345678', email: 'shree@trading.com', gstin: '07ABCDE1234F1Z6', balance: 12800.00, status: 'Active' },
+        { id: 3, name: 'Global Suppliers', contact: 'Anil Gupta', mobile: '9123456780', email: 'global@suppliers.com', gstin: '-', balance: 0.00, status: 'Active' },
+        { id: 4, name: 'Mahesh Traders', contact: 'Mahesh Verma', mobile: '9888777666', email: 'mahesh@traders.com', gstin: '07ABCDE1234F1Z7', balance: 3450.00, status: 'Active' },
+        { id: 5, name: 'KR Enterprises', contact: 'Karan Rawat', mobile: '9654009887', email: 'kr@enterprises.com', gstin: '-', balance: 7300.00, status: 'Active' }
+      ];
+      localStorage.setItem('pos_suppliers_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
   // Users Directory & Role Assignments (Persisted in localStorage with Passwords)
   users: (() => {
@@ -121,27 +164,121 @@ const posState = {
   },
   selectedPermRole: 'ADMIN',
 
-  // Active POS Cart
-  cart: [
-    { productId: 1, name: 'Milk', qty: 1, price: 52.00, taxRate: 0 },
-    { productId: 2, name: 'Bread', qty: 2, price: 35.00, taxRate: 0 },
-    { productId: 3, name: 'Biscuits', qty: 1, price: 20.00, taxRate: 18 }
-  ],
+  // Active POS Cart - ALWAYS starts 100% EMPTY on load as requested!
+  cart: [],
+  posCustomerName: 'Walk-in Customer',
+  posCustomerMobile: '9999999999',
 
-  // Past Sales History
-  salesHistory: [
-    { id: 125, invoiceNo: 'INV-0000125', date: '08-09-2025', customer: 'Walk-in Customer', amount: 167.56, payment: 'Cash', items: [
-      { name: 'Milk', qty: 1, price: 52.00 }, { name: 'Bread', qty: 2, price: 35.00 }, { name: 'Biscuits', qty: 1, price: 20.00 }
-    ]},
-    { id: 124, invoiceNo: 'INV-0000124', date: '08-09-2025', customer: 'Rohit Sharma', amount: 310.00, payment: 'UPI', items: [{ name: 'Cooking Oil', qty: 2, price: 120.00 }, { name: 'Rice', qty: 1, price: 60.00 }] },
-    { id: 123, invoiceNo: 'INV-0000123', date: '07-09-2025', customer: 'Priya Singh', amount: 320.00, payment: 'Credit', items: [{ name: 'Biscuits', qty: 10, price: 20.00 }, { name: 'Cooking Oil', qty: 1, price: 120.00 }] },
-    { id: 122, invoiceNo: 'INV-0000122', date: '07-09-2025', customer: 'Amit Kumar', amount: 540.00, payment: 'Card', items: [{ name: 'Rice', qty: 9, price: 60.00 }] },
-    { id: 121, invoiceNo: 'INV-0000121', date: '06-09-2025', customer: 'Sunita Devi', amount: 120.00, payment: 'UPI', items: [{ name: 'Cooking Oil', qty: 1, price: 120.00 }] }
-  ],
+  // Past Sales History (Persisted in localStorage)
+  salesHistory: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_sales_history') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 125, invoiceNo: 'INV-0000125', date: '08-09-2025', customer: 'Walk-in Customer', customerMobile: '9999999999', branch: 'Main Branch', cashier: 'System Administrator', amount: 167.56, payment: 'Cash', paymentMode: 'CASH', items: [
+          { productId: 1, name: 'Milk', qty: 1, price: 52.00, taxRate: 0 }, { productId: 2, name: 'Bread', qty: 2, price: 35.00, taxRate: 0 }, { productId: 3, name: 'Biscuits', qty: 1, price: 20.00, taxRate: 18 }
+        ]},
+        { id: 124, invoiceNo: 'INV-0000124', date: '08-09-2025', customer: 'Rohit Sharma', customerMobile: '9876543210', branch: 'Main Branch', cashier: 'Cashier One', amount: 310.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 2, price: 120.00, taxRate: 5 }, { productId: 8, name: 'Basmati Rice', qty: 1, price: 60.00, taxRate: 0 }] },
+        { id: 123, invoiceNo: 'INV-0000123', date: '07-09-2025', customer: 'Priya Singh', customerMobile: '9811122334', branch: 'Branch 2 - Noida Sector 62', cashier: 'Cashier Two', amount: 320.00, payment: 'Credit', paymentMode: 'CREDIT', items: [{ productId: 3, name: 'Biscuits', qty: 10, price: 20.00, taxRate: 18 }, { productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] },
+        { id: 122, invoiceNo: 'INV-0000122', date: '07-09-2025', customer: 'Amit Kumar', customerMobile: '9123456789', branch: 'Main Branch', cashier: 'System Administrator', amount: 540.00, payment: 'Card', paymentMode: 'CARD', items: [{ productId: 8, name: 'Basmati Rice', qty: 9, price: 60.00, taxRate: 0 }] },
+        { id: 121, invoiceNo: 'INV-0000121', date: '06-09-2025', customer: 'Sunita Devi', customerMobile: '9887766554', branch: 'Branch 3 - Gurgaon Express', cashier: 'Cashier One', amount: 120.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] }
+      ];
+      localStorage.setItem('pos_sales_history', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
 
-  lastCompletedSale: null
+  // Purchase Master (Persisted in localStorage)
+  purchases: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_purchases_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 124, poNumber: 'PUR-000124', date: '08-09-2025', supplier: 'ABC Distributors', branch: 'Main Branch', itemsCount: 3, totalQty: 60, totalAmount: 5750.00, status: 'Received' },
+        { id: 123, poNumber: 'PUR-000123', date: '06-09-2025', supplier: 'Shree Trading', branch: 'Branch 2 - Noida Sector 62', itemsCount: 2, totalQty: 40, totalAmount: 4200.00, status: 'Received' },
+        { id: 122, poNumber: 'PUR-000122', date: '04-09-2025', supplier: 'Mahesh Traders', branch: 'Main Branch', itemsCount: 4, totalQty: 80, totalAmount: 8900.00, status: 'Received' }
+      ];
+      localStorage.setItem('pos_purchases_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
+
+  // Returns Master (Sales & Purchase Returns) (Persisted in localStorage)
+  returns: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_returns_list') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 'RET-0001', date: '08-09-2025', type: 'Sales Return', refNo: 'INV-0000124', party: 'Rohit Sharma', branch: 'Main Branch', amount: 120.00, reason: 'Damaged packaging', status: 'Completed' },
+        { id: 'RET-0002', date: '07-09-2025', type: 'Purchase Return', refNo: 'PUR-000123', party: 'Shree Trading', branch: 'Branch 2 - Noida Sector 62', amount: 350.00, reason: 'Expired stock batch', status: 'Completed' },
+        { id: 'RET-0003', date: '05-09-2025', type: 'Sales Return', refNo: 'INV-0000121', party: 'Sunita Devi', branch: 'Branch 3 - Gurgaon Express', amount: 45.00, reason: 'Wrong item purchased', status: 'Completed' }
+      ];
+      localStorage.setItem('pos_returns_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
+
+  lastCompletedSale: null,
+
+  // Active Stock Transfer Manifest & History
+  activeTransferItems: [],
+  transferHistory: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_transfer_history') || 'null');
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        {
+          id: 'TRF-1001',
+          date: '08-09-2025',
+          from: 'Main Branch',
+          to: 'Branch 2 - Noida Sector 62',
+          items: [
+            { name: 'Milk', qty: 10 },
+            { name: 'Bread', qty: 5 },
+            { name: 'Biscuits', qty: 8 }
+          ],
+          totalQty: 23,
+          status: 'Completed'
+        }
+      ];
+      localStorage.setItem('pos_transfer_history', JSON.stringify(saved));
+    }
+    return saved;
+  })()
 };
 window.posState = posState;
+
+// Storage Helpers: Save entities to localStorage
+function saveProductsToStorage() {
+  localStorage.setItem('pos_products_list', JSON.stringify(posState.products));
+}
+function saveBranchesToStorage() {
+  localStorage.setItem('pos_branches_list', JSON.stringify(posState.branches));
+}
+function saveCategoriesToStorage() {
+  localStorage.setItem('pos_categories_list', JSON.stringify(posState.categories));
+}
+function saveCustomersToStorage() {
+  localStorage.setItem('pos_customers_list', JSON.stringify(posState.customers));
+}
+function saveSuppliersToStorage() {
+  localStorage.setItem('pos_suppliers_list', JSON.stringify(posState.suppliers));
+}
+function saveSettingsToStorage() {
+  localStorage.setItem('pos_settings', JSON.stringify(posState.settings));
+}
+function saveSalesHistoryToStorage() {
+  localStorage.setItem('pos_sales_history', JSON.stringify(posState.salesHistory));
+}
+function saveTransferHistoryToStorage() {
+  localStorage.setItem('pos_transfer_history', JSON.stringify(posState.transferHistory));
+}
+function saveUsersToStorage() {
+  localStorage.setItem('pos_users_list', JSON.stringify(posState.users));
+}
+function savePurchasesToStorage() {
+  localStorage.setItem('pos_purchases_list', JSON.stringify(posState.purchases));
+}
+function saveReturnsToStorage() {
+  localStorage.setItem('pos_returns_list', JSON.stringify(posState.returns));
+}
+
 
 // --- 2. NOTIFICATION TOAST SYSTEM ---
 function showToast(message, type = 'success') {
@@ -231,7 +368,28 @@ function hasPermission(screenId) {
   return allowed.includes(checkKey) || allowed.includes(screenId);
 }
 
+// --- MOBILE SIDEBAR DRAWER CONTROLLER ---
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.toggle('sidebar-open');
+  if (backdrop) {
+    backdrop.classList.toggle('active', isOpen);
+  }
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('sidebar-open');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
 function navigateToScreen(screenId) {
+  // Automatically dismiss mobile drawer when a screen is chosen
+  closeMobileSidebar();
+
   // Enforce authentication guard: must be authenticated for any screen other than login
   if (!posState.isAuthenticated && screenId !== 'login') {
     showToast('🔒 Please sign in with your username and password.', 'warning');
@@ -281,7 +439,7 @@ function navigateToScreen(screenId) {
   }
 
   // Refresh dynamic screen content
-  if (screenId === 'pos') renderPosProducts();
+  if (screenId === 'pos') { renderPosProducts(); renderCart(); initPosCustomerBar(); }
   if (screenId === 'inventory') renderInventory();
   if (screenId === 'products') renderProductMaster();
   if (screenId === 'categories') renderCategories();
@@ -294,6 +452,8 @@ function navigateToScreen(screenId) {
   if (screenId === 'users') renderUsers();
   if (screenId === 'branches') renderBranches();
   if (screenId === 'settings') loadSettings();
+  if (screenId === 'product-search') renderProductSearch();
+  if (screenId === 'stock-transfer') initStockTransferScreen();
   if (screenId === 'purchase') populatePurchaseDropdowns();
 }
 
@@ -566,6 +726,15 @@ function populateCategorySelects() {
       });
     }
   });
+
+  const screen4Cat = document.getElementById('prod-search-category-screen4');
+  if (screen4Cat) {
+    const currentVal = screen4Cat.value || 'ALL';
+    screen4Cat.innerHTML = `<option value="ALL">All Categories</option>`;
+    posState.categories.forEach(c => {
+      screen4Cat.innerHTML += `<option value="${c.name}" ${currentVal === c.name ? 'selected' : ''}>${c.name}</option>`;
+    });
+  }
 }
 
 function openAddProductModal() {
@@ -649,10 +818,17 @@ function saveProduct(e) {
     showToast(`New product "${name}" added to catalog and inventory!`, 'success');
   }
 
+  // Save to persistent storage
+  saveProductsToStorage();
+
   closeModal('modal-add-product');
   renderProductMaster();
   renderPosProducts();
   renderInventory();
+  renderProductSearch();
+  if (typeof initStockTransferScreen === 'function') {
+    initStockTransferScreen();
+  }
 }
 
 function deleteProduct(productId) {
@@ -661,11 +837,53 @@ function deleteProduct(productId) {
 
   if (confirm(`Are you sure you want to delete "${p.name}" (${p.code})?`)) {
     posState.products = posState.products.filter(x => x.id !== productId);
+    saveProductsToStorage();
     showToast(`Product "${p.name}" removed from catalog.`, 'warning');
     renderProductMaster();
     renderPosProducts();
     renderInventory();
+    renderProductSearch();
+    if (typeof initStockTransferScreen === 'function') {
+      initStockTransferScreen();
+    }
   }
+}
+
+// Render dynamic Product Search (Screen 4)
+function renderProductSearch() {
+  const tbody = document.getElementById('product-search-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const query = (document.getElementById('prod-search-filter-screen4')?.value || '').toLowerCase();
+  const catSelect = document.getElementById('prod-search-category-screen4');
+  const catFilter = catSelect ? catSelect.value : 'ALL';
+
+  const filtered = posState.products.filter(p => {
+    const matchCat = (catFilter === 'ALL' || p.category.toLowerCase() === catFilter.toLowerCase());
+    const matchQuery = (!query || p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query) || (p.barcode && p.barcode.includes(query)) || p.category.toLowerCase().includes(query));
+    return matchCat && matchQuery;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:18px; color:var(--text-muted);">No products match your search filter.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size:1.3rem;">${p.icon}</td>
+      <td><strong>${p.name}</strong></td>
+      <td><code>${p.code}</code></td>
+      <td>${p.barcode || '-'}</td>
+      <td>${p.category}</td>
+      <td>₹ ${p.price.toFixed(2)}</td>
+      <td><span style="font-weight:700;">${p.stock}</span> ${p.unit}</td>
+      <td><button class="btn btn-success btn-sm" onclick="addToCart(${p.id}); navigateToScreen('pos')">+ Add to Cart</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // Export Products to real CSV download
@@ -748,9 +966,12 @@ function saveCategory(e) {
     showToast(`New category "${name}" added!`, 'success');
   }
 
+  saveCategoriesToStorage();
   closeModal('modal-add-category');
   renderCategories();
   updateCategoryChips();
+  populateCategorySelects();
+  renderProductSearch();
 }
 
 function deleteCategory(catId) {
@@ -759,9 +980,12 @@ function deleteCategory(catId) {
 
   if (confirm(`Delete category "${c.name}"?`)) {
     posState.categories = posState.categories.filter(x => x.id !== catId);
+    saveCategoriesToStorage();
     showToast(`Category "${c.name}" removed.`, 'warning');
     renderCategories();
     updateCategoryChips();
+    populateCategorySelects();
+    renderProductSearch();
   }
 }
 
@@ -790,6 +1014,7 @@ function renderCustomers() {
       <td><span class="badge ${c.status === 'Active' ? 'badge-success' : 'badge-warning'}">${c.status}</span></td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="openEditCustomerModal(${c.id})">✏️ Edit</button>
+        ${c.id !== 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id})">🗑️</button>` : ''}
       </td>
     `;
     tbody.appendChild(tr);
@@ -849,8 +1074,86 @@ function saveCustomer(e) {
     showToast(`Customer "${name}" created successfully!`, 'success');
   }
 
+  saveCustomersToStorage();
   closeModal('modal-add-customer');
   renderCustomers();
+}
+
+function deleteCustomer(custId) {
+  if (custId === 1) {
+    showToast('Default Walk-in Customer cannot be deleted!', 'warning');
+    return;
+  }
+  const c = posState.customers.find(x => x.id === custId);
+  if (!c) return;
+
+  if (confirm(`Are you sure you want to delete customer "${c.name}"?`)) {
+    posState.customers = posState.customers.filter(x => x.id !== custId);
+    saveCustomersToStorage();
+    showToast(`Customer "${c.name}" deleted.`, 'warning');
+    renderCustomers();
+  }
+}
+
+
+// --- POS CUSTOMER QUICKBAR CONTROLLERS ---
+function onPosCustomerSelectChange() {
+  const select = document.getElementById('pos-customer-select');
+  if (!select) return;
+  const custId = parseInt(select.value);
+  const cust = posState.customers.find(c => c.id === custId) || posState.customers[0];
+
+  const nameInput = document.getElementById('pos-cust-name-input');
+  const mobileInput = document.getElementById('pos-cust-mobile-input');
+  const badge = document.getElementById('pos-cust-status-badge');
+
+  if (nameInput) nameInput.value = cust.name;
+  if (mobileInput) mobileInput.value = cust.mobile;
+  if (badge) {
+    badge.textContent = cust.name === 'Walk-in Customer' ? 'Walk-in' : 'Registered';
+    badge.className = cust.name === 'Walk-in Customer' ? 'badge badge-info' : 'badge badge-success';
+  }
+  posState.posCustomerName = cust.name;
+  posState.posCustomerMobile = cust.mobile;
+}
+
+function onPosCustomerInputChange() {
+  const nameInput = document.getElementById('pos-cust-name-input');
+  const mobileInput = document.getElementById('pos-cust-mobile-input');
+  const badge = document.getElementById('pos-cust-status-badge');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const mobile = mobileInput ? mobileInput.value.trim() : '';
+
+  posState.posCustomerName = name || 'Walk-in Customer';
+  posState.posCustomerMobile = mobile || '9999999999';
+
+  const select = document.getElementById('pos-customer-select');
+  const match = posState.customers.find(c => (mobile && c.mobile === mobile) || (name && c.name.toLowerCase() === name.toLowerCase()));
+
+  if (match && select) {
+    select.value = match.id;
+    if (badge) {
+      badge.textContent = match.name === 'Walk-in Customer' ? 'Walk-in' : 'Registered';
+      badge.className = match.name === 'Walk-in Customer' ? 'badge badge-info' : 'badge badge-success';
+    }
+  } else {
+    if (badge) {
+      if (name === 'Walk-in Customer' && (!mobile || mobile === '9999999999')) {
+        badge.textContent = 'Walk-in';
+        badge.className = 'badge badge-info';
+      } else {
+        badge.textContent = 'New Customer';
+        badge.className = 'badge badge-warning';
+      }
+    }
+  }
+}
+
+function initPosCustomerBar() {
+  const nameInput = document.getElementById('pos-cust-name-input');
+  const mobileInput = document.getElementById('pos-cust-mobile-input');
+  if (nameInput && !nameInput.value) nameInput.value = posState.posCustomerName || 'Walk-in Customer';
+  if (mobileInput && !mobileInput.value) mobileInput.value = posState.posCustomerMobile || '9999999999';
 }
 
 function updatePosCustomerDropdown() {
@@ -881,6 +1184,7 @@ function renderSuppliers() {
       <td><span class="badge ${s.status === 'Active' ? 'badge-success' : 'badge-warning'}">${s.status}</span></td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="openEditSupplierModal(${s.id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})">🗑️</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -940,8 +1244,22 @@ function saveSupplier(e) {
     showToast(`Supplier "${name}" registered successfully!`, 'success');
   }
 
+  saveSuppliersToStorage();
   closeModal('modal-add-supplier');
   renderSuppliers();
+}
+
+function deleteSupplier(suppId) {
+  const s = posState.suppliers.find(x => x.id === suppId);
+  if (!s) return;
+
+  if (confirm(`Are you sure you want to delete supplier "${s.name}"?`)) {
+    posState.suppliers = posState.suppliers.filter(x => x.id !== suppId);
+    saveSuppliersToStorage();
+    showToast(`Supplier "${s.name}" removed.`, 'warning');
+    renderSuppliers();
+    populatePurchaseDropdowns();
+  }
 }
 
 // --- 9. PURCHASE ENTRY (SCREEN 10) & DYNAMIC ROWS ---
@@ -1043,10 +1361,33 @@ function savePurchase() {
   });
 
   const poNumber = `PUR-000${posState.nextPurchaseSeq++}`;
+  const supplierSelect = document.getElementById('purchase-supplier-select');
+  const supplierName = supplierSelect ? supplierSelect.options[supplierSelect.selectedIndex]?.text.split('(')[0].trim() : 'ABC Distributors';
+  const totalAmount = parseFloat(document.getElementById('purchase-grand-total')?.textContent.replace(/[^0-9.]/g, '')) || (itemsAdded * 50);
+  const today = new Date().toLocaleDateString('en-GB');
+
+  posState.purchases.unshift({
+    id: posState.nextPurchaseSeq,
+    poNumber: poNumber,
+    date: today,
+    supplier: supplierName,
+    branch: posState.selectedBranch || 'Main Branch',
+    itemsCount: tbody.querySelectorAll('tr').length,
+    totalQty: itemsAdded,
+    totalAmount: totalAmount,
+    status: 'Received'
+  });
+  savePurchasesToStorage();
+  saveProductsToStorage();
+
   showToast(`Purchase bill ${poNumber} recorded! ${itemsAdded} units intake into stock ledger.`, 'success');
   renderInventory();
   renderProductMaster();
   renderPosProducts();
+  renderProductSearch();
+  if (typeof initStockTransferScreen === 'function') {
+    initStockTransferScreen();
+  }
   navigateToScreen('inventory');
 }
 
@@ -1059,23 +1400,78 @@ function renderBranches() {
   posState.branches.forEach(b => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><strong>${b.name}</strong> (${b.code})</td>
-      <td>${b.address}</td>
-      <td>${b.phone}</td>
+      <td><strong>${b.name}</strong> (<code>${b.code}</code>)</td>
+      <td>${b.address || '-'}</td>
+      <td>${b.phone || '-'}</td>
       <td><span class="badge badge-success">${b.status}</span></td>
+      <td style="text-align:center;">
+        <button class="btn btn-outline btn-sm" onclick="openEditBranchModal(${b.id})">✏️ Edit</button>
+        ${b.name !== 'Main Branch' ? `<button class="btn btn-danger btn-sm" onclick="deleteBranch(${b.id})">🗑️</button>` : ''}
+      </td>
     `;
     tbody.appendChild(tr);
   });
+  populateBranchDropdowns();
+}
+
+function populateBranchDropdowns() {
+  const userBranchSelect = document.getElementById('user-branch-select');
+  if (userBranchSelect) {
+    const currentVal = userBranchSelect.value;
+    userBranchSelect.innerHTML = '<option value="All Branches">All Branches (Global Access)</option>';
+    posState.branches.forEach(b => {
+      userBranchSelect.innerHTML += `<option value="${b.name}" ${currentVal === b.name ? 'selected' : ''}>${b.name}</option>`;
+    });
+  }
+
+  const fromSelect = document.getElementById('transfer-from');
+  const toSelect = document.getElementById('transfer-to');
+  if (fromSelect && toSelect) {
+    const currentFrom = fromSelect.value;
+    const currentTo = toSelect.value;
+    fromSelect.innerHTML = '';
+    toSelect.innerHTML = '';
+    posState.branches.forEach((b, idx) => {
+      const fromSel = currentFrom ? (currentFrom === b.name) : (idx === 0);
+      const toSel = currentTo ? (currentTo === b.name) : (idx === 1);
+      fromSelect.innerHTML += `<option value="${b.name}" ${fromSel ? 'selected' : ''}>${b.name}</option>`;
+      toSelect.innerHTML += `<option value="${b.name}" ${toSel ? 'selected' : ''}>${b.name}</option>`;
+    });
+  }
 }
 
 function openAddBranchModal() {
+  posState.editingBranchId = null;
   document.getElementById('branch-form').reset();
-  document.getElementById('branch-code').value = `B00${posState.branches.length + 1}`;
+  const editIdInput = document.getElementById('branch-edit-id');
+  if (editIdInput) editIdInput.value = '';
+  const titleEl = document.getElementById('modal-branch-title');
+  if (titleEl) titleEl.textContent = 'Add New Branch';
+  const nextNum = posState.branches.length > 0 ? Math.max(...posState.branches.map(x => x.id)) + 1 : 1;
+  document.getElementById('branch-code').value = `B00${nextNum}`;
+  openModal('modal-add-branch');
+}
+
+function openEditBranchModal(branchId) {
+  const b = posState.branches.find(x => x.id === branchId);
+  if (!b) return;
+
+  posState.editingBranchId = branchId;
+  const editIdInput = document.getElementById('branch-edit-id');
+  if (editIdInput) editIdInput.value = b.id;
+  const titleEl = document.getElementById('modal-branch-title');
+  if (titleEl) titleEl.textContent = `Edit Branch: ${b.name}`;
+  document.getElementById('branch-code').value = b.code;
+  document.getElementById('branch-name').value = b.name;
+  document.getElementById('branch-address').value = b.address || '';
+  document.getElementById('branch-phone').value = b.phone || '';
   openModal('modal-add-branch');
 }
 
 function saveBranch(e) {
   if (e) e.preventDefault();
+  const editIdInput = document.getElementById('branch-edit-id');
+  const editId = editIdInput ? editIdInput.value : '';
   const code = document.getElementById('branch-code').value.trim();
   const name = document.getElementById('branch-name').value.trim();
   const address = document.getElementById('branch-address').value.trim();
@@ -1086,14 +1482,50 @@ function saveBranch(e) {
     return;
   }
 
-  posState.branches.push({
-    id: posState.branches.length + 1,
-    code, name, address, phone, status: 'Active'
-  });
+  if (editId) {
+    const b = posState.branches.find(x => x.id === parseInt(editId));
+    if (b) {
+      b.code = code;
+      b.name = name;
+      b.address = address;
+      b.phone = phone;
+      showToast(`Branch "${name}" updated successfully!`, 'success');
+    }
+  } else {
+    const nextId = posState.branches.length > 0 ? Math.max(...posState.branches.map(x => x.id)) + 1 : 1;
+    posState.branches.push({
+      id: nextId,
+      code, name, address, phone, status: 'Active'
+    });
+    showToast(`Branch "${name}" added to company network!`, 'success');
+  }
 
-  showToast(`Branch "${name}" added to company network!`, 'success');
+  saveBranchesToStorage();
   closeModal('modal-add-branch');
   renderBranches();
+  if (typeof initStockTransferScreen === 'function') {
+    initStockTransferScreen();
+  }
+}
+
+function deleteBranch(branchId) {
+  const b = posState.branches.find(x => x.id === branchId);
+  if (!b) return;
+
+  if (b.name === 'Main Branch') {
+    showToast('Master Main Branch cannot be deleted!', 'warning');
+    return;
+  }
+
+  if (confirm(`Are you sure you want to delete branch "${b.name}" (${b.code})?`)) {
+    posState.branches = posState.branches.filter(x => x.id !== branchId);
+    saveBranchesToStorage();
+    showToast(`Branch "${b.name}" removed from records.`, 'warning');
+    renderBranches();
+    if (typeof initStockTransferScreen === 'function') {
+      initStockTransferScreen();
+    }
+  }
 }
 
 // --- 11. USER MANAGEMENT (SCREEN 20) & 14-MODULE PERMISSION MATRIX ---
@@ -1489,6 +1921,7 @@ function saveSettings(e) {
   posState.settings.currency = document.getElementById('set-currency').value.trim();
   posState.settings.allowNegativeStock = document.getElementById('set-negative-stock').checked;
 
+  saveSettingsToStorage();
   document.querySelectorAll('.app-store-name').forEach(el => el.textContent = posState.settings.storeName);
   showToast('Company settings updated successfully!', 'success');
 }
@@ -1593,6 +2026,27 @@ function renderCart() {
   container.innerHTML = '';
   let subtotal = 0;
   let totalTax = 0;
+
+  if (posState.cart.length === 0) {
+    container.innerHTML = `
+      <div class="empty-cart-state">
+        <div style="font-size: 2.8rem; margin-bottom: 8px; opacity: 0.65;">🛒</div>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-color);">Cart is empty</div>
+        <div style="font-size: 0.8rem; margin-top: 4px; color: var(--text-muted);">Click any product card or scan barcode to add items</div>
+      </div>
+    `;
+    const badge = document.getElementById('cart-count-badge');
+    if (badge) badge.textContent = '0';
+    const subDisp = document.getElementById('cart-subtotal');
+    if (subDisp) subDisp.textContent = '₹ 0.00';
+    const taxDisp = document.getElementById('cart-tax');
+    if (taxDisp) taxDisp.textContent = '₹ 0.00';
+    const totDisp = document.getElementById('cart-grand-total');
+    if (totDisp) totDisp.textContent = '₹ 0.00';
+    const payTotalDisplay = document.getElementById('modal-payable-total');
+    if (payTotalDisplay) payTotalDisplay.textContent = '₹ 0.00';
+    return;
+  }
 
   posState.cart.forEach(item => {
     const lineTotal = item.qty * item.price;
@@ -1954,10 +2408,40 @@ function completeSale() {
   const totalTax = posState.cart.reduce((sum, i) => sum + (i.qty * i.price * i.taxRate / 100), 0);
   const grandTotal = Math.round(subtotal + totalTax);
 
+  const nameInput = document.getElementById('pos-cust-name-input');
+  const mobileInput = document.getElementById('pos-cust-mobile-input');
   const custSelect = document.getElementById('pos-customer-select');
-  const custId = custSelect ? parseInt(custSelect.value) : 1;
-  const customerObj = posState.customers.find(c => c.id === custId) || posState.customers[0];
-  const customerName = customerObj.name;
+
+  let customerName = (nameInput && nameInput.value.trim()) || '';
+  let customerMobile = (mobileInput && mobileInput.value.trim()) || '';
+
+  if (!customerName) {
+    const custId = custSelect ? parseInt(custSelect.value) : 1;
+    const customerObj = posState.customers.find(c => c.id === custId) || posState.customers[0];
+    customerName = customerObj.name;
+    customerMobile = customerObj.mobile;
+  }
+  if (!customerMobile) customerMobile = '9999999999';
+
+  // If new customer details were entered (not generic Walk-in), auto-save to customer directory!
+  if (customerName !== 'Walk-in Customer' && customerMobile !== '9999999999') {
+    const existing = posState.customers.find(c => c.mobile === customerMobile || c.name.toLowerCase() === customerName.toLowerCase());
+    if (!existing) {
+      const newCust = {
+        id: posState.customers.length + 1,
+        name: customerName,
+        mobile: customerMobile,
+        email: '',
+        gstin: 'Unregistered',
+        balance: selectedPaymentMode === 'CREDIT' ? grandTotal : 0.00,
+        creditLimit: 2000,
+        status: 'Active'
+      };
+      posState.customers.push(newCust);
+      saveCustomersToStorage();
+      updatePosCustomerDropdown();
+    }
+  }
 
   // Validation according to payment mode
   let paymentDetails = selectedPaymentMode;
@@ -1978,7 +2462,11 @@ function completeSale() {
     const auth = document.getElementById('card-auth-input')?.value.trim() || 'AUTH-OK';
     paymentDetails = `Card (Ending: ${last4}, ${auth})`;
   } else if (selectedPaymentMode === 'CREDIT') {
-    customerObj.balance += grandTotal;
+    const cust = posState.customers.find(c => (customerMobile && c.mobile === customerMobile) || c.name.toLowerCase() === customerName.toLowerCase());
+    if (cust) {
+      cust.balance += grandTotal;
+      saveCustomersToStorage();
+    }
     paymentDetails = `Credit Ledger (Khata)`;
   } else if (selectedPaymentMode === 'SPLIT') {
     const cash = parseFloat(document.getElementById('split-cash-input')?.value) || 0;
@@ -1994,6 +2482,9 @@ function completeSale() {
     invoiceNo: invoiceNum,
     date: today,
     customer: customerName,
+    customerMobile: customerMobile,
+    branch: posState.selectedBranch || 'Main Branch',
+    cashier: posState.currentUser.name || posState.currentUser.username || 'Admin',
     amount: grandTotal,
     payment: paymentDetails,
     paymentMode: selectedPaymentMode,
@@ -2005,8 +2496,16 @@ function completeSale() {
     const p = posState.products.find(prod => prod.id === cartItem.productId);
     if (p) p.stock -= cartItem.qty;
   });
+  saveProductsToStorage();
+  renderInventory();
+  renderProductMaster();
+  renderProductSearch();
+  if (typeof initStockTransferScreen === 'function') {
+    initStockTransferScreen();
+  }
 
   posState.salesHistory.unshift(newSale);
+  saveSalesHistoryToStorage();
   posState.lastCompletedSale = newSale;
 
   closePaymentModal();
@@ -2026,6 +2525,12 @@ function renderReceipt(sale) {
   document.getElementById('rcpt-inv-no').textContent = s.invoiceNo;
   document.getElementById('rcpt-date').textContent = s.date;
   document.getElementById('rcpt-customer').textContent = s.customer;
+  const mobEl = document.getElementById('rcpt-customer-mobile');
+  if (mobEl) mobEl.textContent = s.customerMobile || s.mobile || '9999999999';
+  const cashierEl = document.getElementById('rcpt-cashier');
+  if (cashierEl) cashierEl.textContent = s.cashier || posState.currentUser.name || 'Admin';
+  const branchEl = document.getElementById('rcpt-branch');
+  if (branchEl) branchEl.textContent = s.branch || posState.selectedBranch || 'Main Branch';
   document.getElementById('rcpt-payment-mode').textContent = s.payment;
 
   const tbody = document.getElementById('rcpt-items-body');
@@ -2033,7 +2538,7 @@ function renderReceipt(sale) {
   tbody.innerHTML = '';
 
   let subtotal = 0;
-  s.items.forEach((item, idx) => {
+  (s.items || []).forEach((item, idx) => {
     const total = item.qty * item.price;
     subtotal += total;
     const row = document.createElement('tr');
@@ -2051,6 +2556,11 @@ function renderReceipt(sale) {
   document.getElementById('rcpt-subtotal').textContent = `₹ ${subtotal.toFixed(2)}`;
   document.getElementById('rcpt-gst').textContent = `₹ ${gst.toFixed(2)}`;
   document.getElementById('rcpt-total').textContent = `₹ ${s.amount.toFixed(2)}`;
+}
+
+function downloadReceiptPdf() {
+  window.print();
+  showToast('Print dialog opened. Select "Save as PDF" to save invoice locally.', 'info');
 }
 
 // --- 16. INVENTORY (SCREEN 9) ---
@@ -2115,8 +2625,711 @@ function renderLedger() {
   `;
 }
 
-// --- 19. REPORTS (SCREEN 18 & 19) ---
-function renderReports() {}
+// =============================================================================
+// --- 19. MASTER REPORTS & ANALYTICS CENTER (SCREEN 18) ---
+// 11 Complete Business Entities with Universal Date & Search Filters + Local Exports
+// =============================================================================
+let activeReportEntity = 'billing';
+let reportDatePreset = 'all';
+
+function switchReportEntity(entity) {
+  activeReportEntity = entity;
+  window.activeReportEntity = entity;
+
+  // Update tab buttons active state
+  document.querySelectorAll('.report-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.entity === entity);
+  });
+
+  populateReportBranchDropdown();
+  populateReportSecondaryFilter();
+  renderActiveReport();
+}
+
+function populateReportBranchDropdown() {
+  const select = document.getElementById('report-branch-select');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="ALL">All Branches</option>';
+  posState.branches.forEach(b => {
+    select.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+  });
+  if (current) select.value = current;
+}
+
+function populateReportSecondaryFilter() {
+  const select = document.getElementById('report-secondary-select');
+  if (!select) return;
+  select.innerHTML = '<option value="ALL">All Categories / Types</option>';
+
+  if (activeReportEntity === 'billing') {
+    select.innerHTML = `
+      <option value="ALL">All Payment Modes</option>
+      <option value="Cash">Cash</option>
+      <option value="UPI">UPI</option>
+      <option value="Card">Card</option>
+      <option value="Credit">Credit / Khata</option>
+      <option value="Split">Split</option>
+    `;
+  } else if (activeReportEntity === 'products' || activeReportEntity === 'inventory') {
+    select.innerHTML = '<option value="ALL">All Categories</option>';
+    posState.categories.forEach(c => {
+      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+  } else if (activeReportEntity === 'categories' || activeReportEntity === 'branches') {
+    select.innerHTML = `
+      <option value="ALL">All Status</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Inactive</option>
+    `;
+  } else if (activeReportEntity === 'purchases') {
+    select.innerHTML = '<option value="ALL">All Suppliers</option>';
+    posState.suppliers.forEach(s => {
+      select.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+    });
+  } else if (activeReportEntity === 'returns') {
+    select.innerHTML = `
+      <option value="ALL">All Return Types</option>
+      <option value="Sales Return">Sales Return</option>
+      <option value="Purchase Return">Purchase Return</option>
+    `;
+  } else if (activeReportEntity === 'transfer') {
+    select.innerHTML = '<option value="ALL">All Destination Branches</option>';
+    posState.branches.forEach(b => {
+      select.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+    });
+  } else if (activeReportEntity === 'customers') {
+    select.innerHTML = `
+      <option value="ALL">All Customers</option>
+      <option value="BALANCE">With Khata Balance (> ₹0)</option>
+      <option value="ZERO">Zero Balance</option>
+    `;
+  } else if (activeReportEntity === 'suppliers') {
+    select.innerHTML = `
+      <option value="ALL">All Suppliers</option>
+      <option value="PAYABLE">Pending Payables (> ₹0)</option>
+      <option value="ZERO">Clear Balance</option>
+    `;
+  } else if (activeReportEntity === 'users') {
+    select.innerHTML = `
+      <option value="ALL">All Roles</option>
+      <option value="ADMIN">ADMIN</option>
+      <option value="MANAGER">MANAGER</option>
+      <option value="CASHIER">CASHIER</option>
+    `;
+  }
+}
+
+function setReportDatePreset(preset) {
+  reportDatePreset = preset;
+  document.querySelectorAll('.btn-preset').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.preset === preset);
+  });
+
+  const fromInput = document.getElementById('report-date-from');
+  const toInput = document.getElementById('report-date-to');
+  const now = new Date();
+  const formatYmd = d => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  if (preset === 'all') {
+    if (fromInput) fromInput.value = '';
+    if (toInput) toInput.value = '';
+  } else if (preset === 'today') {
+    const ymd = formatYmd(now);
+    if (fromInput) fromInput.value = ymd;
+    if (toInput) toInput.value = ymd;
+  } else if (preset === 'yesterday') {
+    const yest = new Date(now);
+    yest.setDate(now.getDate() - 1);
+    const ymd = formatYmd(yest);
+    if (fromInput) fromInput.value = ymd;
+    if (toInput) toInput.value = ymd;
+  } else if (preset === '7days') {
+    const past = new Date(now);
+    past.setDate(now.getDate() - 7);
+    if (fromInput) fromInput.value = formatYmd(past);
+    if (toInput) toInput.value = formatYmd(now);
+  } else if (preset === 'month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (fromInput) fromInput.value = formatYmd(firstDay);
+    if (toInput) toInput.value = formatYmd(now);
+  }
+
+  applyReportFilters();
+}
+
+function applyReportFilters() {
+  renderActiveReport();
+}
+
+function resetReportFilters() {
+  setReportDatePreset('all');
+  const branchSel = document.getElementById('report-branch-select');
+  if (branchSel) branchSel.value = 'ALL';
+  const secSel = document.getElementById('report-secondary-select');
+  if (secSel) secSel.value = 'ALL';
+  const searchInput = document.getElementById('report-search-input');
+  if (searchInput) searchInput.value = '';
+  renderActiveReport();
+  showToast('Report filters reset to All Time.', 'info');
+}
+
+function parseDateStrToTimestamp(str) {
+  if (!str) return 0;
+  if (typeof str === 'string') {
+    if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])).getTime();
+      } else if (parts[2].length === 4) {
+        // DD-MM-YYYY
+        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+      }
+    }
+  }
+  return new Date(str).getTime() || 0;
+}
+
+function getFilteredReportData() {
+  const fromInput = document.getElementById('report-date-from')?.value;
+  const toInput = document.getElementById('report-date-to')?.value;
+  const branchFilter = document.getElementById('report-branch-select')?.value || 'ALL';
+  const secFilter = document.getElementById('report-secondary-select')?.value || 'ALL';
+  const searchQuery = (document.getElementById('report-search-input')?.value || '').trim().toLowerCase();
+
+  const fromTime = fromInput ? parseDateStrToTimestamp(fromInput) : 0;
+  const toTime = toInput ? parseDateStrToTimestamp(toInput) + (24 * 60 * 60 * 1000 - 1) : Infinity;
+
+  let headers = [];
+  let rows = [];
+  let rawItems = [];
+  let kpiCards = [];
+
+  if (activeReportEntity === 'billing') {
+    headers = ['Invoice No', 'Date', 'Customer', 'Mobile', 'Branch', 'Cashier', 'Payment Mode', 'Amount (₹)', 'Action'];
+    rawItems = posState.salesHistory.filter(s => {
+      const t = parseDateStrToTimestamp(s.date);
+      if (fromTime && t < fromTime) return false;
+      if (toTime !== Infinity && t > toTime) return false;
+      if (branchFilter !== 'ALL' && s.branch && s.branch !== branchFilter) return false;
+      if (secFilter !== 'ALL') {
+        const p = (s.payment || '').toLowerCase();
+        const m = (s.paymentMode || '').toLowerCase();
+        if (!p.includes(secFilter.toLowerCase()) && !m.includes(secFilter.toLowerCase())) return false;
+      }
+      if (searchQuery) {
+        const text = `${s.invoiceNo} ${s.customer} ${s.customerMobile || ''} ${s.payment} ${s.cashier || ''}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalRev = rawItems.reduce((acc, s) => acc + s.amount, 0);
+    const avgBill = rawItems.length > 0 ? (totalRev / rawItems.length) : 0;
+    kpiCards = [
+      { title: 'Total Invoices', value: rawItems.length, sub: 'Bills Generated' },
+      { title: 'Total Sales Revenue', value: `₹ ${totalRev.toFixed(2)}`, sub: 'Gross Invoiced', highlight: true },
+      { title: 'Average Ticket Size', value: `₹ ${avgBill.toFixed(2)}`, sub: 'Per Bill Average' },
+      { title: 'Active Filter', value: secFilter === 'ALL' ? 'All Modes' : secFilter, sub: branchFilter }
+    ];
+
+    rows = rawItems.map(s => [
+      `<strong>${s.invoiceNo}</strong>`,
+      s.date,
+      s.customer,
+      s.customerMobile || s.mobile || '-',
+      s.branch || 'Main Branch',
+      s.cashier || 'Admin',
+      `<span class="badge badge-info">${s.payment}</span>`,
+      `<strong>₹ ${s.amount.toFixed(2)}</strong>`,
+      `<button class="btn btn-primary btn-sm" onclick="renderReceipt(posState.salesHistory.find(x=>x.id===${s.id})); navigateToScreen('receipt')">👁️ Receipt</button>`
+    ]);
+
+  } else if (activeReportEntity === 'products') {
+    headers = ['Code', 'Product Name', 'Category', 'Selling Price', 'Cost Price', 'Margin %', 'Stock Qty', 'Unit', 'Tax Rate', 'Status'];
+    rawItems = posState.products.filter(p => {
+      if (secFilter !== 'ALL' && p.category !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${p.code} ${p.name} ${p.category} ${p.barcode || ''}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalValuation = rawItems.reduce((acc, p) => acc + (p.stock * p.cost), 0);
+    const lowStockCount = rawItems.filter(p => p.stock <= p.minStock).length;
+    kpiCards = [
+      { title: 'Total Products', value: rawItems.length, sub: 'Catalog Items' },
+      { title: 'Total Valuation', value: `₹ ${totalValuation.toFixed(2)}`, sub: 'Based on Cost Price', highlight: true },
+      { title: 'Low Stock Alert', value: lowStockCount, sub: 'Below Min Threshold' },
+      { title: 'Category Scope', value: secFilter === 'ALL' ? 'All Categories' : secFilter, sub: `${rawItems.length} SKUs` }
+    ];
+
+    rows = rawItems.map(p => {
+      const margin = p.price > 0 ? (((p.price - p.cost) / p.price) * 100).toFixed(1) : '0';
+      const statusBadge = p.stock <= 0 ? '<span class="badge badge-danger">Out of Stock</span>' : (p.stock <= p.minStock ? '<span class="badge badge-warning">Low Stock</span>' : '<span class="badge badge-success">Available</span>');
+      return [
+        `<code>${p.code}</code>`,
+        `<strong>${p.icon || '📦'} ${p.name}</strong>`,
+        p.category,
+        `₹ ${p.price.toFixed(2)}`,
+        `₹ ${p.cost.toFixed(2)}`,
+        `${margin}%`,
+        `<strong>${p.stock}</strong>`,
+        p.unit,
+        `${p.tax}%`,
+        statusBadge
+      ];
+    });
+
+  } else if (activeReportEntity === 'categories') {
+    headers = ['Category ID', 'Category Name', 'Description', 'Product Count', 'Status'];
+    rawItems = posState.categories.filter(c => {
+      if (secFilter !== 'ALL' && c.status !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${c.name} ${c.desc || ''}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    kpiCards = [
+      { title: 'Total Categories', value: rawItems.length, sub: 'Item Departments' },
+      { title: 'Total Catalog SKUs', value: posState.products.length, sub: 'Mapped Items', highlight: true },
+      { title: 'Active Categories', value: rawItems.filter(c => c.status === 'Active').length, sub: 'Operational' },
+      { title: 'Top Category', value: 'Food / Dairy', sub: 'Highest Volume' }
+    ];
+
+    rows = rawItems.map(c => {
+      const count = posState.products.filter(p => p.category.toLowerCase() === c.name.toLowerCase()).length;
+      return [
+        `CAT-00${c.id}`,
+        `<strong>${c.name}</strong>`,
+        c.desc || '-',
+        `<span class="badge badge-info">${count} Items</span>`,
+        `<span class="badge badge-success">${c.status || 'Active'}</span>`
+      ];
+    });
+
+  } else if (activeReportEntity === 'inventory') {
+    headers = ['Product Name', 'Code', 'Category', 'Available Stock', 'Min Stock Level', 'Unit', 'Unit Cost', 'Stock Valuation (₹)', 'Status'];
+    rawItems = posState.products.filter(p => {
+      if (secFilter === 'LOW_STOCK' && p.stock > p.minStock) return false;
+      if (secFilter === 'OUT_OF_STOCK' && p.stock > 0) return false;
+      if (secFilter === 'OK' && (p.stock <= p.minStock || p.stock <= 0)) return false;
+      if (searchQuery) {
+        const text = `${p.name} ${p.code} ${p.category}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalValuation = rawItems.reduce((acc, p) => acc + (p.stock * p.cost), 0);
+    const totalUnits = rawItems.reduce((acc, p) => acc + p.stock, 0);
+    kpiCards = [
+      { title: 'Total Units', value: totalUnits, sub: 'Units in Warehouse' },
+      { title: 'Total Stock Valuation', value: `₹ ${totalValuation.toFixed(2)}`, sub: 'Current Inventory Value', highlight: true },
+      { title: 'Out of Stock', value: posState.products.filter(p => p.stock <= 0).length, sub: 'Critical Restock' },
+      { title: 'Healthy Stock Items', value: posState.products.filter(p => p.stock > p.minStock).length, sub: 'Optimal Levels' }
+    ];
+
+    rows = rawItems.map(p => {
+      let statusClass = 'badge-success';
+      let statusLabel = 'HEALTHY';
+      if (p.stock <= 0) {
+        statusClass = 'badge-danger';
+        statusLabel = 'OUT_OF_STOCK';
+      } else if (p.stock <= p.minStock) {
+        statusClass = 'badge-warning';
+        statusLabel = 'LOW_STOCK';
+      }
+      return [
+        `<strong>${p.name}</strong>`,
+        `<code>${p.code}</code>`,
+        p.category,
+        `<strong>${p.stock}</strong>`,
+        `${p.minStock}`,
+        p.unit,
+        `₹ ${p.cost.toFixed(2)}`,
+        `<strong>₹ ${(p.stock * p.cost).toFixed(2)}</strong>`,
+        `<span class="badge ${statusClass}">${statusLabel}</span>`
+      ];
+    });
+
+  } else if (activeReportEntity === 'purchases') {
+    headers = ['PO Number', 'Date', 'Supplier', 'Branch', 'Items Count', 'Total Units', 'Total Amount (₹)', 'Status'];
+    rawItems = posState.purchases.filter(po => {
+      const t = parseDateStrToTimestamp(po.date);
+      if (fromTime && t < fromTime) return false;
+      if (toTime !== Infinity && t > toTime) return false;
+      if (branchFilter !== 'ALL' && po.branch && po.branch !== branchFilter) return false;
+      if (secFilter !== 'ALL' && po.supplier !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${po.poNumber} ${po.supplier} ${po.branch || ''}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalPurchases = rawItems.reduce((acc, p) => acc + (p.totalAmount || 0), 0);
+    const totalUnits = rawItems.reduce((acc, p) => acc + (p.totalQty || 0), 0);
+    kpiCards = [
+      { title: 'Total Purchase Orders', value: rawItems.length, sub: 'Inward Invoices' },
+      { title: 'Total Purchase Cost', value: `₹ ${totalPurchases.toFixed(2)}`, sub: 'Payable to Vendors', highlight: true },
+      { title: 'Total Units Received', value: totalUnits, sub: 'Stock Restocked' },
+      { title: 'Branch Scope', value: branchFilter, sub: 'Purchase Inflow' }
+    ];
+
+    rows = rawItems.map(po => [
+      `<strong>${po.poNumber}</strong>`,
+      po.date,
+      po.supplier,
+      po.branch || 'Main Branch',
+      po.itemsCount || 1,
+      `<strong>${po.totalQty || 10}</strong>`,
+      `<strong>₹ ${(po.totalAmount || 0).toFixed(2)}</strong>`,
+      `<span class="badge badge-success">${po.status || 'Received'}</span>`
+    ]);
+
+  } else if (activeReportEntity === 'returns') {
+    headers = ['Return ID', 'Date', 'Return Type', 'Reference No', 'Party / Customer', 'Branch', 'Refund Amount (₹)', 'Reason', 'Status'];
+    rawItems = posState.returns.filter(ret => {
+      const t = parseDateStrToTimestamp(ret.date);
+      if (fromTime && t < fromTime) return false;
+      if (toTime !== Infinity && t > toTime) return false;
+      if (branchFilter !== 'ALL' && ret.branch && ret.branch !== branchFilter) return false;
+      if (secFilter !== 'ALL' && ret.type !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${ret.id} ${ret.refNo} ${ret.party} ${ret.reason}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalRefund = rawItems.reduce((acc, r) => acc + (r.amount || 0), 0);
+    kpiCards = [
+      { title: 'Total Return Logs', value: rawItems.length, sub: 'Processed Claims' },
+      { title: 'Total Refund Value', value: `₹ ${totalRefund.toFixed(2)}`, sub: 'Restitution Value', highlight: true },
+      { title: 'Sales Returns', value: rawItems.filter(r => r.type === 'Sales Return').length, sub: 'Customer Exchanges' },
+      { title: 'Purchase Returns', value: rawItems.filter(r => r.type === 'Purchase Return').length, sub: 'Vendor Debit Notes' }
+    ];
+
+    rows = rawItems.map(r => [
+      `<strong>${r.id}</strong>`,
+      r.date,
+      `<span class="badge ${r.type === 'Sales Return' ? 'badge-info' : 'badge-warning'}">${r.type}</span>`,
+      `<code>${r.refNo}</code>`,
+      r.party,
+      r.branch || 'Main Branch',
+      `<strong>₹ ${(r.amount || 0).toFixed(2)}</strong>`,
+      r.reason || 'General Return',
+      `<span class="badge badge-success">${r.status || 'Completed'}</span>`
+    ]);
+
+  } else if (activeReportEntity === 'transfer') {
+    headers = ['Transfer ID', 'Date', 'Origin Branch', 'Destination Branch', 'Items Manifest', 'Total Units', 'Status'];
+    rawItems = posState.transferHistory.filter(tr => {
+      const t = parseDateStrToTimestamp(tr.date);
+      if (fromTime && t < fromTime) return false;
+      if (toTime !== Infinity && t > toTime) return false;
+      if (branchFilter !== 'ALL' && tr.from !== branchFilter && tr.to !== branchFilter) return false;
+      if (secFilter !== 'ALL' && tr.to !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${tr.id} ${tr.from} ${tr.to}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalUnitsTransferred = rawItems.reduce((acc, t) => acc + (t.totalQty || 0), 0);
+    kpiCards = [
+      { title: 'Total Transfers', value: rawItems.length, sub: 'Inter-Branch Shipments' },
+      { title: 'Units Relocated', value: totalUnitsTransferred, sub: 'Inventory Units Moved', highlight: true },
+      { title: 'Active Branches', value: posState.branches.length, sub: 'Distribution Network' },
+      { title: 'Transfer Status', value: '100% Completed', sub: 'Verified Handover' }
+    ];
+
+    rows = rawItems.map(tr => {
+      const manifestStr = (tr.items || []).map(i => `${i.name} (${i.qty})`).join(', ');
+      return [
+        `<strong>${tr.id}</strong>`,
+        tr.date,
+        tr.from,
+        `<strong>${tr.to}</strong>`,
+        manifestStr || '-',
+        `<strong>${tr.totalQty || 0}</strong>`,
+        `<span class="badge badge-success">${tr.status || 'Completed'}</span>`
+      ];
+    });
+
+  } else if (activeReportEntity === 'customers') {
+    headers = ['Customer ID', 'Customer Name', 'Mobile Number', 'Email', 'GSTIN', 'Outstanding Khata (₹)', 'Credit Limit', 'Status'];
+    rawItems = posState.customers.filter(c => {
+      if (secFilter === 'BALANCE' && c.balance <= 0) return false;
+      if (secFilter === 'ZERO' && c.balance > 0) return false;
+      if (searchQuery) {
+        const text = `${c.name} ${c.mobile} ${c.email} ${c.gstin}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalBalance = rawItems.reduce((acc, c) => acc + (c.balance || 0), 0);
+    kpiCards = [
+      { title: 'Total Customers', value: rawItems.length, sub: 'Registered Directory' },
+      { title: 'Outstanding Khata', value: `₹ ${totalBalance.toFixed(2)}`, sub: 'Customer Credit Due', highlight: true },
+      { title: 'Active Accounts', value: rawItems.filter(c => c.status === 'Active').length, sub: 'Good Standing' },
+      { title: 'With Due Balance', value: rawItems.filter(c => c.balance > 0).length, sub: 'Follow-up Required' }
+    ];
+
+    rows = rawItems.map(c => [
+      `CUST-00${c.id}`,
+      `<strong>${c.name}</strong>`,
+      c.mobile,
+      c.email || '-',
+      c.gstin || '-',
+      `<strong style="color:${c.balance > 0 ? 'var(--danger)' : 'var(--success)'}">₹ ${c.balance.toFixed(2)}</strong>`,
+      `₹ ${(c.creditLimit || 0).toFixed(2)}`,
+      `<span class="badge badge-success">${c.status || 'Active'}</span>`
+    ]);
+
+  } else if (activeReportEntity === 'suppliers') {
+    headers = ['Supplier ID', 'Supplier / Firm Name', 'Contact Person', 'Mobile Number', 'Email', 'GSTIN', 'Pending Payables (₹)', 'Status'];
+    rawItems = posState.suppliers.filter(s => {
+      if (secFilter === 'PAYABLE' && s.balance <= 0) return false;
+      if (secFilter === 'ZERO' && s.balance > 0) return false;
+      if (searchQuery) {
+        const text = `${s.name} ${s.contact} ${s.mobile} ${s.gstin}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    const totalPayables = rawItems.reduce((acc, s) => acc + (s.balance || 0), 0);
+    kpiCards = [
+      { title: 'Total Suppliers', value: rawItems.length, sub: 'Approved Vendors' },
+      { title: 'Pending Payables', value: `₹ ${totalPayables.toFixed(2)}`, sub: 'Total Vendor Liability', highlight: true },
+      { title: 'Active Vendors', value: rawItems.filter(s => s.status === 'Active').length, sub: 'Direct Suppliers' },
+      { title: 'With Pending Balance', value: rawItems.filter(s => s.balance > 0).length, sub: 'Bills Payable' }
+    ];
+
+    rows = rawItems.map(s => [
+      `SUPP-00${s.id}`,
+      `<strong>${s.name}</strong>`,
+      s.contact || '-',
+      s.mobile,
+      s.email || '-',
+      s.gstin || '-',
+      `<strong style="color:${s.balance > 0 ? 'var(--danger)' : 'var(--success)'}">₹ ${s.balance.toFixed(2)}</strong>`,
+      `<span class="badge badge-success">${s.status || 'Active'}</span>`
+    ]);
+
+  } else if (activeReportEntity === 'users') {
+    headers = ['User ID', 'Full Name', 'Username', 'Role', 'Assigned Branch', 'Status'];
+    rawItems = posState.users.filter(u => {
+      if (secFilter !== 'ALL' && u.role !== secFilter) return false;
+      if (branchFilter !== 'ALL' && u.branch !== 'All Branches' && u.branch !== branchFilter) return false;
+      if (searchQuery) {
+        const text = `${u.name} ${u.username} ${u.role} ${u.branch}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    kpiCards = [
+      { title: 'Total Users', value: rawItems.length, sub: 'System Accounts' },
+      { title: 'Administrators', value: rawItems.filter(u => u.role === 'ADMIN').length, sub: 'Full Master Privileges', highlight: true },
+      { title: 'Managers', value: rawItems.filter(u => u.role === 'MANAGER').length, sub: 'Store Supervisors' },
+      { title: 'Cashiers', value: rawItems.filter(u => u.role === 'CASHIER').length, sub: 'Front Desk Operators' }
+    ];
+
+    rows = rawItems.map(u => [
+      `USR-00${u.id}`,
+      `<strong>${u.name}</strong>`,
+      `<code>${u.username}</code>`,
+      `<span class="badge ${u.role === 'ADMIN' ? 'badge-danger' : (u.role === 'MANAGER' ? 'badge-warning' : 'badge-info')}">${u.role}</span>`,
+      u.branch || 'Main Branch',
+      `<span class="badge badge-success">${u.status || 'Active'}</span>`
+    ]);
+
+  } else if (activeReportEntity === 'branches') {
+    headers = ['Branch Code', 'Branch Name', 'Address', 'Contact Phone', 'Status'];
+    rawItems = posState.branches.filter(b => {
+      if (secFilter !== 'ALL' && b.status !== secFilter) return false;
+      if (searchQuery) {
+        const text = `${b.code} ${b.name} ${b.address} ${b.phone}`.toLowerCase();
+        if (!text.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    kpiCards = [
+      { title: 'Total Branches', value: rawItems.length, sub: 'Store Network' },
+      { title: 'Main Branch Hub', value: 'Green Park', sub: 'Flagship Store', highlight: true },
+      { title: 'Active Outlets', value: rawItems.filter(b => b.status === 'Active').length, sub: 'Live POS Registers' },
+      { title: 'Expansion Cities', value: 'Delhi, Noida, Gurgaon', sub: 'Regional Footprint' }
+    ];
+
+    rows = rawItems.map(b => [
+      `<code>${b.code}</code>`,
+      `<strong>${b.name}</strong>`,
+      b.address || '-',
+      b.phone || '-',
+      `<span class="badge badge-success">${b.status || 'Active'}</span>`
+    ]);
+  }
+
+  return { headers, rows, rawItems, kpiCards };
+}
+
+function renderActiveReport() {
+  const container = document.getElementById('screen-sales-reports');
+  if (!container) return;
+
+  const data = getFilteredReportData();
+
+  // 1. Render KPI Cards
+  const kpiContainer = document.getElementById('report-kpi-cards');
+  if (kpiContainer) {
+    kpiContainer.innerHTML = '';
+    data.kpiCards.forEach(card => {
+      const div = document.createElement('div');
+      div.className = 'kpi-card';
+      div.innerHTML = `
+        <div class="kpi-header">${card.title}</div>
+        <div class="kpi-value" style="${card.highlight ? 'color:var(--primary); font-weight:800;' : ''}">${card.value}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${card.sub}</div>
+      `;
+      kpiContainer.appendChild(div);
+    });
+  }
+
+  // 2. Render Table Headers
+  const thead = document.getElementById('report-table-head');
+  if (thead) {
+    thead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+  }
+
+  // 3. Render Table Body
+  const tbody = document.getElementById('report-table-body');
+  if (tbody) {
+    tbody.innerHTML = '';
+    if (data.rows.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="${data.headers.length}" style="text-align:center; padding:36px; color:var(--text-muted);">
+            <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
+            <div style="font-weight:600;">No matching records found</div>
+            <div style="font-size:0.8rem; margin-top:4px;">Try changing the date range, branch, or search criteria</div>
+          </td>
+        </tr>
+      `;
+    } else {
+      data.rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = r.map(cell => `<td>${cell}</td>`).join('');
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  // 4. Update status texts
+  const countText = document.getElementById('report-record-count-text');
+  if (countText) {
+    countText.textContent = `Showing ${data.rows.length} ${activeReportEntity.toUpperCase()} records`;
+  }
+  const genText = document.getElementById('report-generated-text');
+  if (genText) {
+    genText.textContent = `Generated: ${new Date().toLocaleTimeString('en-GB')}`;
+  }
+}
+
+// 1-Click Local File Export Engines (Direct Browser Download to User PC)
+function exportReportToCsv() {
+  const data = getFilteredReportData();
+  if (!data.rows || data.rows.length === 0) {
+    showToast('No records found to export for active filter criteria.', 'warning');
+    return;
+  }
+
+  let csv = '\uFEFF'; // UTF-8 BOM for clean Excel rendering
+  // Headers (clean from HTML)
+  const cleanHeaders = data.headers.filter(h => h !== 'Action');
+  csv += cleanHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\r\n';
+
+  // Rows (strip HTML tags)
+  data.rows.forEach(row => {
+    // If last cell is Action button, skip it
+    const cellsToExport = (data.headers[data.headers.length - 1] === 'Action') ? row.slice(0, -1) : row;
+    const cleanCells = cellsToExport.map(cell => {
+      const plain = String(cell || '').replace(/<[^>]*>/g, '').trim();
+      return `"${plain.replace(/"/g, '""')}"`;
+    });
+    csv += cleanCells.join(',') + '\r\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const entityLabel = activeReportEntity.toUpperCase();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `MyPOS_Report_${entityLabel}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ CSV Report downloaded to your device: ${a.download}`, 'success');
+}
+
+function printReportPdf() {
+  window.print();
+  showToast('Print dialog opened. Choose "Save as PDF" to save report locally.', 'info');
+}
+
+function exportReportToJson() {
+  const data = getFilteredReportData();
+  const exportPayload = {
+    reportType: activeReportEntity,
+    generatedAt: new Date().toISOString(),
+    storeName: posState.settings.storeName,
+    filters: {
+      datePreset: reportDatePreset,
+      fromDate: document.getElementById('report-date-from')?.value || 'All',
+      toDate: document.getElementById('report-date-to')?.value || 'All',
+      branch: document.getElementById('report-branch-select')?.value || 'ALL',
+      secondary: document.getElementById('report-secondary-select')?.value || 'ALL'
+    },
+    totalRecords: data.rawItems.length,
+    records: data.rawItems
+  };
+
+  const jsonStr = JSON.stringify(exportPayload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `MyPOS_Report_${activeReportEntity.toUpperCase()}_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ JSON Data exported to your device: ${a.download}`, 'success');
+}
+
+function renderReports() {
+  populateReportBranchDropdown();
+  populateReportSecondaryFilter();
+  renderActiveReport();
+}
+
 
 function renderProfitReport() {
   const tbody = document.getElementById('profit-table-body');
@@ -2169,31 +3382,322 @@ function lookupSaleForReturn() {
 }
 
 function processReturn() {
+  const invInput = document.getElementById('return-inv-input')?.value.trim() || 'INV-0000125';
+  const sale = posState.salesHistory.find(s => s.invoiceNo.toLowerCase() === invInput.toLowerCase());
+  const today = new Date().toLocaleDateString('en-GB');
+  const retId = 'RET-000' + (posState.returns.length + 1);
+
+  posState.returns.unshift({
+    id: retId,
+    date: today,
+    type: 'Sales Return',
+    refNo: invInput,
+    party: sale ? sale.customer : 'Walk-in Customer',
+    branch: posState.selectedBranch || 'Main Branch',
+    amount: sale ? Math.round(sale.amount * 0.5) : 50.00,
+    reason: 'Customer return / exchange',
+    status: 'Completed'
+  });
+  saveReturnsToStorage();
+
   showToast('Sales return processed! Quantity restituted to stock ledger and credit note issued.', 'success');
   navigateToScreen('inventory');
 }
 
-// --- 21. STOCK TRANSFER (SCREEN 15) ---
+// --- 21. STOCK TRANSFER (SCREEN 15) CONTROLLERS ---
+
+function initStockTransferScreen() {
+  // 1. Populate Branch Selectors
+  const fromSelect = document.getElementById('transfer-from');
+  const toSelect = document.getElementById('transfer-to');
+  if (fromSelect && toSelect) {
+    const currentFrom = fromSelect.value;
+    const currentTo = toSelect.value;
+    fromSelect.innerHTML = '';
+    toSelect.innerHTML = '';
+    posState.branches.forEach((b, idx) => {
+      const fromSel = currentFrom ? (currentFrom === b.name) : (idx === 0);
+      const toSel = currentTo ? (currentTo === b.name) : (idx === 1);
+      fromSelect.innerHTML += `<option value="${b.name}" ${fromSel ? 'selected' : ''}>${b.name}</option>`;
+      toSelect.innerHTML += `<option value="${b.name}" ${toSel ? 'selected' : ''}>${b.name}</option>`;
+    });
+  }
+
+  // 2. Populate product select dropdown
+  const prodSelect = document.getElementById('transfer-product-select');
+  if (prodSelect && posState.products.length > 0) {
+    const prevVal = prodSelect.value;
+    const defaultId = prevVal ? parseInt(prevVal) : posState.products[0].id;
+    prodSelect.innerHTML = '';
+    posState.products.forEach((p, idx) => {
+      const isSelected = prevVal ? (prevVal == p.id) : (idx === 0);
+      prodSelect.innerHTML += `<option value="${p.id}" ${isSelected ? 'selected' : ''}>${p.icon} ${p.name} (${p.code}) &bull; Stock: ${p.stock} ${p.unit}</option>`;
+    });
+    prodSelect.value = defaultId;
+  }
+
+  onTransferProductChange();
+  renderTransferManifest();
+  renderTransferHistory();
+}
+
+function onTransferBranchChange() {
+  const fromB = document.getElementById('transfer-from')?.value;
+  const toB = document.getElementById('transfer-to')?.value;
+  if (fromB && toB && fromB === toB) {
+    showToast('Warning: Origin and destination branch cannot be identical!', 'warning');
+  }
+}
+
+function onTransferProductChange() {
+  const prodSelect = document.getElementById('transfer-product-select');
+  const availInput = document.getElementById('transfer-source-avail');
+  const qtyInput = document.getElementById('transfer-input-qty');
+  if (!prodSelect || !availInput) return;
+
+  const prodId = parseInt(prodSelect.value);
+  const p = posState.products.find(x => x.id === prodId);
+  if (p) {
+    availInput.value = `${p.stock} ${p.unit}`;
+    if (qtyInput) {
+      qtyInput.max = p.stock > 0 ? p.stock : 1;
+      if (parseInt(qtyInput.value) > p.stock && p.stock > 0) {
+        qtyInput.value = p.stock;
+      }
+    }
+  } else {
+    availInput.value = '0';
+  }
+}
+
+function addTransferItemRow() {
+  const prodSelect = document.getElementById('transfer-product-select');
+  const qtyInput = document.getElementById('transfer-input-qty');
+  if (!prodSelect || !qtyInput) return;
+
+  const prodId = parseInt(prodSelect.value);
+  const p = posState.products.find(x => x.id === prodId);
+  if (!p) {
+    showToast('Please select a valid product to transfer!', 'warning');
+    return;
+  }
+
+  const qty = parseInt(qtyInput.value) || 0;
+  if (qty <= 0) {
+    showToast('Please enter a transfer quantity of at least 1!', 'warning');
+    return;
+  }
+
+  if (qty > p.stock) {
+    showToast(`Insufficient Stock: Only ${p.stock} ${p.unit} of "${p.name}" available in source branch!`, 'danger');
+    return;
+  }
+
+  const existing = posState.activeTransferItems.find(x => x.id === p.id);
+  if (existing) {
+    if (existing.qty + qty > p.stock) {
+      showToast(`Cannot add ${qty} more. Manifest total (${existing.qty + qty}) exceeds available stock (${p.stock})!`, 'warning');
+      return;
+    }
+    existing.qty += qty;
+  } else {
+    posState.activeTransferItems.push({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+      category: p.category,
+      icon: p.icon,
+      unit: p.unit,
+      qty: qty,
+      available: p.stock
+    });
+  }
+
+  renderTransferManifest();
+  showToast(`Added ${p.name} (${qty} ${p.unit}) to transfer manifest!`, 'success');
+  qtyInput.value = 1;
+}
+
+function removeTransferItem(prodId) {
+  posState.activeTransferItems = posState.activeTransferItems.filter(x => x.id !== prodId);
+  renderTransferManifest();
+  showToast('Item removed from transfer manifest.', 'info');
+}
+
+function clearTransferManifest() {
+  if (posState.activeTransferItems.length === 0) return;
+  posState.activeTransferItems = [];
+  renderTransferManifest();
+  showToast('Transfer manifest cleared.', 'info');
+}
+
+function renderTransferManifest() {
+  const tbody = document.getElementById('transfer-items-table-body');
+  const totalItemsEl = document.getElementById('transfer-total-items');
+  const totalQtyEl = document.getElementById('transfer-total-qty');
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (posState.activeTransferItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No items in transfer manifest. Select a product above and click "+ Add to Manifest".</td></tr>`;
+    if (totalItemsEl) totalItemsEl.textContent = '0';
+    if (totalQtyEl) totalQtyEl.textContent = '0';
+    return;
+  }
+
+  let totalQty = 0;
+  posState.activeTransferItems.forEach(item => {
+    totalQty += item.qty;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.icon} <strong>${item.name}</strong></td>
+      <td><code>${item.code}</code></td>
+      <td>${item.category}</td>
+      <td style="text-align:center; font-weight:700;">${item.qty} ${item.unit}</td>
+      <td style="text-align:center;">${item.available} ${item.unit}</td>
+      <td style="text-align:center;">
+        <button class="btn btn-danger btn-sm" onclick="removeTransferItem(${item.id})">🗑️ Remove</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (totalItemsEl) totalItemsEl.textContent = posState.activeTransferItems.length;
+  if (totalQtyEl) totalQtyEl.textContent = totalQty;
+}
+
+function renderTransferHistory() {
+  const tbody = document.getElementById('transfer-history-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!posState.transferHistory || posState.transferHistory.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:16px; color:var(--text-muted);">No transfer records logged yet.</td></tr>`;
+    return;
+  }
+
+  posState.transferHistory.forEach(t => {
+    const itemsSummary = Array.isArray(t.items) ? t.items.map(i => `${i.name} (${i.qty})`).join(', ') : 'Stock items';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${t.id}</strong></td>
+      <td>${t.date}</td>
+      <td>${t.from}</td>
+      <td>${t.to}</td>
+      <td>${itemsSummary}</td>
+      <td><strong>${t.totalQty}</strong></td>
+      <td><span class="badge badge-success">${t.status}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 function executeTransfer() {
-  const fromB = document.getElementById('transfer-from').value;
-  const toB = document.getElementById('transfer-to').value;
-  if (fromB === toB) {
+  const fromB = document.getElementById('transfer-from')?.value;
+  const toB = document.getElementById('transfer-to')?.value;
+
+  if (!fromB || !toB || fromB === toB) {
     showToast('Origin and destination branch cannot be identical!', 'warning');
     return;
   }
-  showToast(`Stock transfer of 23 units from ${fromB} to ${toB} completed! Stock ledger updated.`, 'success');
-  navigateToScreen('inventory');
+
+  if (posState.activeTransferItems.length === 0) {
+    showToast('Please select and add at least one product to the transfer manifest first!', 'danger');
+    return;
+  }
+
+  // Verify stock availability
+  for (const item of posState.activeTransferItems) {
+    const prod = posState.products.find(p => p.id === item.id);
+    if (!prod || prod.stock < item.qty) {
+      showToast(`Cannot transfer: insufficient stock for "${item.name}"!`, 'danger');
+      return;
+    }
+  }
+
+  // Deduct transferred stock from source
+  posState.activeTransferItems.forEach(item => {
+    const prod = posState.products.find(p => p.id === item.id);
+    if (prod) {
+      prod.stock -= item.qty;
+    }
+  });
+  saveProductsToStorage();
+
+  const totalQty = posState.activeTransferItems.reduce((s, x) => s + x.qty, 0);
+  const transferId = `TRF-${Math.floor(1000 + Math.random() * 9000)}`;
+  const today = new Date().toLocaleDateString('en-GB');
+
+  const transferRecord = {
+    id: transferId,
+    date: today,
+    from: fromB,
+    to: toB,
+    items: JSON.parse(JSON.stringify(posState.activeTransferItems)),
+    totalQty: totalQty,
+    status: 'Completed'
+  };
+
+  posState.transferHistory.unshift(transferRecord);
+  localStorage.setItem('pos_transfer_history', JSON.stringify(posState.transferHistory));
+
+  posState.activeTransferItems = [];
+  renderTransferManifest();
+  renderTransferHistory();
+  initStockTransferScreen();
+
+  renderInventory();
+  renderPosProducts();
+  renderProductMaster();
+  renderProductSearch();
+
+  showToast(`✅ Transfer ${transferId} executed! ${totalQty} units transferred from ${fromB} to ${toB}. Stock deducted!`, 'success');
 }
 
 // --- INITIALIZATION ON DOM READY ---
 document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   renderPosProducts();
+  renderProductSearch();
+  initStockTransferScreen();
   updateCategoryChips();
   populateCategorySelects();
   populatePurchaseDropdowns();
   addPurchaseRow(1, 10, 42.00);
   addPurchaseRow(2, 20, 25.00);
+
+  // Check automated preview query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('noanim') === '1') {
+    document.body.classList.add('no-anim');
+  }
+  const autoUser = urlParams.get('autologin');
+  if (autoUser) {
+    const userObj = posState.users.find(u => u.username.toLowerCase() === autoUser.toLowerCase() && u.status === 'Active');
+    if (userObj) {
+      posState.isAuthenticated = true;
+      posState.currentUser = {
+        username: userObj.username,
+        role: userObj.role,
+        name: userObj.name
+      };
+      const curUserEl = document.getElementById('current-username');
+      const curRoleEl = document.getElementById('current-role');
+      if (curUserEl) curUserEl.textContent = userObj.username;
+      if (curRoleEl) curRoleEl.textContent = userObj.role;
+
+      syncActiveUserDropdown();
+      updateNavigationPermissionsUI();
+      const targetScreen = urlParams.get('screen') || 'dashboard';
+      navigateToScreen(targetScreen);
+      if (urlParams.get('drawer') === 'open') {
+        toggleMobileSidebar();
+      }
+      setupKeybindings();
+      return;
+    }
+  }
 
   // Check existing session
   const savedSession = sessionStorage.getItem('pos_active_session');

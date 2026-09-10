@@ -1,5 +1,5 @@
 @echo off
-title Pushing MyPOS Retail Application to GitHub
+title Push MyPOS to GitHub (SEE-VAM/POS)
 color 0b
 echo ========================================================
 echo   Pushing MyPOS Retail Project to GitHub
@@ -8,35 +8,30 @@ echo ========================================================
 echo.
 
 set "GIT_PATH=%LOCALAPPDATA%\Programs\Git\cmd\git.exe"
-
-if not exist "%GIT_PATH%" (
-    echo [ERROR] Git was not found at %GIT_PATH%
-    pause
-    exit /b 1
+if exist "%GIT_PATH%" (
+    set "PATH=%LOCALAPPDATA%\Programs\Git\cmd;%PATH%"
 )
 
-echo [1/2] Connecting to GitHub remote...
-"%GIT_PATH%" remote -v
+echo [1/2] Checking remote configuration...
+git remote -v
 echo.
 
-echo [2/2] Pushing branch 'main' to origin...
-echo (A browser window will open shortly to authorize your GitHub account if not already signed in)
+echo [2/2] Pushing main branch to origin...
+echo (If prompted, sign in via your browser window)
 echo.
-"%GIT_PATH%" push -u origin main
+git push -u origin main
 
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ========================================================
     echo   [SUCCESS] Code successfully pushed to GitHub!
-    echo   Check your repository at:
-    echo   https://github.com/SEE-VAM/POS
+    echo   View online: https://github.com/SEE-VAM/POS
     echo ========================================================
 ) else (
     echo.
     echo ========================================================
-    echo   [NOTE] If authentication failed:
-    echo   Make sure you are logged into GitHub account 'SEE-VAM'
-    echo   in your default browser, or enter a Personal Access Token.
+    echo   [NOTICE] Push could not complete automatically.
+    echo   Run: git push origin main
     echo ========================================================
 )
 

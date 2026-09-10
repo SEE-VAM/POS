@@ -14,6 +14,9 @@
       const win = iframe.contentWindow;
       const doc = iframe.contentDocument;
       const results = [];
+      win.confirm = () => true;
+      win.alert = () => {};
+      win.print = () => {};
 
       function assert(condition, message) {
         if (condition) {
@@ -89,6 +92,313 @@
         const cashierAccess = win.navigateToScreen('users');
         assert(win.posState.activeScreen !== 'users', "Cashier cannot access Users & Roles screen");
 
+        // Test 11: Switch back to Admin
+        win.handleLogout();
+        doc.getElementById('login-user').value = 'admin';
+        doc.getElementById('login-pass').value = 'password123';
+        win.handleLogin();
+        assert(win.posState.currentUser.role === 'ADMIN', "Switched back to ADMIN user");
+
+        // Test 12: Admin creates new product in Product Master
+        win.navigateToScreen('products');
+        win.openAddProductModal();
+        doc.getElementById('prod-code').value = 'P009';
+        doc.getElementById('prod-name').value = 'Cadbury Dairy Milk';
+        doc.getElementById('modal-prod-category').value = 'Snacks';
+        doc.getElementById('prod-price').value = '80';
+        doc.getElementById('prod-cost').value = '60';
+        doc.getElementById('prod-stock').value = '50';
+        doc.getElementById('prod-min-stock').value = '10';
+        doc.getElementById('prod-unit').value = 'Pkt';
+        doc.getElementById('prod-icon').value = '🍫';
+        win.saveProduct();
+
+        const storedProds = JSON.parse(win.localStorage.getItem('pos_products_list') || '[]');
+        const storedItem = storedProds.find(p => p.code === 'P009');
+        assert(!!storedItem, "New product 'Cadbury Dairy Milk' saved to localStorage ('pos_products_list')");
+        assert(storedItem && storedItem.stock === 50, "Stored product has correct initial stock (50)");
+
+        // Test 13: New product is visible in POS billing grid
+        win.navigateToScreen('pos');
+        const posCard = Array.from(doc.querySelectorAll('.product-card')).find(c => c.textContent.includes('Cadbury Dairy Milk'));
+        assert(!!posCard, "New product appears in POS product grid");
+
+        // Test 14: New product is visible in Live Inventory table
+        win.navigateToScreen('inventory');
+        const invRow = Array.from(doc.querySelectorAll('#inventory-table-body tr')).find(r => r.textContent.includes('Cadbury Dairy Milk'));
+        assert(!!invRow, "New product appears in Live Inventory table");
+
+        // Test 15: New product is visible in Product Search / Barcode (Screen 4)
+        win.navigateToScreen('product-search');
+        const searchRow = Array.from(doc.querySelectorAll('#product-search-table-body tr')).find(r => r.textContent.includes('Cadbury Dairy Milk'));
+        assert(!!searchRow, "New product appears in Screen 4 Product Search / Barcode table");
+
+        // Test 16: Inter-Branch Stock Transfer - Item selection & Manifest
+        win.navigateToScreen('stock-transfer');
+        doc.getElementById('transfer-from').value = 'Main Branch';
+        doc.getElementById('transfer-to').value = 'Branch 2 - Noida Sector 62';
+        
+        const prodSelect = doc.getElementById('transfer-product-select');
+        const createdProd = win.posState.products.find(p => p.code === 'P009');
+        prodSelect.value = createdProd.id;
+        win.onTransferProductChange();
+
+        const availDisplay = doc.getElementById('transfer-source-avail').value;
+        assert(availDisplay.includes('50'), `Source available stock displays accurately (${availDisplay})`);
+
+        // Add 15 units to transfer manifest
+        doc.getElementById('transfer-input-qty').value = '15';
+        win.addTransferItemRow();
+
+        assert(win.posState.activeTransferItems.length === 1, "Transfer manifest has 1 item added");
+        assert(win.posState.activeTransferItems[0].qty === 15, "Manifest item has transfer qty 15");
+
+        const manifestRows = doc.querySelectorAll('#transfer-items-table-body tr');
+        assert(manifestRows.length === 1 && manifestRows[0].textContent.includes('Cadbury Dairy Milk'), "Manifest table renders transfer item row");
+
+        // Test 17: Execute Transfer & Stock Deduction
+        win.executeTransfer();
+
+        const updatedProd = win.posState.products.find(p => p.code === 'P009');
+        assert(updatedProd && updatedProd.stock === 35, `Source product stock decremented to 35 (was 50, transferred 15, actual: ${updatedProd ? updatedProd.stock : 'null'})`);
+
+        const updatedStored = JSON.parse(win.localStorage.getItem('pos_products_list') || '[]');
+        const updatedStoredItem = updatedStored.find(p => p.code === 'P009');
+        assert(updatedStoredItem && updatedStoredItem.stock === 35, "Updated stock (35) is persisted in localStorage");
+
+        // Test 18: Transfer History Ledger records transaction
+        const historyRows = doc.querySelectorAll('#transfer-history-table-body tr');
+        assert(historyRows.length >= 1, `Transfer history ledger has ${historyRows.length} records`);
+        assert(historyRows[0].textContent.includes('Cadbury Dairy Milk') && historyRows[0].textContent.includes('15'), "Transfer history ledger shows latest transfer details");
+
+        // Test 19: Live Inventory table reflects decremented stock (35)
+        win.navigateToScreen('inventory');
+        const updatedInvRow = Array.from(doc.querySelectorAll('#inventory-table-body tr')).find(r => r.textContent.includes('Cadbury Dairy Milk'));
+        assert(updatedInvRow && updatedInvRow.textContent.includes('35 Pkt'), "Live inventory reflects transferred/deducted stock of 35 Pkt");
+
+        // Test 20: Branch Creation & Persistence across App
+        win.navigateToScreen('branches');
+        win.openAddBranchModal();
+        doc.getElementById('branch-code').value = 'B004';
+        doc.getElementById('branch-name').value = 'Branch 4 - Bengaluru Tech Hub';
+        doc.getElementById('branch-phone').value = '9876543299';
+        doc.getElementById('branch-address').value = 'Electronic City, Bengaluru';
+        win.saveBranch();
+
+        const storedBranches = JSON.parse(win.localStorage.getItem('pos_branches_list') || '[]');
+        const storedBranch = storedBranches.find(b => b.code === 'B004');
+        assert(!!storedBranch, "New branch 'Branch 4 - Bengaluru Tech Hub' stored in localStorage ('pos_branches_list')");
+
+        const branchRows = Array.from(doc.querySelectorAll('#branches-table-body tr')).find(r => r.textContent.includes('Bengaluru Tech Hub'));
+        assert(!!branchRows, "New branch renders in Branch Management directory");
+
+        win.navigateToScreen('stock-transfer');
+        const fromOptions = Array.from(doc.getElementById('transfer-from').options).map(o => o.value);
+        assert(fromOptions.includes('Branch 4 - Bengaluru Tech Hub'), "New branch is available in Stock Transfer 'From Branch' dropdown");
+
+        // Test 21: Category Creation & Persistence
+        win.navigateToScreen('categories');
+        win.openAddCategoryModal();
+        doc.getElementById('cat-name').value = 'Chocolates';
+        doc.getElementById('cat-desc').value = 'Imported and Indian chocolates';
+        doc.getElementById('cat-status').value = 'Active';
+        win.saveCategory();
+
+        const storedCats = JSON.parse(win.localStorage.getItem('pos_categories_list') || '[]');
+        const storedCat = storedCats.find(c => c.name === 'Chocolates');
+        assert(!!storedCat, "New category 'Chocolates' stored in localStorage ('pos_categories_list')");
+
+        const catRows = Array.from(doc.querySelectorAll('#category-table-body tr')).find(r => r.textContent.includes('Chocolates'));
+        assert(!!catRows, "New category renders in Category Master table");
+
+        win.populateCategorySelects();
+        const screen4CatOpts = Array.from(doc.getElementById('prod-search-category-screen4').options).map(o => o.value);
+        assert(screen4CatOpts.includes('Chocolates'), "New category appears in Screen 4 category dropdown filter");
+
+        // Test 22: Customer Creation & Persistence
+        win.navigateToScreen('customers');
+        win.openAddCustomerModal();
+        doc.getElementById('cust-name').value = 'Suresh Raina';
+        doc.getElementById('cust-mobile').value = '9988771122';
+        doc.getElementById('cust-email').value = 'suresh@cricket.in';
+        doc.getElementById('cust-gstin').value = '-';
+        doc.getElementById('cust-credit').value = '5000';
+        win.saveCustomer();
+
+        const storedCusts = JSON.parse(win.localStorage.getItem('pos_customers_list') || '[]');
+        const storedCust = storedCusts.find(c => c.mobile === '9988771122');
+        assert(!!storedCust, "New customer 'Suresh Raina' stored in localStorage ('pos_customers_list')");
+
+        const custRows = Array.from(doc.querySelectorAll('#customer-table-body tr')).find(r => r.textContent.includes('Suresh Raina'));
+        assert(!!custRows, "New customer renders in Customer Master table");
+
+        const posCustOpts = Array.from(doc.getElementById('pos-customer-select').options).map(o => o.textContent);
+        assert(posCustOpts.some(t => t.includes('Suresh Raina')), "New customer is available in POS Billing customer select dropdown");
+
+        // Test 23: Supplier Creation & Persistence
+        win.navigateToScreen('suppliers');
+        win.openAddSupplierModal();
+        doc.getElementById('supp-name').value = 'Tata Consumer Products';
+        doc.getElementById('supp-contact').value = 'Ajay Mehra';
+        doc.getElementById('supp-mobile').value = '9112233445';
+        doc.getElementById('supp-email').value = 'supply@tataconsumer.com';
+        doc.getElementById('supp-gstin').value = '07TATAC1234F1Z1';
+        win.saveSupplier();
+
+        const storedSupps = JSON.parse(win.localStorage.getItem('pos_suppliers_list') || '[]');
+        const storedSupp = storedSupps.find(s => s.name === 'Tata Consumer Products');
+        assert(!!storedSupp, "New supplier 'Tata Consumer Products' stored in localStorage ('pos_suppliers_list')");
+
+        const suppRows = Array.from(doc.querySelectorAll('#supplier-table-body tr')).find(r => r.textContent.includes('Tata Consumer Products'));
+        assert(!!suppRows, "New supplier renders in Supplier Master table");
+
+        win.populatePurchaseDropdowns();
+        const purchSuppOpts = Array.from(doc.getElementById('purchase-supplier-select').options).map(o => o.textContent);
+        assert(purchSuppOpts.some(t => t.includes('Tata Consumer Products')), "New supplier is available in Purchase Bill supplier dropdown");
+
+        // Test 24: Company Settings Update & Persistence
+        win.navigateToScreen('settings');
+        doc.getElementById('set-store-name').value = 'MyRetail SuperStore';
+        doc.getElementById('set-gstin').value = '07MYRET9999F1Z9';
+        win.saveSettings();
+
+        const storedSettings = JSON.parse(win.localStorage.getItem('pos_settings') || '{}');
+        assert(storedSettings.storeName === 'MyRetail SuperStore', "Updated store name persisted in localStorage ('pos_settings')");
+        assert(storedSettings.gstin === '07MYRET9999F1Z9', "Updated GSTIN persisted in localStorage ('pos_settings')");
+
+        const brandHeaders = Array.from(doc.querySelectorAll('.app-store-name')).map(h => h.textContent);
+        assert(brandHeaders.every(h => h === 'MyRetail SuperStore'), "Store name updated across all receipt/invoice UI headers");
+
+        // =====================================================================
+        // Test 25: Cart Starts 100% Empty on Load & Empty Cart UI
+        // =====================================================================
+        win.navigateToScreen('pos');
+        assert(win.posState.cart.length === 0, "Cart is 100% empty on initial load");
+        const emptyCartBadge = doc.getElementById('cart-count-badge');
+        assert(emptyCartBadge && emptyCartBadge.textContent === '0', "Cart count badge displays '0'");
+        const emptySub = doc.getElementById('cart-subtotal');
+        assert(emptySub && emptySub.textContent.includes('0.00'), "Cart subtotal displays '₹ 0.00'");
+        const emptyGrand = doc.getElementById('cart-grand-total');
+        assert(emptyGrand && emptyGrand.textContent.includes('0.00'), "Cart grand total displays '₹ 0.00'");
+        const emptyStateEl = doc.querySelector('.empty-cart-state');
+        assert(!!emptyStateEl, "Empty cart state UI with 🛒 placeholder is displayed");
+
+        // =====================================================================
+        // Test 26: Add Item to Cart and Verify Dynamics
+        // =====================================================================
+        const testProduct = win.posState.products[0]; // Milk
+        win.addToCart(testProduct.id);
+        assert(win.posState.cart.length === 1, "Item successfully added to cart");
+        assert(emptyCartBadge.textContent === '1', "Cart badge updated to 1");
+        assert(!doc.querySelector('.empty-cart-state'), "Empty cart state removed when item is added");
+        const cartItemEl = doc.querySelector('.cart-item');
+        assert(!!cartItemEl && cartItemEl.textContent.includes(testProduct.name), "Cart item row rendered with product name");
+
+        // Clear Cart
+        win.posState.cart = [];
+        win.renderCart();
+        assert(win.posState.cart.length === 0, "Cart cleared successfully");
+        assert(!!doc.querySelector('.empty-cart-state'), "Empty cart state restored after clearing cart");
+
+        // =====================================================================
+        // Test 27: Direct POS Customer Quickbar (Name & Mobile Inputs)
+        // =====================================================================
+        const custNameInput = doc.getElementById('pos-cust-name-input');
+        const custMobileInput = doc.getElementById('pos-cust-mobile-input');
+        const custStatusBadge = doc.getElementById('pos-cust-status-badge');
+        assert(!!custNameInput && !!custMobileInput, "POS screen contains Customer Name and Mobile inputs");
+
+        // Auto-fill from dropdown
+        const custSelect = doc.getElementById('pos-customer-select');
+        custSelect.value = '2'; // Rohit Sharma
+        win.onPosCustomerSelectChange();
+        assert(custNameInput.value === 'Rohit Sharma', "Customer Name input auto-populated on dropdown selection");
+        assert(custMobileInput.value === '9876543210', "Customer Mobile input auto-populated on dropdown selection");
+        assert(custStatusBadge.textContent === 'Registered', "Customer status badge displays 'Registered'");
+
+        // Manual custom customer typing
+        custNameInput.value = 'Sunil Verma';
+        custMobileInput.value = '9876541230';
+        win.onPosCustomerInputChange();
+        assert(custStatusBadge.textContent === 'New Customer', "Custom customer entry marks status as 'New Customer'");
+
+        // =====================================================================
+        // Test 28: Complete Sale with Custom Customer & Receipt Details
+        // =====================================================================
+        win.addToCart(testProduct.id); // Add Milk
+        win.openPaymentModal();
+        win.selectPaymentMode('CASH');
+        doc.getElementById('pay-amount-received').value = '100';
+        win.completeSale();
+
+        const latestSale = win.posState.salesHistory[0];
+        assert(latestSale.customer === 'Sunil Verma', "Sale recorded with custom customer name 'Sunil Verma'");
+        assert(latestSale.customerMobile === '9876541230', "Sale recorded with custom customer mobile '9876541230'");
+
+        // Verify customer auto-registered in posState.customers & localStorage
+        const registeredCust = win.posState.customers.find(c => c.mobile === '9876541230');
+        assert(!!registeredCust && registeredCust.name === 'Sunil Verma', "New customer 'Sunil Verma' auto-registered in customer directory");
+        const storedCustList = JSON.parse(win.localStorage.getItem('pos_customers_list') || '[]');
+        assert(storedCustList.some(c => c.mobile === '9876541230'), "New customer saved to localStorage ('pos_customers_list')");
+
+        // Verify receipt displays Customer Name and Mobile
+        const rcptCust = doc.getElementById('rcpt-customer');
+        const rcptMobile = doc.getElementById('rcpt-customer-mobile');
+        assert(rcptCust && rcptCust.textContent === 'Sunil Verma', "Thermal receipt header displays Customer Name 'Sunil Verma'");
+        assert(rcptMobile && rcptMobile.textContent === '9876541230', "Thermal receipt header displays Customer Mobile '9876541230'");
+
+        // =====================================================================
+        // Test 29: Screen 18 (Master Reports Center) 11 Module Navigation
+        // =====================================================================
+        win.navigateToScreen('sales-reports');
+        assert(win.posState.activeScreen === 'sales-reports', "Navigated to Screen 18 (Master Reports Center)");
+
+        const entities = ['billing', 'products', 'categories', 'inventory', 'purchases', 'returns', 'transfer', 'customers', 'suppliers', 'users', 'branches'];
+        entities.forEach(entity => {
+          win.switchReportEntity(entity);
+          assert(win.activeReportEntity === entity, `Report module '${entity}' activated`);
+          const tableHeaders = doc.querySelectorAll('#report-table-head th');
+          assert(tableHeaders.length > 0, `Report '${entity}' table headers rendered (${tableHeaders.length} columns)`);
+          const tableRows = doc.querySelectorAll('#report-table-body tr');
+          assert(tableRows.length > 0, `Report '${entity}' table rows rendered (${tableRows.length} rows)`);
+          const kpis = doc.querySelectorAll('#report-kpi-cards .kpi-card');
+          assert(kpis.length >= 3, `Report '${entity}' rendered ${kpis.length} dynamic KPI cards`);
+        });
+
+        // =====================================================================
+        // Test 30: Report Filtering & Local Export Engine Validation
+        // =====================================================================
+        win.switchReportEntity('billing');
+        // Test search filter
+        doc.getElementById('report-search-input').value = 'Sunil Verma';
+        win.applyReportFilters();
+        const filteredRows = doc.querySelectorAll('#report-table-body tr');
+        assert(filteredRows.length === 1 && filteredRows[0].textContent.includes('Sunil Verma'), "Live search filter correctly filters report data table");
+
+        // Reset search
+        doc.getElementById('report-search-input').value = '';
+        win.applyReportFilters();
+
+        // Validate Export functions execution without throwing exceptions
+        let csvSuccess = false;
+        try {
+          win.exportReportToCsv();
+          csvSuccess = true;
+        } catch (e) {
+          csvSuccess = false;
+        }
+        assert(csvSuccess, "exportReportToCsv() executes successfully and generates downloadable CSV blob");
+
+        let jsonSuccess = false;
+        try {
+          win.exportReportToJson();
+          jsonSuccess = true;
+        } catch (e) {
+          jsonSuccess = false;
+        }
+        assert(jsonSuccess, "exportReportToJson() executes successfully and generates downloadable JSON blob");
+
+
       } catch (err) {
         results.push(`EXCEPTION: ${err.message}`);
       }
@@ -101,5 +411,6 @@
       console.log(results.join('\n'));
     };
   </script>
+</body>
 </body>
 </html>
