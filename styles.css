@@ -902,25 +902,21 @@ body.not-authenticated .app-main {
   font-weight: 800;
 }
 
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .receipt-wrapper, .receipt-wrapper * {
-    visibility: visible;
-  }
-  .receipt-wrapper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    border: none;
-    box-shadow: none;
-    padding: 4mm;
-  }
-  .no-print {
-    display: none !important;
-  }
+/* A4 Full Tax Invoice format toggle */
+.receipt-wrapper.a4-format {
+  max-width: 720px;
+  padding: 30px 36px;
+  box-shadow: var(--shadow-lg);
+  font-family: inherit;
+}
+.receipt-wrapper.a4-format .receipt-header h2 {
+  font-size: 1.6rem;
+}
+.receipt-wrapper.a4-format table {
+  font-size: 0.9rem;
+}
+.receipt-wrapper.a4-format .receipt-barcode {
+  font-size: 1.2rem;
 }
 
 /* =============================================================================
@@ -2027,41 +2023,259 @@ body.no-anim .sidebar-backdrop {
   width: 100%;
 }
 
+@page {
+  size: auto;
+  margin: 6mm;
+}
+
 @media print {
+  /* 1. Global Reset: Remove all dark mode/colored canvas and allow natural document flow */
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 2. Hide all non-printable application navigation, chrome & overlays */
+  .app-topbar,
+  .app-sidebar,
+  .sidebar-backdrop,
+  .screen-switcher-bar,
+  .btn-sidebar-toggle,
+  .modal-overlay,
+  #toast-container,
   .no-print,
-  .topbar,
-  .sidebar,
-  .screen-switcher,
+  .btn,
+  button,
   .report-filters-bar,
   .report-module-tabs,
   .report-export-buttons,
-  .modal-overlay {
+  .alert-banner {
     display: none !important;
   }
-  body, .main-layout, .content-container, .screen-view {
+
+  /* 3. Reset Layout Shell from Flex/Fixed to Plain Block */
+  .app-container {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+  }
+
+  .app-main {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
     background: #ffffff !important;
     width: 100% !important;
-  }
-  .panel {
-    box-shadow: none !important;
     border: none !important;
+  }
+
+  /* 4. Display ONLY the active screen view, hide inactive screens */
+  .screen-view {
+    display: none !important;
+  }
+  .screen-view.active {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* =========================================================================
+     A. RECEIPT / INVOICE PRINT ENGINE (SCREEN 6)
+     ========================================================================= */
+  #screen-receipt.active {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
   }
-  .table-responsive {
+
+  /* Default: Standard 80mm POS Thermal Slip (High-contrast, crisp receipt) */
+  .receipt-wrapper {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 4mm 6mm !important;
+    border: 1px dashed #475569 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    font-family: 'Courier New', Courier, monospace, system-ui !important;
+  }
+
+  /* A4 Full Tax Invoice Layout Mode */
+  .receipt-wrapper.a4-format {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    padding: 10mm 14mm !important;
+    border: 1px solid #1e293b !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  .receipt-wrapper * {
+    visibility: visible !important;
+    color: #000000 !important;
+  }
+
+  .receipt-header {
+    text-align: center !important;
+    border-bottom: 1px dashed #000000 !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .receipt-header h2 {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 3px 0 !important;
+    color: #000000 !important;
+  }
+
+  .receipt-header p {
+    font-size: 7.5pt !important;
+    color: #1e293b !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Clean Itemized Table for Receipt (NO ugly spreadsheet black borders) */
+  .receipt-wrapper table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 6px 0 10px 0 !important;
+    font-size: 8pt !important;
+  }
+
+  .receipt-wrapper table th {
+    border: none !important;
+    border-top: 1px dashed #000000 !important;
+    border-bottom: 1px dashed #000000 !important;
+    padding: 4px 2px !important;
+    font-weight: 700 !important;
+    font-size: 8pt !important;
+    text-align: left !important;
+  }
+
+  .receipt-wrapper table td {
+    border: none !important;
+    padding: 3px 2px !important;
+    font-size: 8pt !important;
+  }
+
+  .receipt-wrapper.a4-format table th,
+  .receipt-wrapper.a4-format table td {
+    padding: 6px 4px !important;
+    font-size: 9pt !important;
+  }
+
+  .receipt-barcode {
+    display: block !important;
+    visibility: visible !important;
+    font-size: 14pt !important;
+    letter-spacing: 5px !important;
+    margin-top: 10px !important;
+    text-align: center !important;
+    color: #000000 !important;
+  }
+
+  /* =========================================================================
+     B. MASTER REPORTS & ANALYTICS PRINT ENGINE (SCREEN 18)
+     ========================================================================= */
+  #screen-sales-reports.active .panel {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #screen-sales-reports.active .panel-header {
+    border-bottom: 2px solid #000000 !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  #screen-sales-reports.active .panel-title {
+    font-size: 13pt !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+  }
+
+  #screen-sales-reports.active .kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+  }
+
+  #screen-sales-reports.active .kpi-card {
+    border: 1px solid #94a3b8 !important;
+    padding: 6px 8px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  #screen-sales-reports.active .kpi-header {
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+  }
+
+  #screen-sales-reports.active .kpi-value {
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+  }
+
+  #screen-sales-reports.active .table-responsive {
     max-height: none !important;
     overflow: visible !important;
     border: none !important;
   }
-  table {
+
+  #report-master-table {
     width: 100% !important;
     border-collapse: collapse !important;
+    font-size: 8pt !important;
   }
-  th, td {
-    border: 1px solid #333333 !important;
-    color: #000000 !important;
-    font-size: 8.5pt !important;
+
+  #report-master-table th,
+  #report-master-table td {
+    border: 1px solid #94a3b8 !important;
     padding: 4px 6px !important;
+    color: #000000 !important;
+  }
+
+  #report-master-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
   }
 }

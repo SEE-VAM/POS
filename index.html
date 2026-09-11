@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MyPOS - Commercial Retail POS System</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
 
@@ -394,18 +394,19 @@
            SCREEN 6: INVOICE / RECEIPT
            ======================================================================= -->
       <section id="screen-receipt" class="screen-view">
-        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px;" class="no-print">
-          <button class="btn btn-primary" onclick="window.print()">🖨️ Print Receipt</button>
-          <button class="btn btn-danger" onclick="downloadReceiptPdf()">📥 Download / Print PDF</button>
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;" class="no-print">
+          <button class="btn btn-primary" onclick="printReceipt()">🖨️ Print Receipt</button>
+          <button class="btn btn-danger" onclick="downloadReceiptPdf()">📥 Download / Save as PDF</button>
+          <button class="btn btn-outline" onclick="toggleReceiptLayout()" id="btn-rcpt-toggle-layout" title="Toggle between 80mm thermal roll & full A4 invoice layout">📄 A4 / 80mm Format</button>
           <button class="btn btn-outline" onclick="openModal('modal-email-receipt')">✉️ Email Receipt</button>
           <button class="btn btn-success" onclick="navigateToScreen('pos')">+ New Sale</button>
         </div>
 
-        <div class="receipt-wrapper">
+        <div class="receipt-wrapper" id="printable-receipt-card">
           <div class="receipt-header">
-            <h2 class="app-store-name">ABC Retail Store</h2>
-            <p>Shop No. 12, Green Park, New Delhi - 110016</p>
-            <p>GSTIN: 07ABCDE1234F1Z5 &bull; Phone: +91 98765 43210</p>
+            <h2 class="app-store-name" id="rcpt-store-name">ABC Retail Store</h2>
+            <p id="rcpt-store-address">Shop No. 12, Green Park, New Delhi - 110016</p>
+            <p id="rcpt-store-tax-phone">GSTIN: 07ABCDE1234F1Z5 &bull; Phone: +91 98765 43210</p>
           </div>
 
           <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:10px;">

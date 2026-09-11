@@ -3033,6 +3033,15 @@ function renderReceipt(sale) {
   const s = sale || posState.salesHistory[0];
   if (!s) return;
 
+  if (posState.settings) {
+    const sName = document.getElementById('rcpt-store-name');
+    if (sName) sName.textContent = posState.settings.storeName || 'ABC Retail Store';
+    const sAddr = document.getElementById('rcpt-store-address');
+    if (sAddr) sAddr.textContent = posState.settings.address || 'Shop No. 12, Green Park, New Delhi - 110016';
+    const sTax = document.getElementById('rcpt-store-tax-phone');
+    if (sTax) sTax.textContent = `GSTIN: ${posState.settings.gstin || '07ABCDE1234F1Z5'} • Phone: ${posState.settings.phone || '+91 98765 43210'}`;
+  }
+
   document.getElementById('rcpt-inv-no').textContent = s.invoiceNo;
   document.getElementById('rcpt-date').textContent = s.date;
   document.getElementById('rcpt-customer').textContent = s.customer;
@@ -3069,9 +3078,61 @@ function renderReceipt(sale) {
   document.getElementById('rcpt-total').textContent = `₹ ${s.amount.toFixed(2)}`;
 }
 
+let receiptLayoutMode = 'thermal'; // 'thermal' (80mm) or 'a4' (full page)
+
+function printReceipt() {
+  if (posState.activeScreen !== 'receipt') {
+    navigateToScreen('receipt');
+  }
+  const main = document.querySelector('.app-main');
+  if (main) main.scrollTop = 0;
+
+  setTimeout(() => {
+    window.print();
+  }, 100);
+}
+
 function downloadReceiptPdf() {
-  window.print();
-  showToast('Print dialog opened. Select "Save as PDF" to save invoice locally.', 'info');
+  if (posState.activeScreen !== 'receipt') {
+    navigateToScreen('receipt');
+  }
+  const main = document.querySelector('.app-main');
+  if (main) main.scrollTop = 0;
+
+  showToast('📄 Print dialog opened! In the "Destination" dropdown, select "Save as PDF" to save invoice locally.', 'info');
+  setTimeout(() => {
+    window.print();
+  }, 150);
+}
+
+function toggleReceiptLayout() {
+  const card = document.getElementById('printable-receipt-card');
+  const btn = document.getElementById('btn-rcpt-toggle-layout');
+  if (!card) return;
+
+  if (receiptLayoutMode === 'thermal') {
+    receiptLayoutMode = 'a4';
+    card.classList.add('a4-format');
+    if (btn) btn.innerHTML = '🧾 80mm Thermal Format';
+    showToast('Switched to A4 Full Tax Invoice format (Ideal for standard printers & PDF saves)', 'info');
+  } else {
+    receiptLayoutMode = 'thermal';
+    card.classList.remove('a4-format');
+    if (btn) btn.innerHTML = '📄 A4 / 80mm Format';
+    showToast('Switched to 80mm Thermal POS Slip format', 'info');
+  }
+}
+
+function printReceiptForSale(saleId) {
+  const sale = posState.salesHistory.find(x => x.id === saleId);
+  if (!sale) return;
+  renderReceipt(sale);
+  navigateToScreen('receipt');
+  const main = document.querySelector('.app-main');
+  if (main) main.scrollTop = 0;
+  setTimeout(() => {
+    window.print();
+  }, 150);
 }
 
 // --- 16. INVENTORY (SCREEN 9) ---
@@ -3119,6 +3180,7 @@ function renderSalesHistory() {
       <td><span class="badge badge-info">${s.payment}</span></td>
       <td>
         <button class="btn btn-primary btn-sm" onclick="renderReceipt(posState.salesHistory.find(x=>x.id===${s.id})); navigateToScreen('receipt')">👁️ Receipt</button>
+        <button class="btn btn-outline btn-sm" onclick="printReceiptForSale(${s.id})" title="Direct 1-Click Print">🖨️ Print</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -3807,8 +3869,12 @@ function exportReportToCsv() {
 }
 
 function printReportPdf() {
-  window.print();
-  showToast('Print dialog opened. Choose "Save as PDF" to save report locally.', 'info');
+  const main = document.querySelector('.app-main');
+  if (main) main.scrollTop = 0;
+  setTimeout(() => {
+    window.print();
+  }, 100);
+  showToast('Print dialog opened. Choose "Save as PDF" in Destination to save report locally.', 'info');
 }
 
 function exportReportToJson() {
