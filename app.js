@@ -268,39 +268,55 @@ const posState = {
 };
 window.posState = posState;
 
-// Storage Helpers: Save entities to localStorage
+// Safe Storage Helpers: Save entities to localStorage with error handling & console logging
+function safeSetStorage(key, data, label) {
+  try {
+    const serialized = JSON.stringify(data);
+    localStorage.setItem(key, serialized);
+    console.log(`%c[Storage OK] ${label} (${Array.isArray(data) ? data.length + ' records' : 'saved'}) persisted to "${key}"`, 'color:#10b981; font-weight:bold;');
+    if (typeof renderStorageDiagnostics === 'function') {
+      renderStorageDiagnostics();
+    }
+    return true;
+  } catch (err) {
+    console.error(`[Storage Error] Failed to persist ${label} to "${key}":`, err);
+    showToast(`Storage Alert: Could not save ${label}. Browser memory may be full or restricted.`, 'danger');
+    return false;
+  }
+}
+
 function saveProductsToStorage() {
-  localStorage.setItem('pos_products_list', JSON.stringify(posState.products));
+  safeSetStorage('pos_products_list', posState.products, 'Products');
 }
 function saveBranchesToStorage() {
-  localStorage.setItem('pos_branches_list', JSON.stringify(posState.branches));
+  safeSetStorage('pos_branches_list', posState.branches, 'Branches');
 }
 function saveCategoriesToStorage() {
-  localStorage.setItem('pos_categories_list', JSON.stringify(posState.categories));
+  safeSetStorage('pos_categories_list', posState.categories, 'Categories');
 }
 function saveCustomersToStorage() {
-  localStorage.setItem('pos_customers_list', JSON.stringify(posState.customers));
+  safeSetStorage('pos_customers_list', posState.customers, 'Customers');
 }
 function saveSuppliersToStorage() {
-  localStorage.setItem('pos_suppliers_list', JSON.stringify(posState.suppliers));
+  safeSetStorage('pos_suppliers_list', posState.suppliers, 'Suppliers');
 }
 function saveSettingsToStorage() {
-  localStorage.setItem('pos_settings', JSON.stringify(posState.settings));
+  safeSetStorage('pos_settings', posState.settings, 'Settings');
 }
 function saveSalesHistoryToStorage() {
-  localStorage.setItem('pos_sales_history', JSON.stringify(posState.salesHistory));
+  safeSetStorage('pos_sales_history', posState.salesHistory, 'Sales History');
 }
 function saveTransferHistoryToStorage() {
-  localStorage.setItem('pos_transfer_history', JSON.stringify(posState.transferHistory));
+  safeSetStorage('pos_transfer_history', posState.transferHistory, 'Transfer History');
 }
 function saveUsersToStorage() {
-  localStorage.setItem('pos_users_list', JSON.stringify(posState.users));
+  safeSetStorage('pos_users_list', posState.users, 'Users');
 }
 function savePurchasesToStorage() {
-  localStorage.setItem('pos_purchases_list', JSON.stringify(posState.purchases));
+  safeSetStorage('pos_purchases_list', posState.purchases, 'Purchases');
 }
 function saveReturnsToStorage() {
-  localStorage.setItem('pos_returns_list', JSON.stringify(posState.returns));
+  safeSetStorage('pos_returns_list', posState.returns, 'Returns');
 }
 
 
@@ -2023,7 +2039,7 @@ function changeUserRoleInline(userId, newRole) {
     document.getElementById('current-role').textContent = newRole;
   }
 
-  localStorage.setItem('pos_users_list', JSON.stringify(posState.users));
+  saveUsersToStorage();
   showToast(`Role for "${u.name}" changed from ${oldRole} to ${newRole} successfully!`, 'success');
 
   renderUsers();
@@ -2128,7 +2144,7 @@ function saveUser(e) {
     showToast(`New user "${username}" created! Password: "${password}". User can now sign in.`, 'success');
   }
 
-  localStorage.setItem('pos_users_list', JSON.stringify(posState.users));
+  saveUsersToStorage();
   closeModal('modal-add-user');
   renderUsers();
   updateNavigationPermissionsUI();
@@ -2150,7 +2166,7 @@ function deleteUser(userId) {
 
   if (confirm(`Are you sure you want to delete user "${u.name}" (${u.username})?`)) {
     posState.users = posState.users.filter(x => x.id !== userId);
-    localStorage.setItem('pos_users_list', JSON.stringify(posState.users));
+    saveUsersToStorage();
     showToast(`User "${u.username}" deleted.`, 'info');
     renderUsers();
     updateNavigationPermissionsUI();
@@ -2232,7 +2248,7 @@ function resetRoleDefaults() {
   const targetRole = posState.selectedPermRole || 'ADMIN';
   const defaults = DEFAULT_ROLE_PERMISSIONS[targetRole] || [];
   posState.rolePermissions[targetRole] = [...defaults];
-  localStorage.setItem('pos_role_permissions', JSON.stringify(posState.rolePermissions));
+  safeSetStorage('pos_role_permissions', posState.rolePermissions, 'Role Permissions');
   renderPermissionMatrixUI();
   updateNavigationPermissionsUI();
   showToast(`Reset permissions for role ${targetRole} to factory defaults!`, 'info');
@@ -2259,7 +2275,7 @@ function savePermissions() {
   }
 
   posState.rolePermissions[targetRole] = checkedModules;
-  localStorage.setItem('pos_role_permissions', JSON.stringify(posState.rolePermissions));
+  safeSetStorage('pos_role_permissions', posState.rolePermissions, 'Role Permissions');
 
   showToast(`✅ Permissions for role "${targetRole}" successfully updated! (${checkedModules.length} modules granted)`, 'success');
   updateNavigationPermissionsUI();
@@ -2275,6 +2291,7 @@ function loadSettings() {
   document.getElementById('set-prefix').value = posState.settings.invoicePrefix;
   document.getElementById('set-currency').value = posState.settings.currency;
   document.getElementById('set-negative-stock').checked = posState.settings.allowNegativeStock;
+  renderStorageDiagnostics();
 }
 
 function saveSettings(e) {
@@ -2291,6 +2308,132 @@ function saveSettings(e) {
   saveSettingsToStorage();
   document.querySelectorAll('.app-store-name').forEach(el => el.textContent = posState.settings.storeName);
   showToast('Company settings updated successfully!', 'success');
+  renderStorageDiagnostics();
+}
+
+function renderStorageDiagnostics() {
+  const originEl = document.getElementById('diag-origin');
+  if (originEl) originEl.textContent = window.location.origin || window.location.href;
+
+  const countP = document.getElementById('diag-count-products');
+  if (countP) countP.textContent = posState.products.length.toString();
+  const countC = document.getElementById('diag-count-categories');
+  if (countC) countC.textContent = posState.categories.length.toString();
+  const countB = document.getElementById('diag-count-branches');
+  if (countB) countB.textContent = posState.branches.length.toString();
+  const countCust = document.getElementById('diag-count-customers');
+  if (countCust) countCust.textContent = posState.customers.length.toString();
+  const countS = document.getElementById('diag-count-suppliers');
+  if (countS) countS.textContent = posState.suppliers.length.toString();
+  const countSales = document.getElementById('diag-count-sales');
+  if (countSales) countSales.textContent = posState.salesHistory.length.toString();
+}
+
+function exportFullDatabaseBackup() {
+  const fullBackup = {
+    appName: 'MyPOS Commercial Retail',
+    backupVersion: '2.0',
+    exportTimestamp: new Date().toISOString(),
+    storeSettings: posState.settings,
+    products: posState.products,
+    categories: posState.categories,
+    branches: posState.branches,
+    customers: posState.customers,
+    suppliers: posState.suppliers,
+    salesHistory: posState.salesHistory,
+    purchases: posState.purchases,
+    returns: posState.returns,
+    transferHistory: posState.transferHistory,
+    users: posState.users,
+    rolePermissions: posState.rolePermissions
+  };
+
+  const jsonStr = JSON.stringify(fullBackup, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `MyPOS_FullDatabaseBackup_${dStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Full Database Backup successfully downloaded to your computer!', 'success');
+}
+
+function importFullDatabaseBackup(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      if (!data.products && !data.salesHistory) {
+        showToast('Invalid backup file format.', 'danger');
+        return;
+      }
+      if (confirm(`Restore database from backup created on ${data.exportTimestamp || 'unknown date'}? This will update your local data.`)) {
+        if (Array.isArray(data.products)) posState.products = data.products;
+        if (Array.isArray(data.categories)) posState.categories = data.categories;
+        if (Array.isArray(data.branches)) posState.branches = data.branches;
+        if (Array.isArray(data.customers)) posState.customers = data.customers;
+        if (Array.isArray(data.suppliers)) posState.suppliers = data.suppliers;
+        if (Array.isArray(data.salesHistory)) posState.salesHistory = data.salesHistory;
+        if (Array.isArray(data.purchases)) posState.purchases = data.purchases;
+        if (Array.isArray(data.returns)) posState.returns = data.returns;
+        if (Array.isArray(data.transferHistory)) posState.transferHistory = data.transferHistory;
+        if (Array.isArray(data.users)) posState.users = data.users;
+        if (data.storeSettings) posState.settings = data.storeSettings;
+        if (data.rolePermissions) posState.rolePermissions = data.rolePermissions;
+
+        saveProductsToStorage();
+        saveCategoriesToStorage();
+        saveBranchesToStorage();
+        saveCustomersToStorage();
+        saveSuppliersToStorage();
+        saveSalesHistoryToStorage();
+        savePurchasesToStorage();
+        saveReturnsToStorage();
+        saveTransferHistoryToStorage();
+        saveUsersToStorage();
+        saveSettingsToStorage();
+
+        renderStorageDiagnostics();
+        renderProductMaster();
+        renderPosProducts();
+        renderInventory();
+        renderCategories();
+        renderBranches();
+        renderCustomers();
+        renderSuppliers();
+        renderSalesHistory();
+        renderDashboard();
+        showToast('✅ Database restored successfully from backup file!', 'success');
+      }
+    } catch (err) {
+      console.error('Backup import error:', err);
+      showToast('Error reading backup JSON file. Check console for details.', 'danger');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function inspectStorageInConsole() {
+  console.group('=== 🗄️ MyPOS Full Storage Inspection ===');
+  console.log('Storage Origin:', window.location.origin);
+  console.log('Total Products:', posState.products.length);
+  console.table(posState.products);
+  console.log('Total Branches:', posState.branches.length);
+  console.table(posState.branches);
+  console.log('Total Customers:', posState.customers.length);
+  console.table(posState.customers);
+  console.log('Total Sales History:', posState.salesHistory.length);
+  console.table(posState.salesHistory);
+  console.groupEnd();
+  showToast('Storage inspected in Developer Console! Press F12 -> Console to view tables.', 'info');
 }
 
 // --- 13. POS BILLING & CART FUNCTIONS (SCREEN 3, 4, 5, 6) ---
@@ -4015,7 +4158,7 @@ function executeTransfer() {
   };
 
   posState.transferHistory.unshift(transferRecord);
-  localStorage.setItem('pos_transfer_history', JSON.stringify(posState.transferHistory));
+  saveTransferHistoryToStorage();
 
   posState.activeTransferItems = [];
   renderTransferManifest();
