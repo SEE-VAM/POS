@@ -207,27 +207,32 @@
            SCREEN 2: DASHBOARD
            ======================================================================= -->
       <section id="screen-dashboard" class="screen-view active">
-        <!-- 4 Top KPI Cards -->
-        <div class="kpi-grid">
+        <!-- 5 Top KPI Cards (Live Real-Time Metrics) -->
+        <div class="kpi-grid dashboard-kpi-grid">
           <div class="kpi-card">
             <div class="kpi-header"><span>Today Sales</span> <span>🛒</span></div>
-            <div class="kpi-value">₹ 85,450</div>
-            <div class="kpi-trend up">▲ +12%</div>
+            <div class="kpi-value" id="dash-today-sales">₹ 0.00</div>
+            <div class="kpi-trend up" id="dash-today-sales-sub">0 orders today</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-header"><span>Today Profit</span> <span>📈</span></div>
-            <div class="kpi-value">₹ 17,320</div>
-            <div class="kpi-trend up">▲ +8%</div>
+            <div class="kpi-value" id="dash-today-profit" style="color:var(--success);">₹ 0.00</div>
+            <div class="kpi-trend up" id="dash-today-profit-margin">Margin: 0.0%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Total Sales</span> <span>💰</span></div>
+            <div class="kpi-value" id="dash-total-sales">₹ 0.00</div>
+            <div class="kpi-trend up" id="dash-total-sales-sub">All-time revenue</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-header"><span>Total Bills</span> <span>📄</span></div>
-            <div class="kpi-value">124</div>
-            <div class="kpi-trend up">▲ +15%</div>
+            <div class="kpi-value" id="dash-total-bills">0</div>
+            <div class="kpi-trend up" id="dash-total-bills-sub">Invoices processed</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-header"><span>Low Stock Items</span> <span>⚠️</span></div>
-            <div class="kpi-value" style="color:var(--danger)">18</div>
-            <div class="kpi-trend down">▼ -3%</div>
+            <div class="kpi-value" id="dash-low-stock" style="color:var(--danger)">0</div>
+            <div class="kpi-trend down" id="dash-low-stock-sub">Needs reorder</div>
           </div>
         </div>
 
@@ -235,32 +240,30 @@
           <!-- Sales Overview Chart -->
           <div class="panel">
             <div class="panel-header">
-              <span class="panel-title">Sales Overview</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="panel-title">Sales Overview</span>
+                <span id="dash-chart-period-badge" class="badge badge-info" style="font-size:0.7rem;">7 Days</span>
+              </div>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-outline btn-sm">Today</button>
-                <button class="btn btn-primary btn-sm">7 Days</button>
-                <button class="btn btn-outline btn-sm">30 Days</button>
+                <button id="dash-btn-today" class="btn btn-outline btn-sm" onclick="switchDashboardPeriod('today')">Today</button>
+                <button id="dash-btn-7days" class="btn btn-primary btn-sm" onclick="switchDashboardPeriod('7days')">7 Days</button>
+                <button id="dash-btn-30days" class="btn btn-outline btn-sm" onclick="switchDashboardPeriod('30days')">30 Days</button>
               </div>
             </div>
-            <!-- SVG Area Chart -->
-            <div style="height:210px; width:100%;">
-              <svg width="100%" height="100%" viewBox="0 0 500 180" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
-                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
-                  </linearGradient>
-                </defs>
-                <path d="M0,150 Q70,90 140,110 T280,60 T420,80 T500,30 L500,180 L0,180 Z" fill="url(#chartGrad)" />
-                <path d="M0,150 Q70,90 140,110 T280,60 T420,80 T500,30" fill="none" stroke="#2563eb" stroke-width="3" />
-                <circle cx="140" cy="110" r="4" fill="#2563eb"/>
-                <circle cx="280" cy="60" r="4" fill="#2563eb"/>
-                <circle cx="420" cy="80" r="4" fill="#2563eb"/>
-                <circle cx="500" cy="30" r="4" fill="#2563eb"/>
+            <!-- Dynamic SVG Area Chart -->
+            <div style="height:210px; width:100%; position:relative;">
+              <svg id="dash-chart-svg" width="100%" height="100%" viewBox="0 0 500 180" preserveAspectRatio="none">
+                <!-- Injected by renderDashboardChart() -->
               </svg>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
-              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            <div id="dash-chart-labels" style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:4px; padding:0 10px;">
+              <!-- Dynamic day / slot labels -->
+            </div>
+            <!-- Chart Summary Footer -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border-color); font-size:0.78rem; color:var(--text-muted);">
+              <span>Period Revenue: <strong id="dash-period-sales" style="color:var(--primary); font-weight:700;">₹ 0.00</strong></span>
+              <span>Total Invoices: <strong id="dash-period-bills" style="font-weight:700; color:var(--secondary);">0</strong></span>
+              <span>Avg Ticket: <strong id="dash-period-avg" style="font-weight:700; color:var(--text-color);">₹ 0.00</strong></span>
             </div>
           </div>
 
@@ -268,17 +271,22 @@
           <div class="panel">
             <div class="panel-header">
               <span class="panel-title">Top Selling Products</span>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Live Sales</span>
             </div>
-            <table class="data-table">
-              <thead><tr><th>Product</th><th style="text-align:right">Qty</th></tr></thead>
-              <tbody>
-                <tr><td>🥛 Milk</td><td style="text-align:right; font-weight:700">45</td></tr>
-                <tr><td>🍞 Bread</td><td style="text-align:right; font-weight:700">32</td></tr>
-                <tr><td>🍪 Biscuits</td><td style="text-align:right; font-weight:700">28</td></tr>
-                <tr><td>🥤 Soft Drink</td><td style="text-align:right; font-weight:700">26</td></tr>
-                <tr><td>🍜 Maggi</td><td style="text-align:right; font-weight:700">22</td></tr>
-              </tbody>
-            </table>
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th style="text-align:right">Qty</th>
+                    <th style="text-align:right">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-top-products-body">
+                  <!-- Dynamically populated from salesHistory -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

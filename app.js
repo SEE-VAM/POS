@@ -172,17 +172,41 @@ const posState = {
   // Past Sales History (Persisted in localStorage)
   salesHistory: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_sales_history') || 'null');
+    const now = new Date();
+    const fmt = (d) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+    const d0 = fmt(now);
+    const d1 = fmt(new Date(now.getTime() - 1 * 86400000));
+    const d2 = fmt(new Date(now.getTime() - 2 * 86400000));
+    const d3 = fmt(new Date(now.getTime() - 3 * 86400000));
+
     if (!saved || !Array.isArray(saved) || saved.length === 0) {
       saved = [
-        { id: 125, invoiceNo: 'INV-0000125', date: '08-09-2025', customer: 'Walk-in Customer', customerMobile: '9999999999', branch: 'Main Branch', cashier: 'System Administrator', amount: 167.56, payment: 'Cash', paymentMode: 'CASH', items: [
+        { id: 125, invoiceNo: 'INV-0000125', date: d0, customer: 'Walk-in Customer', customerMobile: '9999999999', branch: 'Main Branch', cashier: 'System Administrator', amount: 167.56, payment: 'Cash', paymentMode: 'CASH', items: [
           { productId: 1, name: 'Milk', qty: 1, price: 52.00, taxRate: 0 }, { productId: 2, name: 'Bread', qty: 2, price: 35.00, taxRate: 0 }, { productId: 3, name: 'Biscuits', qty: 1, price: 20.00, taxRate: 18 }
         ]},
-        { id: 124, invoiceNo: 'INV-0000124', date: '08-09-2025', customer: 'Rohit Sharma', customerMobile: '9876543210', branch: 'Main Branch', cashier: 'Cashier One', amount: 310.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 2, price: 120.00, taxRate: 5 }, { productId: 8, name: 'Basmati Rice', qty: 1, price: 60.00, taxRate: 0 }] },
-        { id: 123, invoiceNo: 'INV-0000123', date: '07-09-2025', customer: 'Priya Singh', customerMobile: '9811122334', branch: 'Branch 2 - Noida Sector 62', cashier: 'Cashier Two', amount: 320.00, payment: 'Credit', paymentMode: 'CREDIT', items: [{ productId: 3, name: 'Biscuits', qty: 10, price: 20.00, taxRate: 18 }, { productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] },
-        { id: 122, invoiceNo: 'INV-0000122', date: '07-09-2025', customer: 'Amit Kumar', customerMobile: '9123456789', branch: 'Main Branch', cashier: 'System Administrator', amount: 540.00, payment: 'Card', paymentMode: 'CARD', items: [{ productId: 8, name: 'Basmati Rice', qty: 9, price: 60.00, taxRate: 0 }] },
-        { id: 121, invoiceNo: 'INV-0000121', date: '06-09-2025', customer: 'Sunita Devi', customerMobile: '9887766554', branch: 'Branch 3 - Gurgaon Express', cashier: 'Cashier One', amount: 120.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] }
+        { id: 124, invoiceNo: 'INV-0000124', date: d0, customer: 'Rohit Sharma', customerMobile: '9876543210', branch: 'Main Branch', cashier: 'Cashier One', amount: 310.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 2, price: 120.00, taxRate: 5 }, { productId: 8, name: 'Basmati Rice', qty: 1, price: 60.00, taxRate: 0 }] },
+        { id: 123, invoiceNo: 'INV-0000123', date: d1, customer: 'Priya Singh', customerMobile: '9811122334', branch: 'Branch 2 - Noida Sector 62', cashier: 'Cashier Two', amount: 320.00, payment: 'Credit', paymentMode: 'CREDIT', items: [{ productId: 3, name: 'Biscuits', qty: 10, price: 20.00, taxRate: 18 }, { productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] },
+        { id: 122, invoiceNo: 'INV-0000122', date: d2, customer: 'Amit Kumar', customerMobile: '9123456789', branch: 'Main Branch', cashier: 'System Administrator', amount: 540.00, payment: 'Card', paymentMode: 'CARD', items: [{ productId: 8, name: 'Basmati Rice', qty: 9, price: 60.00, taxRate: 0 }] },
+        { id: 121, invoiceNo: 'INV-0000121', date: d3, customer: 'Sunita Devi', customerMobile: '9887766554', branch: 'Branch 3 - Gurgaon Express', cashier: 'Cashier One', amount: 120.00, payment: 'UPI', paymentMode: 'UPI', items: [{ productId: 7, name: 'Cooking Oil', qty: 1, price: 120.00, taxRate: 5 }] }
       ];
       localStorage.setItem('pos_sales_history', JSON.stringify(saved));
+    } else {
+      let updated = false;
+      saved.forEach(s => {
+        if (s.id === 125 && s.date && s.date.includes('2025')) { s.date = d0; updated = true; }
+        if (s.id === 124 && s.date && s.date.includes('2025')) { s.date = d0; updated = true; }
+        if (s.id === 123 && s.date && s.date.includes('2025')) { s.date = d1; updated = true; }
+        if (s.id === 122 && s.date && s.date.includes('2025')) { s.date = d2; updated = true; }
+        if (s.id === 121 && s.date && s.date.includes('2025')) { s.date = d3; updated = true; }
+      });
+      if (updated) {
+        localStorage.setItem('pos_sales_history', JSON.stringify(saved));
+      }
     }
     return saved;
   })(),
@@ -439,6 +463,7 @@ function navigateToScreen(screenId) {
   }
 
   // Refresh dynamic screen content
+  if (screenId === 'dashboard') renderDashboard();
   if (screenId === 'pos') { renderPosProducts(); renderCart(); initPosCustomerBar(); }
   if (screenId === 'inventory') renderInventory();
   if (screenId === 'products') renderProductMaster();
@@ -685,6 +710,346 @@ function updateNavigationPermissionsUI() {
   }
 }
 
+// --- DASHBOARD (SCREEN 2) - REAL-TIME KPIS, INTERACTIVE SVG CHART & TOP PRODUCTS ---
+let currentDashboardPeriod = '7days';
+
+function switchDashboardPeriod(period) {
+  currentDashboardPeriod = period;
+  ['today', '7days', '30days'].forEach(p => {
+    const btn = document.getElementById(`dash-btn-${p}`);
+    if (btn) {
+      if (p === period) {
+        btn.className = 'btn btn-primary btn-sm';
+      } else {
+        btn.className = 'btn btn-outline btn-sm';
+      }
+    }
+  });
+  const badge = document.getElementById('dash-chart-period-badge');
+  if (badge) {
+    badge.textContent = period === 'today' ? 'Today' : period === '7days' ? '7 Days' : '30 Days';
+  }
+  renderDashboardChart(period);
+}
+
+function parseSaleDateObj(dateStr) {
+  if (!dateStr) return new Date();
+  if (dateStr instanceof Date) return dateStr;
+  if (typeof dateStr === 'string') {
+    const sep = dateStr.includes('/') ? '/' : dateStr.includes('-') ? '-' : null;
+    if (sep) {
+      const parts = dateStr.split(sep);
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else if (parts[2] && parts[2].length === 4) {
+        // DD-MM-YYYY or DD/MM/YYYY
+        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      }
+    }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+function isSameCalendarDay(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
+
+function renderDashboard() {
+  const dashScreen = document.getElementById('screen-dashboard');
+  if (!dashScreen) return;
+
+  const now = new Date();
+
+  // 1. Filter today's sales
+  const todaySalesList = posState.salesHistory.filter(s => {
+    const sDate = parseSaleDateObj(s.date);
+    return isSameCalendarDay(sDate, now);
+  });
+
+  const todaySalesTotal = todaySalesList.reduce((acc, s) => acc + (s.amount || 0), 0);
+  const todayBillsCount = todaySalesList.length;
+
+  // Calculate Today Profit: (selling_price - cost_price) * qty
+  let todayProfitTotal = 0;
+  todaySalesList.forEach(sale => {
+    if (Array.isArray(sale.items)) {
+      sale.items.forEach(item => {
+        const prod = posState.products.find(p => p.id === item.productId || (p.name && item.name && p.name.toLowerCase() === item.name.toLowerCase()));
+        const cost = prod ? (prod.cost || 0) : ((item.price || 0) * 0.7);
+        const profit = ((item.price || 0) - cost) * (item.qty || 1);
+        todayProfitTotal += Math.max(0, profit);
+      });
+    }
+  });
+
+  const todayMargin = todaySalesTotal > 0 ? ((todayProfitTotal / todaySalesTotal) * 100).toFixed(1) : '0.0';
+
+  // 2. Total Lifetime Sales & Bills
+  const totalLifetimeSales = posState.salesHistory.reduce((acc, s) => acc + (s.amount || 0), 0);
+  const totalBillsCount = posState.salesHistory.length;
+
+  // 3. Low Stock Items count
+  const lowStockProducts = posState.products.filter(p => (p.stock || 0) <= (p.minStock || 0));
+  const lowStockCount = lowStockProducts.length;
+
+  // Update DOM elements
+  const elTodaySales = document.getElementById('dash-today-sales');
+  if (elTodaySales) elTodaySales.textContent = `₹ ${todaySalesTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elTodaySalesSub = document.getElementById('dash-today-sales-sub');
+  if (elTodaySalesSub) elTodaySalesSub.textContent = `${todayBillsCount} order${todayBillsCount === 1 ? '' : 's'} today`;
+
+  const elTodayProfit = document.getElementById('dash-today-profit');
+  if (elTodayProfit) elTodayProfit.textContent = `₹ ${todayProfitTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elTodayProfitMargin = document.getElementById('dash-today-profit-margin');
+  if (elTodayProfitMargin) elTodayProfitMargin.textContent = `Margin: ${todayMargin}%`;
+
+  const elTotalSales = document.getElementById('dash-total-sales');
+  if (elTotalSales) elTotalSales.textContent = `₹ ${totalLifetimeSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elTotalSalesSub = document.getElementById('dash-total-sales-sub');
+  if (elTotalSalesSub) elTotalSalesSub.textContent = `All-time revenue`;
+
+  const elTotalBills = document.getElementById('dash-total-bills');
+  if (elTotalBills) elTotalBills.textContent = totalBillsCount.toString();
+
+  const elTotalBillsSub = document.getElementById('dash-total-bills-sub');
+  if (elTotalBillsSub) elTotalBillsSub.textContent = `Invoices processed`;
+
+  const elLowStock = document.getElementById('dash-low-stock');
+  if (elLowStock) {
+    elLowStock.textContent = lowStockCount.toString();
+    elLowStock.style.color = lowStockCount > 0 ? 'var(--danger)' : 'var(--success)';
+  }
+
+  const elLowStockSub = document.getElementById('dash-low-stock-sub');
+  if (elLowStockSub) {
+    elLowStockSub.textContent = lowStockCount > 0 ? `${lowStockCount} items need reorder` : `All stock levels healthy`;
+  }
+
+  // 4. Render Top Selling Products
+  renderTopSellingProducts();
+
+  // 5. Render Interactive Sales Chart
+  renderDashboardChart(currentDashboardPeriod);
+}
+
+function renderTopSellingProducts() {
+  const tbody = document.getElementById('dash-top-products-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const salesMap = {};
+  posState.salesHistory.forEach(sale => {
+    if (Array.isArray(sale.items)) {
+      sale.items.forEach(item => {
+        const key = item.productId || item.name;
+        if (!salesMap[key]) {
+          const prod = posState.products.find(p => p.id === item.productId || (p.name && item.name && p.name.toLowerCase() === item.name.toLowerCase()));
+          salesMap[key] = {
+            name: item.name,
+            icon: prod ? prod.icon : '📦',
+            qty: 0,
+            revenue: 0
+          };
+        }
+        salesMap[key].qty += (item.qty || 1);
+        salesMap[key].revenue += ((item.qty || 1) * (item.price || 0));
+      });
+    }
+  });
+
+  const sorted = Object.values(salesMap).sort((a, b) => b.qty - a.qty);
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:18px; color:var(--text-muted);">No sales recorded yet</td></tr>`;
+    return;
+  }
+
+  sorted.slice(0, 5).forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span style="margin-right:6px; font-size:1.15rem;">${item.icon}</span><strong>${item.name}</strong></td>
+      <td style="text-align:right; font-weight:700; color:var(--secondary);">${item.qty}</td>
+      <td style="text-align:right; font-weight:600; color:var(--primary);">₹ ${item.revenue.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDashboardChart(period = '7days') {
+  const svg = document.getElementById('dash-chart-svg');
+  const labelsContainer = document.getElementById('dash-chart-labels');
+  if (!svg || !labelsContainer) return;
+
+  const now = new Date();
+  let pointsData = [];
+
+  if (period === 'today') {
+    const slots = [
+      { label: '09:00', startH: 0, endH: 10 },
+      { label: '11:00', startH: 10, endH: 12 },
+      { label: '13:00', startH: 12, endH: 14 },
+      { label: '15:00', startH: 14, endH: 16 },
+      { label: '17:00', startH: 16, endH: 18 },
+      { label: '19:00', startH: 18, endH: 20 },
+      { label: '21:00', startH: 20, endH: 24 }
+    ];
+
+    const todaySales = posState.salesHistory.filter(s => isSameCalendarDay(parseSaleDateObj(s.date), now));
+
+    pointsData = slots.map((slot, index) => {
+      let total = 0;
+      let count = 0;
+      todaySales.forEach(s => {
+        const sDate = parseSaleDateObj(s.date);
+        const saleHour = sDate.getHours ? sDate.getHours() : 12;
+        if (saleHour >= slot.startH && saleHour < slot.endH) {
+          total += s.amount;
+          count++;
+        } else if (todaySales.length <= slots.length && Math.floor((s.id || 0) % slots.length) === index) {
+          total += s.amount;
+          count++;
+        }
+      });
+      return { label: slot.label, shortLabel: slot.label, value: total, count: count };
+    });
+
+  } else if (period === '7days') {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dayLabel = `${dayNames[d.getDay()]} ${d.getDate()}`;
+      const daySales = posState.salesHistory.filter(s => isSameCalendarDay(parseSaleDateObj(s.date), d));
+      const dayTotal = daySales.reduce((acc, s) => acc + (s.amount || 0), 0);
+      pointsData.push({
+        label: dayLabel,
+        shortLabel: dayNames[d.getDay()],
+        value: dayTotal,
+        count: daySales.length
+      });
+    }
+
+  } else if (period === '30days') {
+    for (let i = 5; i >= 0; i--) {
+      const endDaysAgo = i * 5;
+      const startDaysAgo = (i + 1) * 5 - 1;
+      const startDate = new Date(now.getTime() - startDaysAgo * 86400000);
+      const endDate = new Date(now.getTime() - endDaysAgo * 86400000);
+
+      const label = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
+      const shortLabel = i === 0 ? 'Now' : `-${endDaysAgo}d`;
+
+      const bucketSales = posState.salesHistory.filter(s => {
+        const sDate = parseSaleDateObj(s.date);
+        const diffTime = now.getTime() - sDate.getTime();
+        const diffDays = Math.floor(diffTime / 86400000);
+        return diffDays >= endDaysAgo && diffDays <= startDaysAgo;
+      });
+      const bucketTotal = bucketSales.reduce((acc, s) => acc + (s.amount || 0), 0);
+      pointsData.push({
+        label: label,
+        shortLabel: shortLabel,
+        value: bucketTotal,
+        count: bucketSales.length
+      });
+    }
+  }
+
+  // Update Period summary metrics
+  const periodTotalRevenue = pointsData.reduce((acc, p) => acc + p.value, 0);
+  const periodTotalBills = pointsData.reduce((acc, p) => acc + p.count, 0);
+  const periodAvg = periodTotalBills > 0 ? (periodTotalRevenue / periodTotalBills) : 0;
+
+  const elPeriodSales = document.getElementById('dash-period-sales');
+  if (elPeriodSales) elPeriodSales.textContent = `₹ ${periodTotalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const elPeriodBills = document.getElementById('dash-period-bills');
+  if (elPeriodBills) elPeriodBills.textContent = periodTotalBills.toString();
+
+  const elPeriodAvg = document.getElementById('dash-period-avg');
+  if (elPeriodAvg) elPeriodAvg.textContent = `₹ ${periodAvg.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // SVG dimensions
+  const width = 500;
+  const height = 180;
+  const padLeft = 45;
+  const padRight = 30;
+  const padTop = 25;
+  const padBottom = 30;
+  const chartW = width - padLeft - padRight;
+  const chartH = height - padTop - padBottom;
+
+  const maxVal = Math.max(...pointsData.map(p => p.value), 200) * 1.15;
+
+  // Calculate coords
+  const coords = pointsData.map((p, idx) => {
+    const x = padLeft + (idx / (pointsData.length - 1)) * chartW;
+    const y = padTop + chartH - ((p.value / maxVal) * chartH);
+    return { x, y, ...p };
+  });
+
+  // Curved Path calculation
+  let pathD = `M ${coords[0].x},${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const curr = coords[i];
+    const next = coords[i + 1];
+    const mx = (curr.x + next.x) / 2;
+    pathD += ` C ${mx},${curr.y} ${mx},${next.y} ${next.x},${next.y}`;
+  }
+
+  const baselineY = padTop + chartH;
+  const areaD = `${pathD} L ${coords[coords.length - 1].x},${baselineY} L ${coords[0].x},${baselineY} Z`;
+
+  // Gridlines
+  let gridlinesHtml = '';
+  const gridSteps = 3;
+  for (let g = 0; g <= gridSteps; g++) {
+    const gy = padTop + (g / gridSteps) * chartH;
+    const gVal = Math.round(maxVal * (1 - g / gridSteps));
+    gridlinesHtml += `
+      <line x1="${padLeft - 5}" y1="${gy}" x2="${width - padRight + 5}" y2="${gy}" stroke="#e2e8f0" stroke-dasharray="3,3" stroke-width="1" />
+      <text x="${padLeft - 8}" y="${gy + 3}" fill="#94a3b8" font-size="9" text-anchor="end">₹${gVal >= 1000 ? (gVal/1000).toFixed(1) + 'k' : gVal}</text>
+    `;
+  }
+
+  // Points and hover circles
+  let circlesHtml = '';
+  coords.forEach((c) => {
+    circlesHtml += `
+      <g class="chart-point-group" style="cursor:pointer;">
+        <circle cx="${c.x}" cy="${c.y}" r="6" fill="#ffffff" stroke="#2563eb" stroke-width="2.5" />
+        <circle cx="${c.x}" cy="${c.y}" r="3" fill="#2563eb" />
+        <text x="${c.x}" y="${c.y - 10}" fill="#1e293b" font-size="10" font-weight="700" text-anchor="middle">
+          ${c.value > 0 ? `₹${Math.round(c.value)}` : ''}
+        </text>
+        <title>${c.label}: ₹${c.value.toFixed(2)} (${c.count} orders)</title>
+      </g>
+    `;
+  });
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${gridlinesHtml}
+    <path d="${areaD}" fill="url(#chartGrad)" />
+    <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    ${circlesHtml}
+  `;
+
+  // X labels
+  labelsContainer.innerHTML = pointsData.map(p => `<span>${p.shortLabel || p.label}</span>`).join('');
+}
+
 // --- 5. PRODUCT MASTER (SCREEN 7) & ADD/EDIT PRODUCT MODAL ---
 function renderProductMaster() {
   const tbody = document.getElementById('product-master-table-body');
@@ -829,6 +1194,7 @@ function saveProduct(e) {
   if (typeof initStockTransferScreen === 'function') {
     initStockTransferScreen();
   }
+  renderDashboard();
 }
 
 function deleteProduct(productId) {
@@ -846,6 +1212,7 @@ function deleteProduct(productId) {
     if (typeof initStockTransferScreen === 'function') {
       initStockTransferScreen();
     }
+    renderDashboard();
   }
 }
 
@@ -2507,6 +2874,7 @@ function completeSale() {
   posState.salesHistory.unshift(newSale);
   saveSalesHistoryToStorage();
   posState.lastCompletedSale = newSale;
+  renderDashboard();
 
   closePaymentModal();
   posState.cart = [];
@@ -2782,12 +3150,19 @@ function resetReportFilters() {
 function parseDateStrToTimestamp(str) {
   if (!str) return 0;
   if (typeof str === 'string') {
+    if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts[2] && parts[2].length === 4) {
+        // DD/MM/YYYY
+        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+      }
+    }
     if (str.includes('-')) {
       const parts = str.split('-');
       if (parts[0].length === 4) {
         // YYYY-MM-DD
         return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])).getTime();
-      } else if (parts[2].length === 4) {
+      } else if (parts[2] && parts[2].length === 4) {
         // DD-MM-YYYY
         return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
       }
@@ -3651,6 +4026,7 @@ function executeTransfer() {
   renderPosProducts();
   renderProductMaster();
   renderProductSearch();
+  renderDashboard();
 
   showToast(`✅ Transfer ${transferId} executed! ${totalQty} units transferred from ${fromB} to ${toB}. Stock deducted!`, 'success');
 }
@@ -3658,6 +4034,7 @@ function executeTransfer() {
 // --- INITIALIZATION ON DOM READY ---
 document.addEventListener('DOMContentLoaded', () => {
   renderCart();
+  renderDashboard();
   renderPosProducts();
   renderProductSearch();
   initStockTransferScreen();

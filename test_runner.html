@@ -398,6 +398,70 @@
         }
         assert(jsonSuccess, "exportReportToJson() executes successfully and generates downloadable JSON blob");
 
+        // =====================================================================
+        // Test 31: Dynamic Dashboard & KPI Real-Time Calculations
+        // =====================================================================
+        win.navigateToScreen('dashboard');
+        assert(win.posState.activeScreen === 'dashboard', "Navigated to Screen 2 Dashboard");
+
+        const dashTodaySalesEl = doc.getElementById('dash-today-sales');
+        const dashTodayProfitEl = doc.getElementById('dash-today-profit');
+        const dashTotalSalesEl = doc.getElementById('dash-total-sales');
+        const dashTotalBillsEl = doc.getElementById('dash-total-bills');
+        const dashLowStockEl = doc.getElementById('dash-low-stock');
+
+        assert(!!dashTodaySalesEl && dashTodaySalesEl.textContent.includes('₹'), "Today Sales KPI is rendered dynamically");
+        assert(!!dashTodayProfitEl && dashTodayProfitEl.textContent.includes('₹'), "Today Profit KPI is rendered dynamically");
+        assert(!!dashTotalSalesEl && dashTotalSalesEl.textContent.includes('₹'), "Total Sales KPI is rendered dynamically");
+        assert(!!dashTotalBillsEl && parseInt(dashTotalBillsEl.textContent) === win.posState.salesHistory.length, `Total Bills KPI (${dashTotalBillsEl?.textContent}) matches actual history count (${win.posState.salesHistory.length})`);
+        
+        const expectedLowStock = win.posState.products.filter(p => p.stock <= p.minStock).length;
+        assert(parseInt(dashLowStockEl.textContent) === expectedLowStock, `Low Stock KPI (${dashLowStockEl?.textContent}) matches products <= minStock (${expectedLowStock})`);
+
+        // Check interactive period chart switching
+        win.switchDashboardPeriod('today');
+        assert(win.currentDashboardPeriod === 'today', "Dashboard period switched to 'today'");
+        const todayChartSvg = doc.getElementById('dash-chart-svg');
+        assert(todayChartSvg && todayChartSvg.querySelectorAll('circle').length > 0, "Today SVG chart rendered data points");
+
+        win.switchDashboardPeriod('30days');
+        assert(win.currentDashboardPeriod === '30days', "Dashboard period switched to '30days'");
+        assert(doc.getElementById('dash-chart-period-badge').textContent === '30 Days', "Period badge displays '30 Days'");
+
+        win.switchDashboardPeriod('7days');
+        assert(win.currentDashboardPeriod === '7days', "Dashboard period switched back to '7days'");
+
+        // Check Top Selling Products Table
+        const topProdRows = doc.querySelectorAll('#dash-top-products-body tr');
+        assert(topProdRows.length > 0, `Top selling products table rendered ${topProdRows.length} active rows`);
+
+        // Real-Time Sale Impact Verification
+        const prevTodaySales = parseFloat(dashTodaySalesEl.textContent.replace(/[^0-9.]/g, ''));
+        const prevTotalBills = parseInt(dashTotalBillsEl.textContent);
+
+        win.navigateToScreen('pos');
+        win.addToCart(1); // Milk price 52.00
+        win.openPaymentModal();
+        win.selectPaymentMode('CASH');
+        doc.getElementById('pay-amount-received').value = '100';
+        win.completeSale();
+
+        win.navigateToScreen('dashboard');
+        const newTodaySales = parseFloat(dashTodaySalesEl.textContent.replace(/[^0-9.]/g, ''));
+        const newTotalBills = parseInt(dashTotalBillsEl.textContent);
+
+        assert(newTotalBills === prevTotalBills + 1, `Total bills incremented by 1 (was ${prevTotalBills}, now ${newTotalBills})`);
+        assert(Math.abs(newTodaySales - (prevTodaySales + 52.00)) < 0.1, `Today sales increased by ₹52.00 (was ₹${prevTodaySales}, now ₹${newTodaySales})`);
+
+        // Low stock update verification
+        const prodToLow = win.posState.products[0];
+        const prevLowStock = parseInt(dashLowStockEl.textContent);
+        prodToLow.stock = prodToLow.minStock; // trigger low stock
+        win.renderDashboard();
+        const updatedLowStock = parseInt(dashLowStockEl.textContent);
+        assert(updatedLowStock === prevLowStock + 1, `Low stock KPI dynamically updated when stock dropped below threshold (now ${updatedLowStock})`);
+        prodToLow.stock = 45; // restore
+        win.renderDashboard();
 
       } catch (err) {
         results.push(`EXCEPTION: ${err.message}`);
