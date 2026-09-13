@@ -1,0 +1,122 @@
+=============================================================================
+             MYPOS RETAIL SYSTEM - ADVANCED COMMERCIAL FEATURES SPECIFICATION
+=============================================================================
+Document Date: 13-September-2026
+Purpose: Client Deployment, Excel Bulk Engine, AI Repair Agent & Backup System
+=============================================================================
+
+-----------------------------------------------------------------------------
+POINT 1: CLIENT PC SETUP & COMMERCIAL DELIVERY WORKFLOW
+-----------------------------------------------------------------------------
+1. Client Release Package (Sirf ye files client ke PC me deni hain):
+   - Start_POS.bat         : 1-Click Desktop Launcher
+   - server.py             : Zero-dependency SQLite & License local server
+   - index.html            : Main Retail POS Application
+   - app.js                : Business Logic, Auto-Sync & Calculations
+   - styles.css            : Modern UI & 80mm Thermal Print Stylesheet
+   - qrcode.min.js         : Dynamic UPI QR Code generator
+   - pos_login_bg.jpg      : Login screen background
+   - Open_POS_In_Browser.bat : Fallback direct browser launcher
+
+2. Security & Anti-Piracy Protection:
+   - "generate_license.py" file client ko KABHI NAHI DENA HAI.
+   - Client software run karega to screen par uska Unique Machine ID dikhega.
+   - Client Machine ID WhatsApp karega, aap apne laptop par key generate karke 
+     denge (Lifetime / 1-Year). Key daalne par software unlock hoga.
+
+3. Zero Dependency Rule:
+   - Client ke PC par sirf standard Python installed hona chahiye (Add to PATH).
+   - Koi pip install ya paid database ki zaroorat nahi hai.
+
+
+-----------------------------------------------------------------------------
+POINT 2: EXCEL BULK PRODUCT UPLOAD & AUTO-CATEGORY SYSTEM (SCREEN 7)
+-----------------------------------------------------------------------------
+1. Button 1: "📥 Download Sample Excel Template"
+   - 1-Click me standard .csv / Excel template download hoga.
+   - Required Columns:
+     [Item Name, Barcode/Code, Category, Unit, Cost Price, Selling Price, 
+      Opening Stock, Min Alert Stock, Tax Rate (%)]
+   - File me 2-3 sample products pehle se bhare honge.
+
+2. Button 2: "📤 Bulk Upload Products (Excel / CSV)"
+   - Client bhari hui Excel file select karke upload karega.
+   - 100 se lekar 1,000 items sirf 5 se 10 second me database me save honge.
+   - Upload hote hi Preview Modal dikhega: Total Items & Categories count.
+
+3. Smart Category Auto-Handling:
+   - Existing Category: Agar category pehle se bani hai to item direct assign hoga.
+   - New Category: Agar nayi category Excel me likhi hai to software background me
+     automatically nayi Category create kar dega (zero error).
+   - Blank Category: Agar category blank chhod di to "General" assign hoga.
+
+4. Duplicate Barcode & Code Protection:
+   - Agar barcode pehle se maujood hai to system duplicate record nahi banayega, 
+     balki uska stock aur rate update kar dega taaki garbage data na bane.
+
+
+-----------------------------------------------------------------------------
+POINT 3: PRODUCT RATE & STOCK CHANGE AUDIT TRAIL (TIMELINE HISTORY)
+-----------------------------------------------------------------------------
+1. Complete Historical Log Tracking:
+   - Har item ke liye date aur time ke sath history maintain hogi.
+   - Logs me record hoga:
+     * Timestamp (Date & Time)
+     * Product Code & Name
+     * Old Price vs New Price
+     * Old Stock vs New Stock
+     * Change Reason ("Excel Bulk Upload", "Manual Edit", "Sale", "Purchase")
+     * User / Cashier Name
+
+2. Proof & Transparency:
+   - Agar client ya cashier bole ki rate kisne badla, to exact date, time aur
+     reason ke sath full audit proof screen par dikhega.
+
+
+-----------------------------------------------------------------------------
+POINT 4: SECRET SUPER-ADMIN AI AGENT (HIDDEN FROM CLIENT)
+-----------------------------------------------------------------------------
+1. Hidden & Master Security Access:
+   - Client ke menu, sidebar ya buttons me ye bilkul nahi dikhega.
+   - Access sirf Secret Key Combination (Ctrl + Shift + D) aur Master PIN /
+     Super-Admin ID se hi khulega.
+   - Aap kisi bhi client ke computer par is Master ID se login kar sakte hain.
+
+2. AI Self-Healing & Auto-Fix Capabilities:
+   - Anomaly Scanner: Pure database ko 2 second me scan karke duplicate barcodes, 
+     negative stocks, aur pricing mistakes pakad lega.
+   - 1-Click Revert Rate: Excel upload me galti se galat hua rate 1 click me 
+     purane rate par wapas restore kar dega.
+   - Auto-Reconcile Stock & Ledgers: Math mismatch ko purchase, sales aur return 
+     receipts ke mutabik reverse-calculate karke auto-fix kar dega.
+   - Natural Language AI Prompt: Aap normal bhasha me likh sakte hain:
+     "Customer Rahul Sharma ka khata match karo" ya "Milk ka rate kal wala karo",
+     aur AI Agent turant theek kar dega.
+
+3. Pre-Repair Safety Net:
+   - AI koi bhi badlaav karne se 1 second pehle automatic restore snapshot lega.
+   - Screen par "Undo AI Action" button rahega taaki chahe to turant undo kar sakein.
+
+
+-----------------------------------------------------------------------------
+POINT 5: 1-HOUR ROLLING AUTO-BACKUP & ZERO DATA-LOSS RESTORE
+-----------------------------------------------------------------------------
+1. Automated Hourly Background Backup:
+   - Har 60 minute (1 ghante) me bina billing ko roke background me automatic 
+     snapshot backup file banegi (Folder: C:\MyPOS\backups\).
+   - Timestamped file naming: backup_YYYY-MM-DD_HH-00.json
+   - Rolling 24-hours aur 7-days backups maintain honge taaki disk space na bhare.
+
+2. 3-Way Instant Restore (Zero Data Loss):
+   - Method 1 (Time-Machine Restore): Super-Admin console me jakar 1-click me 
+     select karein "Restore to 1:00 PM" ya "Restore to 2:00 PM" -> 2 second me 
+     pura software purane time-state par wapas live ho jayega!
+   - Method 2 (Upload Backup File): Agar naya computer setup karna ho, to 
+     "Upload Backup" button se purani .json / .db file select karke 5 second me 
+     saara data restore ho jayega.
+   - Method 3 (Emergency DB Swap): Browser na khulne par latest_healthy.db file 
+     ko rename karke pos_database.db bana kar restart karein.
+
+=============================================================================
+Status: Ready for Implementation upon User Approval ("OK")
+=============================================================================

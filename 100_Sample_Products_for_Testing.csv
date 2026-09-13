@@ -1,0 +1,101 @@
+﻿"Item Name","Barcode / Code","Category","Unit","Cost Price","Selling Price","Opening Stock","Min Alert Stock","Tax Rate %"
+"Amul Taaza Toned Milk 500ml","P1001","Dairy","PACKET",24.00,27.00,60,10,0
+"Amul Gold Full Cream Milk 500ml","P1002","Dairy","PACKET",30.00,33.00,50,10,0
+"Mother Dairy Classic Dahi 400g","P1003","Dairy","CUP",32.00,38.00,30,8,0
+"Amul Salted Butter 100g","P1004","Dairy","PACKET",48.00,56.00,45,10,12
+"Mother Dairy Fresh Paneer 200g","P1005","Dairy","PACKET",75.00,90.00,25,5,0
+"Amul Processed Cheese Slices 200g","P1006","Dairy","PACKET",115.00,140.00,20,5,12
+"Amul Pure Ghee 1L Tin","P1007","Dairy","TIN",540.00,620.00,15,3,12
+"Mother Dairy Masti Spiced Chaas 200ml","P1008","Dairy","PACKET",12.00,15.00,50,12,0
+"Amul Whipping Fresh Cream 250ml","P1009","Dairy","PACKET",58.00,70.00,18,4,12
+"Mother Dairy Sweet Lassi 200ml","P1010","Dairy","BOTTLE",18.00,25.00,35,8,12
+"Britannia Premium White Bread 400g","P1011","Bakery","PCS",38.00,45.00,30,6,5
+"Harvest Gold 100% Atta Bread 450g","P1012","Bakery","PCS",44.00,55.00,25,5,5
+"English Oven Brown Bread 400g","P1013","Bakery","PCS",42.00,50.00,20,4,5
+"Britannia Toastea Premium Rusk 200g","P1014","Bakery","PACKET",30.00,38.00,40,8,5
+"Harvest Gold Bombay Pav (6 Pcs)","P1015","Bakery","PACKET",20.00,25.00,35,8,5
+"Britannia Gobbles Choco Muffin 35g","P1016","Bakery","PCS",12.00,15.00,60,12,18
+"Winkies Classic Vanilla Cake 150g","P1017","Bakery","PACKET",40.00,50.00,22,5,18
+"Pillsbury Choco Lava Cake 30g","P1018","Bakery","PCS",25.00,30.00,40,8,18
+"English Oven Burger Buns (2 Pcs)","P1019","Bakery","PACKET",22.00,28.00,25,5,5
+"Britannia Fruit Roll Cake 120g","P1020","Bakery","PACKET",35.00,45.00,30,6,18
+"Maggi 2-Minute Masala Noodles 70g","P1021","Snacks","PCS",11.50,14.00,120,20,12
+"Yippee Magic Masala Noodles 65g","P1022","Snacks","PCS",10.00,12.00,80,15,12
+"Parle-G Gold Glucose Biscuits 250g","P1023","Snacks","PACKET",24.00,30.00,90,15,5
+"Britannia Good Day Butter Cookies 200g","P1024","Snacks","PACKET",32.00,40.00,75,12,18
+"Oreo Original Vanilla Creme Biscuits 120g","P1025","Snacks","PACKET",28.00,35.00,65,10,18
+"Haldiram Aloo Bhujia 150g","P1026","Snacks","PACKET",42.00,50.00,50,10,12
+"Haldiram Moong Dal Fried Namkeen 200g","P1027","Snacks","PACKET",45.00,55.00,45,8,12
+"Lays India Magic Masala Chips 50g","P1028","Snacks","PACKET",16.00,20.00,100,20,12
+"Kurkure Masala Munch 85g","P1029","Snacks","PACKET",16.00,20.00,100,20,12
+"Doritos Cheese Nachos 60g","P1030","Snacks","PACKET",24.00,30.00,50,10,12
+"Sunfeast Dark Fantasy Choco Fills 75g","P1031","Snacks","PACKET",30.00,40.00,60,10,18
+"Haldiram Roasted Salted Kaju 100g","P1032","Snacks","PACKET",160.00,210.00,25,5,5
+"Coca Cola Original Taste 750ml","P1033","Beverages","BOTTLE",34.00,40.00,60,12,28
+"Thums Up Charged Carbonated Drink 750ml","P1034","Beverages","BOTTLE",34.00,40.00,70,15,28
+"Sprite Lime Flavored Drink 750ml","P1035","Beverages","BOTTLE",34.00,40.00,50,10,28
+"Frooti Mango Drink 200ml Tetra","P1036","Beverages","TETRA",12.00,15.00,80,15,12
+"Real Fruit Power Mixed Fruit Juice 1L","P1037","Beverages","TETRA",100.00,130.00,30,6,12
+"Red Bull Energy Drink 250ml Can","P1038","Beverages","CAN",98.00,125.00,40,8,28
+"Bisleri Mineral Water 1 Litre Bottle","P1039","Beverages","BOTTLE",14.00,20.00,150,25,18
+"Nescafe Classic Instant Coffee Jar 50g","P1040","Beverages","JAR",140.00,175.00,35,6,18
+"Tata Tea Premium Desh Ki Chai 500g","P1041","Beverages","PACKET",210.00,260.00,40,8,5
+"Bournvita Chocolate Nutrition Drink 500g","P1042","Beverages","JAR",195.00,240.00,25,5,18
+"Aashirvaad Sharbati Shudh Chakki Atta 5kg","P1043","Grains & Staples","BAG",240.00,285.00,35,6,0
+"Fortune Special Biryani Basmati Rice 1kg","P1044","Grains & Staples","PACKET",120.00,155.00,45,8,5
+"India Gate Feast Rozzana Basmati Rice 5kg","P1045","Grains & Staples","BAG",390.00,475.00,20,4,5
+"Tata Sampann Unpolished Toor Dal 1kg","P1046","Grains & Staples","PACKET",140.00,175.00,40,8,0
+"Tata Sampann Moong Dal Dhuli 1kg","P1047","Grains & Staples","PACKET",130.00,160.00,35,6,0
+"Fortune Besan Superfine 500g","P1048","Grains & Staples","PACKET",50.00,65.00,50,10,0
+"Rajdhani Sooji / Semolina 500g","P1049","Grains & Staples","PACKET",32.00,42.00,40,8,0
+"Rajdhani Maida Refined Flour 500g","P1050","Grains & Staples","PACKET",28.00,38.00,45,8,0
+"Tata Sampann High Fibre Poha 500g","P1051","Grains & Staples","PACKET",42.00,55.00,35,6,5
+"Tata Sampann Kabuli Chana Premium 500g","P1052","Grains & Staples","PACKET",75.00,95.00,30,5,0
+"Tata Sampann Rajma Red 500g","P1053","Grains & Staples","PACKET",70.00,90.00,30,5,0
+"Loose Sugar M-30 Grade 1kg","P1054","Grains & Staples","KG",40.00,46.00,150,25,5
+"Fortune Sunlite Refined Sunflower Oil 1L Pouch","P1055","Cooking Oils","PACKET",125.00,148.00,50,10,5
+"Dhara Kachi Ghani Mustard Oil 1L Bottle","P1056","Cooking Oils","BOTTLE",145.00,172.00,40,8,5
+"Saffola Gold Pro Healthy Heart Oil 1L Pouch","P1057","Cooking Oils","PACKET",160.00,195.00,35,6,5
+"Fortune Soyabean Refined Oil 1L Pouch","P1058","Cooking Oils","PACKET",110.00,132.00,60,12,5
+"Parachute 100% Pure Coconut Cooking Oil 500ml","P1059","Cooking Oils","BOTTLE",140.00,175.00,25,5,5
+"Borges Extra Virgin Olive Oil 500ml","P1060","Cooking Oils","BOTTLE",520.00,680.00,12,3,5
+"Patanjali Cow Ghee 500ml Pouch","P1061","Cooking Oils","PACKET",270.00,310.00,30,5,12
+"Dalda Vanaspati Ghee 1L Pouch","P1062","Cooking Oils","PACKET",95.00,115.00,25,5,5
+"Tata Salt Vacuum Evaporated Iodized 1kg","P1063","Spices & Staples","PACKET",22.00,28.00,100,20,5
+"MDH Deggi Mirch Powder 100g Box","P1064","Spices & Staples","PACKET",72.00,90.00,45,8,5
+"Catch Turmeric / Haldi Powder 200g","P1065","Spices & Staples","PACKET",45.00,58.00,50,10,5
+"Everest Garam Masala 100g Box","P1066","Spices & Staples","PACKET",68.00,85.00,40,8,5
+"Catch Coriander / Dhaniya Powder 200g","P1067","Spices & Staples","PACKET",48.00,62.00,45,8,5
+"MDH Asafoetida / Hing Compounded 50g","P1068","Spices & Staples","BOTTLE",80.00,105.00,30,5,5
+"Kissan Fresh Tomato Ketchup 950g Squeezo","P1069","Spices & Staples","BOTTLE",110.00,145.00,35,6,12
+"Dr Oetker Funfoods Veg Mayonnaise 250g","P1070","Spices & Staples","BOTTLE",45.00,60.00,30,6,12
+"Ching Secret Schezwan Chutney 250g Bottle","P1071","Spices & Staples","BOTTLE",65.00,85.00,30,5,12
+"Tops Mixed Fruit Jam 500g Jar","P1072","Spices & Staples","JAR",115.00,150.00,25,5,12
+"Dettol Original Germ Protection Soap 125g","P1073","Personal Care","PCS",42.00,52.00,80,15,18
+"Lifebuoy Total Germ Protection Soap 125g","P1074","Personal Care","PCS",30.00,38.00,70,12,18
+"Dove Deep Moisture Bathing Bar 100g","P1075","Personal Care","PCS",55.00,68.00,50,10,18
+"Colgate Strong Teeth Toothpaste 200g","P1076","Personal Care","PACKET",95.00,120.00,60,10,18
+"Sensodyne Rapid Relief Toothpaste 80g","P1077","Personal Care","PACKET",170.00,215.00,30,5,18
+"Head & Shoulders Anti-Dandruff Shampoo 180ml","P1078","Personal Care","BOTTLE",145.00,185.00,35,6,18
+"Parachute 100% Coconut Hair Oil 200ml Bottle","P1079","Personal Care","BOTTLE",78.00,98.00,45,8,18
+"Bajaj Almond Drops Non-Sticky Hair Oil 100ml","P1080","Personal Care","BOTTLE",60.00,75.00,40,8,18
+"Dettol Liquid Handwash Refill Pouch 675ml","P1081","Personal Care","PACKET",85.00,109.00,50,10,18
+"Nivea Soft Light Moisturising Cream 100ml","P1082","Personal Care","JAR",150.00,199.00,25,5,18
+"Surf Excel Easy Wash Detergent Powder 1kg","P1083","Household & Cleaning","PACKET",118.00,145.00,50,10,18
+"Ariel Matic Top Load Detergent Powder 1kg","P1084","Household & Cleaning","PACKET",195.00,245.00,30,6,18
+"Vim Dishwash Bar with Lemon 300g Pack","P1085","Household & Cleaning","PCS",20.00,26.00,90,15,18
+"Vim Pure Lemon Dishwash Gel Bottle 250ml","P1086","Household & Cleaning","BOTTLE",45.00,60.00,50,10,18
+"Harpic Power Plus Toilet Cleaner Original 500ml","P1087","Household & Cleaning","BOTTLE",78.00,99.00,40,8,18
+"Lizol Citrus Surface Disinfectant Floor Cleaner 500ml","P1088","Household & Cleaning","BOTTLE",88.00,110.00,40,8,18
+"Colin Advanced Glass and Surface Cleaner 500ml","P1089","Household & Cleaning","BOTTLE",82.00,104.00,35,6,18
+"Good Knight Gold Flash Mosquito Liquid Refill (45ml)","P1090","Household & Cleaning","PCS",65.00,85.00,60,12,18
+"Scotch Brite Heavy Duty Scrub Pad (3 Pcs Pack)","P1091","Household & Cleaning","PACKET",35.00,45.00,50,10,18
+"Comfort After Wash Fabric Morning Fresh Conditioner 220ml","P1092","Household & Cleaning","BOTTLE",48.00,62.00,35,6,18
+"Cadbury Dairy Milk Silk Chocolate 60g","P1093","Chocolates & Sweets","PCS",65.00,80.00,60,12,18
+"Nestle KitKat 4 Finger Crispy Wafer 38g","P1094","Chocolates & Sweets","PCS",22.00,28.00,75,15,18
+"Cadbury 5 Star Chocolate Bar 40g","P1095","Chocolates & Sweets","PCS",16.00,20.00,80,15,18
+"Snickers Peanut Caramel Chocolate Bar 45g","P1096","Chocolates & Sweets","PCS",38.00,50.00,50,10,18
+"Nestle Munch Crunchy Wafer Bar 22g","P1097","Chocolates & Sweets","PCS",8.00,10.00,100,20,18
+"Cadbury Perk Chocolate Coated Wafer 28g","P1098","Chocolates & Sweets","PCS",8.00,10.00,90,18,18
+"Center Fresh Spearmint Chewing Gum (Pack of 20)","P1099","Chocolates & Sweets","PACKET",15.00,20.00,70,15,18
+"Mentos Mint Roll Candy 37g","P1100","Chocolates & Sweets","PCS",8.00,10.00,80,15,18

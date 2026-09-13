@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyPOS Commercial & IT Support Workflow - Video Simulator & Downloader</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-cursor {
+      animation: pulse-ring 1.5s infinite ease-in-out;
+    }
+    .video-timeline-progress {
+      transition: width 0.3s linear;
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
+    }
+    .glow-btn {
+      animation: glow 2s infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col items-center justify-center p-3 sm:p-6">
+
+  <!-- Video Player Container -->
+  <div class="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+
+    <!-- Top Video Header Bar -->
+    <div class="bg-slate-950 px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="flex h-3 w-3 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+        <div>
+          <span class="font-bold text-sm tracking-wide text-slate-200">🎬 MyPOS Commercial & Remote IT Support - Live Demo Video</span>
+          <p class="text-[11px] text-slate-400">Retail Client Setup &bull; Anti-Piracy Lock &bull; AnyDesk Remote Repair</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <!-- Prominent Download Real-time Video Button -->
+        <button id="btn-download-video" onclick="recordAndDownloadVideo()" class="glow-btn bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-xl shadow-emerald-500/20 transition transform active:scale-95">
+          <span class="text-sm">📥</span>
+          <span>Download Video (.webm)</span>
+        </button>
+
+        <span id="scene-indicator" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2.5 py-1.5 rounded-xl font-semibold text-xs">Scene 1 / 5</span>
+      </div>
+    </div>
+
+    <!-- Recording Progress Banner (Hidden by default) -->
+    <div id="recording-banner" class="hidden bg-emerald-950/90 border-b border-emerald-500/50 px-5 py-3 flex items-center justify-between text-xs text-emerald-300">
+      <div class="flex items-center gap-3">
+        <span class="animate-spin text-base">⏳</span>
+        <div>
+          <span id="recording-status-text" class="font-bold text-emerald-200">Recording video frames in HD 720p...</span>
+          <p class="text-[11px] text-emerald-400/80">Rendering scenes with subtitles & animations into real video file...</p>
+        </div>
+      </div>
+      <div class="w-48 bg-slate-950 rounded-full h-3 overflow-hidden border border-emerald-500/30">
+        <div id="recording-progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-300 h-full w-0 transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <!-- Video Stage / Canvas Area -->
+    <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-slate-950 flex flex-col overflow-hidden select-none">
+
+      <!-- Scene 1: Client Desktop & 1-Click Launch -->
+      <div id="scene-1" class="scene-container absolute inset-0 flex flex-col p-4 sm:p-8 transition-opacity duration-500 opacity-100">
+        <div class="h-full rounded-xl bg-gradient-to-br from-blue-950 via-slate-900 to-slate-950 border border-slate-800 p-6 flex flex-col relative overflow-hidden">
+          <div class="absolute top-4 left-6 text-xs text-slate-400 font-mono">Dukaan Wale Ka Computer (Windows 10/11 Desktop)</div>
+          
+          <div class="grid grid-cols-3 gap-6 w-48 mt-8">
+            <div class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-white/5 cursor-pointer group transition">
+              <div class="w-12 h-12 bg-blue-600/20 border border-blue-500/40 rounded-xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-105 transition">💻</div>
+              <span class="text-[11px] text-slate-300 font-medium">This PC</span>
+            </div>
+            
+            <div id="target-icon" class="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-blue-600/20 border-2 border-blue-400 shadow-xl shadow-blue-500/20 relative cursor-pointer scale-105">
+              <span class="absolute -top-2.5 -right-2.5 bg-emerald-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">DOUBLE CLICK</span>
+              <div class="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-2xl shadow-lg">🛒</div>
+              <span class="text-[11px] text-white font-bold text-center leading-tight">Start_POS.bat</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-white/5 cursor-pointer group transition">
+              <div class="w-12 h-12 bg-red-600/20 border border-red-500/40 rounded-xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-105 transition">🔴</div>
+              <span class="text-[11px] text-slate-300 font-medium text-center">AnyDesk Remote</span>
+            </div>
+          </div>
+
+          <div id="popup-terminal" class="mt-auto bg-slate-950/90 border border-emerald-500/40 rounded-lg p-3 font-mono text-xs text-emerald-400 shadow-2xl backdrop-blur max-w-lg transition-all duration-700 transform translate-y-2 opacity-90">
+            <div class="flex items-center gap-2 pb-1 mb-1.5 border-b border-slate-800 text-[10px] text-slate-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>C:\MyPOS\server.py (Auto-Running in Background)</span>
+            </div>
+            <div>[✓] SQLite Database: pos_database.db connected (0-config)</div>
+            <div>[✓] Machine Hardware Signature verified</div>
+            <div>[✓] Serving POS on http://localhost:8080</div>
+            <div class="text-blue-400 animate-pulse">>>> Launching Chrome/Edge in Full-Screen Billing Mode...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 2: Hardware License Key Verification -->
+      <div id="scene-2" class="scene-container absolute inset-0 flex flex-col p-4 sm:p-8 transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="h-full rounded-xl bg-slate-900 border border-slate-700 p-6 flex flex-col items-center justify-center relative shadow-2xl">
+          <div class="max-w-md w-full bg-slate-950 border-2 border-indigo-500/50 rounded-2xl p-6 shadow-2xl relative">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500 flex items-center justify-center text-xl">🔐</div>
+              <div>
+                <h3 class="font-bold text-white text-base">Software Activation Required</h3>
+                <p class="text-xs text-slate-400">Hardware ID Protection (Anti-Piracy Lock)</p>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 mb-4">
+              <div class="text-[11px] text-slate-400 font-medium mb-1">Client Ka Unique Machine ID (Motherboard + CPU):</div>
+              <div class="flex items-center justify-between bg-black/60 px-3 py-2 rounded font-mono text-emerald-400 font-bold text-sm border border-slate-700">
+                <span>MYPOS-7B29-4A1C-99E3</span>
+                <span class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded cursor-pointer font-sans">Copied!</span>
+              </div>
+            </div>
+
+            <div class="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2.5 mb-4 text-xs text-emerald-300 flex items-start gap-2">
+              <span class="text-base">📲</span>
+              <div>Client ye ID aapko WhatsApp bhejega. Aap apne PC par <code>generate_license.py</code> se 1-Year/Lifetime key banakar bhejenge.</div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[11px] text-slate-300 font-semibold block">Enter Activation License Key:</label>
+              <input type="text" value="LIC-2026-X99Q-8821-OK" readonly class="w-full bg-slate-900 border border-indigo-400 px-3 py-2 rounded font-mono text-indigo-300 text-xs tracking-wider" />
+              <button class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-2 rounded-lg text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5">
+                <span>🚀 Activate & Unlock Full Retail Store</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: Live Retail Billing & Real SQLite Persistence -->
+      <div id="scene-3" class="scene-container absolute inset-0 flex flex-col p-4 sm:p-6 transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="h-full rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col relative overflow-hidden">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-black text-blue-400 text-sm">MyPOS Retail</span>
+              <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 font-bold">● SQLite DB: Active</span>
+            </div>
+            <div class="text-slate-400 font-mono text-[11px]">Invoice: INV-0000126 | ₹ 168.00</div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 flex-1">
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div class="text-[11px] font-bold text-slate-300 mb-2 flex justify-between">
+                  <span>🛒 Billing Cart (Milk x1, Bread x2)</span>
+                  <span class="text-emerald-400">Total: ₹168.00</span>
+                </div>
+                <div class="bg-white text-black p-3 rounded font-mono text-[10px] leading-tight border border-slate-300 shadow-inner">
+                  <div class="text-center font-bold text-xs">ABC RETAIL STORE</div>
+                  <div class="text-center text-[8px] text-gray-600">GSTIN: 07ABCDE1234F1Z5 &bull; Ph: 9876543210</div>
+                  <div class="border-b border-dashed border-gray-400 my-1"></div>
+                  <div class="flex justify-between"><span>Milk (1 Ltr)</span><span>₹ 52.00</span></div>
+                  <div class="flex justify-between"><span>Bread (2 Pkt)</span><span>₹ 70.00</span></div>
+                  <div class="flex justify-between"><span>Chips (1 Pkt)</span><span>₹ 25.00</span></div>
+                  <div class="border-b border-dashed border-gray-400 my-1"></div>
+                  <div class="flex justify-between font-bold text-xs"><span>NET PAYABLE:</span><span>₹ 147.00</span></div>
+                  <div class="text-center text-[8px] text-gray-500 mt-1">Thermal Slip 80mm Printed &bull; Thank You!</div>
+                </div>
+              </div>
+              <div class="mt-2 text-center text-xs text-blue-400 bg-blue-950/40 border border-blue-500/30 py-1.5 rounded">
+                🖨️ ESC/POS Thermal Print &bull; Cash Paid: ₹200.00 &bull; Change: ₹53.00
+              </div>
+            </div>
+
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col font-mono text-xs">
+              <div class="text-[11px] font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Background Hard Disk Write (SQLite3)</span>
+              </div>
+              <div class="bg-black/80 rounded p-2.5 text-slate-300 space-y-1 text-[11px] flex-1 overflow-auto border border-slate-800">
+                <div class="text-slate-500">-- Auto-executing SQL Transaction</div>
+                <div><span class="text-indigo-400">INSERT INTO</span> sales_orders (...)</div>
+                <div><span class="text-indigo-400">VALUES</span> ('INV-0000126', 147.00, 'Cash');</div>
+                <div class="text-emerald-400 font-bold mt-2">✓ Stock Deducted Automatically:</div>
+                <div class="pl-2 text-slate-400">&bull; Milk: 45 &rarr; 44</div>
+                <div class="pl-2 text-slate-400">&bull; Bread: 32 &rarr; 30</div>
+                <div class="text-amber-400 mt-2">✓ Auto-Backup Created:</div>
+                <div class="pl-2 text-slate-400">backups/backup_2026-09-11.db (Safe)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 4: Client Calls for IT Support (Simulation) -->
+      <div id="scene-4" class="scene-container absolute inset-0 flex flex-col p-4 sm:p-8 transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="h-full rounded-xl bg-slate-900 border border-slate-800 p-6 flex flex-col items-center justify-center relative">
+          <div class="max-w-xl w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-950 border border-red-500/40 rounded-2xl p-5 shadow-2xl flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-red-400 font-bold text-sm mb-3">
+                  <span class="text-xl">📞</span>
+                  <span>Shopkeeper Calling You...</span>
+                </div>
+                <div class="bg-red-950/40 border border-red-500/30 rounded-xl p-3 text-xs text-red-200 leading-relaxed">
+                  "Bhaiya! Cashier ne galti se return me 50 box entry kar di! Stock mismatch aa raha hai aur ledger me calculation galat show ho raha hai!"
+                </div>
+              </div>
+              <div class="mt-4 text-[11px] text-slate-400">
+                🔴 Traditional Way: Dukaan jaao, 3 ghante waste karo.
+              </div>
+            </div>
+
+            <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-5 shadow-2xl flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-3">
+                  <span class="text-xl">🏠</span>
+                  <span>Aapka Ghar (Software Support)</span>
+                </div>
+                <div class="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200 leading-relaxed">
+                  "Koi tension nahi bhaiya! Bas computer par AnyDesk open karke mujhe 9-digit code WhatsApp kar dijiye. Mai abhi 2 minute me ghar baithe fix kar deta hu!"
+                </div>
+              </div>
+              <div class="mt-4 bg-blue-600/20 text-blue-300 border border-blue-500/30 text-center py-1.5 rounded-lg text-xs font-bold">
+                ⚡ AnyDesk ID Received: 948 219 042
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 5: Remote AnyDesk Debugging & Live SQLite Database Fix -->
+      <div id="scene-5" class="scene-container absolute inset-0 flex flex-col p-4 sm:p-6 transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="h-full rounded-xl bg-slate-900 border border-slate-800 p-4 flex flex-col relative overflow-hidden">
+          <div class="bg-red-950/40 border border-red-500/30 px-3 py-1.5 rounded-lg flex items-center justify-between text-xs text-red-300 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              <span class="font-bold">AnyDesk Remote Connection: Active (Client PC: Desktop-Store#1)</span>
+            </div>
+            <div class="font-mono text-[11px]">Secret Support Console: Ctrl + Shift + D</div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <div class="bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col">
+              <div class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+                <span>🛠️ AnyDesk Support Action</span>
+                <span class="text-blue-400 text-[10px]">Master PIN: 7788</span>
+              </div>
+              <div class="space-y-2 text-xs flex-1 flex flex-col justify-center">
+                <button class="w-full bg-emerald-600/20 border border-emerald-500/50 text-emerald-300 py-2 px-3 rounded-lg text-left font-semibold flex items-center justify-between">
+                  <span>1. Auto-Recalculate Stock & Balances</span>
+                  <span class="text-[10px] bg-emerald-500 text-slate-950 font-bold px-1.5 py-0.5 rounded">1-CLICK</span>
+                </button>
+                <button class="w-full bg-blue-600/20 border border-blue-500/50 text-blue-300 py-2 px-3 rounded-lg text-left font-semibold flex items-center justify-between">
+                  <span>2. Download Live pos_database.db</span>
+                  <span class="text-[10px] bg-blue-500 text-slate-950 font-bold px-1.5 py-0.5 rounded">BACKUP</span>
+                </button>
+                <div class="bg-slate-900 p-2 rounded border border-slate-800 text-[11px] font-mono text-slate-300">
+                  <div class="text-slate-500 mb-1">// Execute direct SQL on client machine:</div>
+                  <div class="text-amber-300">UPDATE products SET stock = 45 WHERE code='P001';</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col font-mono text-xs">
+              <div class="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                <span>✓ Diagnostic Output</span>
+              </div>
+              <div class="bg-black/90 p-3 rounded text-slate-300 text-[11px] space-y-1.5 flex-1 border border-slate-800">
+                <div class="text-blue-400">[AnyDesk] Connected to port 8080 internal API</div>
+                <div class="text-emerald-400">[Auto-Reconcile] Calculating all invoice items vs purchases...</div>
+                <div class="text-emerald-400">[Auto-Reconcile] Corrected 1 erroneous stock ledger entry!</div>
+                <div class="text-emerald-300 font-bold">[Success] Customer ledger balanced & stock synchronized!</div>
+                <div class="border-t border-slate-800 my-2 pt-2 text-white font-sans text-xs">
+                  🎉 <strong class="text-emerald-400">Client Response:</strong> "Arre wah bhaiya! 2 minute me sab sahi ho gaya! Thank you so much!"
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Video Subtitles & Audio Narration Bar -->
+    <div class="bg-slate-950 border-t border-slate-800 p-4 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 flex-shrink-0 text-sm">
+        💬
+      </div>
+      <div class="flex-1 min-w-0">
+        <h4 id="narration-title" class="font-bold text-xs text-white uppercase tracking-wider mb-0.5">Step 1: Client PC Setup & 1-Click Launch</h4>
+        <p id="narration-text" class="text-xs text-slate-400 leading-snug truncate sm:whitespace-normal">Client ko sirf Start_POS.bat par double-click karna hai. SQLite DB + Server auto-start ho jata hai.</p>
+      </div>
+    </div>
+
+    <!-- Video Player Timeline & Controls -->
+    <div class="bg-slate-900 px-5 py-3 border-t border-slate-800 flex flex-col gap-2.5">
+      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer relative" onclick="seekVideo(event)">
+        <div id="video-progress" class="video-timeline-progress bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-full w-1/5 rounded-full"></div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button id="btn-play-pause" onclick="togglePlay()" class="w-9 h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center font-bold shadow-lg transition">
+            ⏸️
+          </button>
+          <button onclick="prevScene()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold transition">
+            ⏮️ Prev
+          </button>
+          <button onclick="nextScene()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold transition">
+            Next ⏭️
+          </button>
+          <span id="time-display" class="text-xs text-slate-400 font-mono ml-2">0:30 / 2:30</span>
+        </div>
+
+        <div class="hidden sm:flex items-center gap-1.5 text-xs font-medium">
+          <button onclick="goToScene(1)" id="pill-1" class="px-2.5 py-1 rounded-full bg-blue-600 text-white font-bold">1. 1-Click Launch</button>
+          <button onclick="goToScene(2)" id="pill-2" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700">2. License Key</button>
+          <button onclick="goToScene(3)" id="pill-3" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700">3. SQLite DB</button>
+          <button onclick="goToScene(4)" id="pill-4" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700">4. Client Call</button>
+          <button onclick="goToScene(5)" id="pill-5" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700">5. AnyDesk Fix</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hidden Offscreen Canvas for HD 720p Video Generation -->
+  <canvas id="recorder-canvas" width="1280" height="720" style="display:none;"></canvas>
+
+  <!-- Interactive JavaScript & Video Generator Engine -->
+  <script>
+    let currentScene = 1;
+    const totalScenes = 5;
+    let isPlaying = true;
+    let autoPlayTimer = null;
+
+    const sceneData = [
+      {
+        scene: 1,
+        title: "Step 1: Client PC Setup & 1-Click Launch",
+        text: "Client ko sirf ek folder dena hai. Wo desktop par 'Start_POS.bat' par double click karega, aur backend server + SQLite DB + billing screen bina kisi installation ke turant open ho jayegi!",
+        time: "0:30"
+      },
+      {
+        scene: 2,
+        title: "Step 2: Anti-Piracy Hardware License Lock",
+        text: "Pehli baar khulte hi client ko uska unique Machine ID dikhega. Client aapse contact karega aur payment karega. Aap apne generator se key bana kar denge tabhi software unlock hoga!",
+        time: "1:00"
+      },
+      {
+        scene: 3,
+        title: "Step 3: Real Billing & SQLite Hard Drive Storage",
+        text: "Cashier bill banayega, thermal printer se 80mm slip niklegi, aur sabhi transactions hard disk me 'pos_database.db' me auto-save honge. Browser clear hone par bhi data safe rahega.",
+        time: "1:30"
+      },
+      {
+        scene: 4,
+        title: "Step 4: Client Reports an Issue (Simulated Call)",
+        text: "Agar client phone karke bole ki 'Cashier ne galat entry kar di ya stock mismatch ho gaya', to aapko dukaan par jaane ki bilkul zaroorat nahi hai. Aap ghar baithe AnyDesk se judenge.",
+        time: "2:00"
+      },
+      {
+        scene: 5,
+        title: "Step 5: AnyDesk Remote Live Debugging & DB Fix",
+        text: "AnyDesk se connect karke aap live screen dekhenge. Portable DB Browser ya secret console (Ctrl+Shift+D) se direct data cell edit karenge ya recalculate dabayenge. 2 minute me issue solve!",
+        time: "2:30"
+      }
+    ];
+
+    function updateSceneUI() {
+      document.querySelectorAll('.scene-container').forEach(el => {
+        el.classList.add('opacity-0', 'pointer-events-none');
+        el.classList.remove('opacity-100');
+      });
+
+      const activeEl = document.getElementById(`scene-${currentScene}`);
+      if (activeEl) {
+        activeEl.classList.remove('opacity-0', 'pointer-events-none');
+        activeEl.classList.add('opacity-100');
+      }
+
+      const data = sceneData[currentScene - 1];
+      document.getElementById('narration-title').textContent = data.title;
+      document.getElementById('narration-text').textContent = data.text;
+      document.getElementById('time-display').textContent = `${data.time} / 2:30`;
+      document.getElementById('scene-indicator').textContent = `Scene ${currentScene} / ${totalScenes}`;
+
+      const progressPercent = (currentScene / totalScenes) * 100;
+      document.getElementById('video-progress').style.width = `${progressPercent}%`;
+
+      for (let i = 1; i <= totalScenes; i++) {
+        const pill = document.getElementById(`pill-${i}`);
+        if (pill) {
+          if (i === currentScene) {
+            pill.className = "px-2.5 py-1 rounded-full bg-blue-600 text-white font-bold";
+          } else {
+            pill.className = "px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700";
+          }
+        }
+      }
+    }
+
+    function goToScene(num) {
+      currentScene = num;
+      updateSceneUI();
+    }
+
+    function nextScene() {
+      if (currentScene < totalScenes) {
+        currentScene++;
+      } else {
+        currentScene = 1;
+      }
+      updateSceneUI();
+    }
+
+    function prevScene() {
+      if (currentScene > 1) {
+        currentScene--;
+      } else {
+        currentScene = totalScenes;
+      }
+      updateSceneUI();
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('btn-play-pause');
+      if (isPlaying) {
+        btn.textContent = '⏸️';
+        startAutoPlay();
+      } else {
+        btn.textContent = '▶️';
+        clearInterval(autoPlayTimer);
+      }
+    }
+
+    function startAutoPlay() {
+      clearInterval(autoPlayTimer);
+      autoPlayTimer = setInterval(() => {
+        nextScene();
+      }, 7000);
+    }
+
+    function seekVideo(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percent = clickX / rect.width;
+      let target = Math.ceil(percent * totalScenes);
+      if (target < 1) target = 1;
+      if (target > totalScenes) target = totalScenes;
+      goToScene(target);
+    }
+
+    // =========================================================================
+    // REAL-TIME HD VIDEO RECORDER & DOWNLOAD ENGINE (HTML5 CANVAS + MEDIARECORDER)
+    // =========================================================================
+    let isRecording = false;
+
+    async function recordAndDownloadVideo() {
+      if (isRecording) return;
+      isRecording = true;
+
+      const banner = document.getElementById('recording-banner');
+      const progressBar = document.getElementById('recording-progress-bar');
+      const statusText = document.getElementById('recording-status-text');
+      const dlBtn = document.getElementById('btn-download-video');
+
+      banner.classList.remove('hidden');
+      dlBtn.disabled = true;
+      dlBtn.classList.remove('glow-btn');
+      dlBtn.textContent = '⏳ Recording Video...';
+
+      const canvas = document.getElementById('recorder-canvas');
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Check MediaRecorder support
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm';
+      }
+
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeType,
+        videoBitsPerSecond: 3000000 // 3 Mbps clean HD
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = e => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'MyPOS_Commercial_And_Remote_IT_Support_Guide.webm';
+        document.body.appendChild(a);
+        a.click();
+
+        statusText.textContent = '✅ Video Downloaded Successfully! Saved to your Downloads folder.';
+        progressBar.style.width = '100%';
+
+        setTimeout(() => {
+          banner.classList.add('hidden');
+          dlBtn.disabled = false;
+          dlBtn.classList.add('glow-btn');
+          dlBtn.innerHTML = '<span>📥 Download Video Again (.webm)</span>';
+          isRecording = false;
+        }, 5000);
+      };
+
+      recorder.start();
+
+      // Render 5 scenes sequentially onto canvas
+      const totalSteps = 5;
+      const framesPerScene = 90; // 3 seconds at 30 fps per scene
+
+      for (let s = 1; s <= totalSteps; s++) {
+        const progress = Math.round((s / totalSteps) * 100);
+        progressBar.style.width = `${progress}%`;
+        statusText.textContent = `Recording Scene ${s} / 5: ${sceneData[s-1].title}... (${progress}%)`;
+
+        for (let frame = 0; frame < framesPerScene; frame++) {
+          renderCanvasScene(ctx, s, frame, framesPerScene, width, height);
+          await new Promise(r => setTimeout(r, 33)); // ~30 FPS
+        }
+      }
+
+      statusText.textContent = 'Finalizing video compression...';
+      recorder.stop();
+    }
+
+    /**
+     * Renders high-fidelity HD frame onto canvas
+     */
+    function renderCanvasScene(ctx, sceneNum, frame, totalFrames, w, h) {
+      // Background gradient
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, '#020617');
+      bg.addColorStop(0.5, '#0f172a');
+      bg.addColorStop(1, '#020617');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Top Title Bar
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(40, 30, w - 80, 60);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(40, 30, w - 80, 60);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 22px system-ui, sans-serif';
+      ctx.fillText('🎬 MyPOS Commercial Deployment & Remote IT Support Guide', 65, 68);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 16px system-ui, sans-serif';
+      ctx.fillText(`SCENE ${sceneNum} OF 5`, w - 210, 68);
+
+      // Content Box
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(40, 110, w - 80, 460);
+      ctx.strokeStyle = '#1e293b';
+      ctx.strokeRect(40, 110, w - 80, 460);
+
+      // Scene-Specific Graphics
+      if (sceneNum === 1) {
+        // Step 1: 1-Click Launch
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px system-ui, sans-serif';
+        ctx.fillText('Step 1: Client PC Setup & 1-Click Launch (Start_POS.bat)', 70, 160);
+
+        // Windows Desktop Card
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(70, 190, 480, 340);
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(70, 190, 480, 340);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 18px system-ui, sans-serif';
+        ctx.fillText('🖥️ Client Desktop: Double Click Launcher', 95, 230);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(95, 260, 220, 90);
+        ctx.strokeStyle = '#60a5fa';
+        ctx.strokeRect(95, 260, 220, 90);
+
+        ctx.font = '40px system-ui';
+        ctx.fillText('🛒', 115, 320);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('Start_POS.bat', 170, 305);
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 12px system-ui';
+        ctx.fillText('● 1-Click Launch', 170, 330);
+
+        const mouseX = Math.min(200, 100 + frame * 1.5);
+        const mouseY = Math.min(300, 200 + frame * 1.2);
+        ctx.font = '28px system-ui';
+        ctx.fillText('👆', mouseX, mouseY);
+
+        // Terminal Output Card
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(580, 190, 580, 340);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(580, 190, 580, 340);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 16px monospace';
+        ctx.fillText('> python server.py (Auto-Running in Background)', 605, 230);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '15px monospace';
+        ctx.fillText('[✓] SQLite Database: pos_database.db connected (0-config)', 605, 275);
+        ctx.fillText('[✓] Machine Hardware Signature verified', 605, 315);
+        ctx.fillText('[✓] Serving POS on http://localhost:8080', 605, 355);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('>>> Chrome/Edge Auto-Launched in Billing Mode!', 605, 410);
+
+      } else if (sceneNum === 2) {
+        // Step 2: License Key Lock
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px system-ui, sans-serif';
+        ctx.fillText('Step 2: Anti-Piracy Hardware License Lock (CPU & Motherboard)', 70, 160);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(70, 190, 520, 340);
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(70, 190, 520, 340);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px system-ui, sans-serif';
+        ctx.fillText('🔐 Software Activation Required', 100, 235);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px system-ui, sans-serif';
+        ctx.fillText('Client Hardware Machine ID (Motherboard + CPU Unique):', 100, 275);
+
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(100, 295, 460, 45);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(100, 295, 460, 45);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('MYPOS-7B29-4A1C-99E3', 120, 326);
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '14px system-ui';
+        ctx.fillText('Enter Activation License Key:', 100, 380);
+
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(100, 400, 460, 45);
+        ctx.strokeStyle = '#6366f1';
+        ctx.strokeRect(100, 400, 460, 45);
+
+        ctx.fillStyle = '#818cf8';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('LIC-2026-X99Q-8821-LIFETIME', 120, 430);
+
+        // Right: Vendor Generator Card
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(620, 190, 540, 340);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(620, 190, 540, 340);
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 20px system-ui';
+        ctx.fillText('📱 Aapka Phone / Laptop (Private Generator)', 650, 235);
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '15px monospace';
+        ctx.fillText('> python generate_license.py', 650, 280);
+        ctx.fillText('Enter Client Machine ID: MYPOS-7B29-4A1C-99E3', 650, 320);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillText('Duration: Lifetime (or 1-Year)', 650, 360);
+        ctx.fillStyle = '#10b981';
+        ctx.fillText('✓ Key Generated: LIC-2026-X99Q-8821-LIFETIME', 650, 410);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('WhatsApp to Client: "Payment received, here is your key!"', 650, 460);
+
+      } else if (sceneNum === 3) {
+        // Step 3: Live Billing & SQLite Storage
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px system-ui, sans-serif';
+        ctx.fillText('Step 3: Live Retail Billing & Real SQLite Database Persistence', 70, 160);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(90, 190, 380, 350);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('ABC RETAIL STORE', 180, 230);
+        ctx.font = '12px monospace';
+        ctx.fillText('GSTIN: 07ABCDE1234F1Z5  Ph: 9876543210', 120, 255);
+        ctx.fillText('--------------------------------------------', 110, 275);
+        ctx.fillText('Milk (1 Ltr)                 ₹ 52.00', 120, 305);
+        ctx.fillText('Bread (2 Pkt)                ₹ 70.00', 120, 335);
+        ctx.fillText('Cooking Oil (1 Ltr)         ₹ 120.00', 120, 365);
+        ctx.fillText('--------------------------------------------', 110, 395);
+        ctx.font = 'bold 16px monospace';
+        ctx.fillText('NET TOTAL:                  ₹ 242.00', 120, 430);
+        ctx.font = '12px monospace';
+        ctx.fillText('CASH PAID: ₹ 300.00 | CHANGE: ₹ 58.00', 120, 460);
+        ctx.fillText('*** 80mm ESC/POS Thermal Printed ***', 130, 490);
+
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(510, 190, 650, 350);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(510, 190, 650, 350);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('💾 Hard Disk Persistence Engine (pos_database.db)', 535, 230);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '14px monospace';
+        ctx.fillText('INSERT INTO sales_orders (invoice_no, amount, payment)', 535, 280);
+        ctx.fillStyle = '#10b981';
+        ctx.fillText("VALUES ('INV-0000127', 242.00, 'Cash');", 535, 310);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillText('✓ Stock Levels Auto-Deducted in SQLite:', 535, 360);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText('  - Milk: 45 -> 44', 535, 390);
+        ctx.fillText('  - Bread: 32 -> 30', 535, 415);
+        ctx.fillText('  - Cooking Oil: 20 -> 19', 535, 440);
+
+        ctx.fillStyle = '#34d399';
+        ctx.fillText('✓ Auto Daily Backup: backups/backup_2026-09-11.db (Safe)', 535, 490);
+
+      } else if (sceneNum === 4) {
+        // Step 4: Client Calls for Support
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px system-ui, sans-serif';
+        ctx.fillText('Step 4: Client Calls with Calculation / Stock Issue (Zero Travel)', 70, 160);
+
+        ctx.fillStyle = '#450a0a';
+        ctx.fillRect(80, 200, 520, 320);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(80, 200, 520, 320);
+
+        ctx.fillStyle = '#fca5a5';
+        ctx.font = 'bold 22px system-ui';
+        ctx.fillText('📞 Dukaan Wale Ka Call...', 110, 250);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px system-ui';
+        ctx.fillText('"Bhaiya cashier ne galti se return me entry kar di!', 110, 300);
+        ctx.fillText('Stock mismatch ho gaya aur total wrong dikha raha hai!"', 110, 335);
+
+        ctx.fillStyle = '#fca5a5';
+        ctx.font = '14px system-ui';
+        ctx.fillText('❌ Dukaan travel karne ki zaroorat nahi hai (0 km travel)', 110, 420);
+
+        ctx.fillStyle = '#064e3b';
+        ctx.fillRect(630, 200, 530, 320);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(630, 200, 530, 320);
+
+        ctx.fillStyle = '#6ee7b7';
+        ctx.font = 'bold 22px system-ui';
+        ctx.fillText('🏠 Aapka Ghar (Software Engineer)', 660, 250);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px system-ui';
+        ctx.fillText('"Koi baat nahi bhaiya! Bas AnyDesk open kijiye,', 660, 300);
+        ctx.fillText('mai abhi ghar baithe 2 minute me fix kar deta hu!"', 660, 335);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('⚡ AnyDesk ID: 948 219 042 (Connected!)', 660, 420);
+
+      } else if (sceneNum === 5) {
+        // Step 5: AnyDesk Remote Fix & Auto-Reconcile
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 28px system-ui, sans-serif';
+        ctx.fillText('Step 5: AnyDesk Remote Live Debugging & SQLite Database Fix', 70, 160);
+
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(80, 190, 1080, 350);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(80, 190, 1080, 350);
+
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 16px system-ui';
+        ctx.fillText('🔴 AnyDesk Remote Session Active | Secret Support Shortcut: Ctrl + Shift + D', 110, 230);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(110, 255, 500, 250);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(110, 255, 500, 250);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 15px system-ui';
+        ctx.fillText('🛠️ Developer Diagnostic Console (Master PIN: 7788)', 130, 290);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('[✓] Click: Auto-Recalculate Stock & Balances', 130, 335);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText('    Recomputes total ledger from invoices', 130, 360);
+
+        ctx.fillStyle = '#60a5fa';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('[✓] Click: Download pos_database.db Backup', 130, 410);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillText('[✓] Run SQL: UPDATE products SET stock=45...', 130, 460);
+
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(640, 255, 490, 250);
+        ctx.strokeStyle = '#10b981';
+        ctx.strokeRect(640, 255, 490, 250);
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 16px monospace';
+        ctx.fillText('>>> LIVE DIAGNOSTIC OUTPUT:', 665, 290);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '14px monospace';
+        ctx.fillText('✓ Scanning 1,126 transactions...', 665, 335);
+        ctx.fillText('✓ Stock recalculated & discrepancies fixed!', 665, 375);
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 16px system-ui';
+        ctx.fillText('🎉 Issue Solved Remotely in 2 Minutes!', 665, 430);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '13px system-ui';
+        ctx.fillText('Client Happy &bull; Zero travel &bull; Full control in your hands', 665, 465);
+      }
+
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(40, 590, w - 80, 95);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(40, 590, w - 80, 95);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 18px system-ui, sans-serif';
+      ctx.fillText(sceneData[sceneNum - 1].title, 65, 625);
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '15px system-ui, sans-serif';
+      ctx.fillText(sceneData[sceneNum - 1].text, 65, 660);
+    }
+
+    startAutoPlay();
+    updateSceneUI();
+  </script>
+</body>
+</html>

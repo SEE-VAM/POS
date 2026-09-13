@@ -20,7 +20,7 @@
           <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       </button>
-      <div class="topbar-logo">
+      <div class="topbar-logo" id="topbar-secret-trigger" onclick="handleSecretTriggerClick(event)" style="cursor:default;" title="MyPOS Retail System">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -47,8 +47,8 @@
         <option value="purchase">10. Purchase Entry</option>
         <option value="customers">11. Customer Master</option>
         <option value="suppliers">12. Supplier Master</option>
-        <option value="sales-return">13. Sales Return</option>
-        <option value="purchase-return">14. Purchase Return</option>
+        <option value="sales-return">13. Sales Return (Customer)</option>
+        <option value="purchase-return">14. Purchase Return (Supplier)</option>
         <option value="stock-transfer">15. Stock Transfer</option>
         <option value="ledger">16. Customer / Supplier Ledger</option>
         <option value="sales-history">17. Sales History</option>
@@ -71,6 +71,12 @@
           <option value="cashier2">cashier2 (CASHIER)</option>
         </select>
       </div>
+      <!-- Topbar AI Copilot Trigger (Clean, non-blocking header placement) -->
+      <button id="btn-topbar-copilot" onclick="toggleAICopilotDrawer()" class="btn-topbar-copilot" title="MyPOS Smart AI Copilot">
+        <span style="font-size:1.05rem; line-height:1;">🤖</span>
+        <span>AI Copilot</span>
+        <span class="copilot-dot"></span>
+      </button>
       <div class="user-badge">
         <span id="current-username">admin</span>
         <span class="role-tag" id="current-role">ADMIN</span>
@@ -121,7 +127,7 @@
           <span class="nav-icon">🧾</span> <span>Sales History</span>
         </li>
         <li class="nav-item" data-screen="sales-return" onclick="navigateToScreen('sales-return')">
-          <span class="nav-icon">🔄</span> <span>Returns</span>
+          <span class="nav-icon">🔄</span> <span>Returns (Sales & Purchase)</span>
         </li>
         <li class="nav-item" data-screen="stock-transfer" onclick="navigateToScreen('stock-transfer')">
           <span class="nav-icon">🚚</span> <span>Stock Transfer</span>
@@ -134,6 +140,9 @@
         </li>
         <li class="nav-item" data-screen="suppliers" onclick="navigateToScreen('suppliers')">
           <span class="nav-icon">🏭</span> <span>Suppliers</span>
+        </li>
+        <li class="nav-item" data-screen="ledger" onclick="navigateToScreen('ledger')">
+          <span class="nav-icon">📖</span> <span>Ledger / Khata</span>
         </li>
         <li class="nav-item" data-screen="users" onclick="navigateToScreen('users')">
           <span class="nav-icon">🛡️</span> <span>Users & Roles</span>
@@ -454,11 +463,28 @@
            ======================================================================= -->
       <section id="screen-products" class="screen-view">
         <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Product Master Catalog</span>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-outline btn-sm" onclick="exportProductsCSV()">📥 Export CSV</button>
-              <button class="btn btn-primary" onclick="openAddProductModal()">+ Add Product</button>
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <span class="panel-title">📦 Product Master Catalog</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Manage inventory items, download Excel templates, and bulk import products</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="downloadProductExcelTemplate()" title="Download standard Excel/CSV template with format & columns">
+                📥 Download Template
+              </button>
+              <button type="button" class="btn btn-success btn-sm" onclick="triggerBulkProductUpload()" title="Upload filled Excel/CSV file to bulk import products">
+                📤 Bulk Upload (Excel/CSV)
+              </button>
+              <input type="file" id="bulk-product-file-input" accept=".csv, .txt, text/csv" style="display:none;" onchange="handleProductFileSelect(event)" />
+              <button type="button" class="btn btn-outline btn-sm" onclick="exportProductsCSV()" title="Export current catalog to CSV">
+                📊 Export CSV
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="refreshProductMaster(true)" title="Clear search and refresh product catalog">
+                🔄 Refresh
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openAddProductModal()">
+                + Add Product
+              </button>
             </div>
           </div>
           <div style="margin-bottom:14px;">
@@ -474,6 +500,16 @@
               <!-- Dynamically populated -->
             </tbody>
           </table>
+
+          <!-- Product Master Bottom Count & Status Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:14px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; font-size:0.85rem;">
+            <div id="product-master-count-bar" style="font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+              <span>📦</span> Total Products: <strong>0 items</strong>
+            </div>
+            <div id="product-master-stats-bar" style="display:flex; gap:6px; align-items:center;">
+              <!-- Dynamic status badges -->
+            </div>
+          </div>
         </div>
       </section>
 
@@ -484,7 +520,13 @@
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">Category Master</span>
-            <button class="btn btn-primary" onclick="openAddCategoryModal()">+ Add Category</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="refreshCategories(true)" title="Clear search and refresh category list">🔄 Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()">+ Add Category</button>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <input type="text" id="cat-search-input" class="form-input" placeholder="🔍 Search categories by name..." oninput="renderCategories()" />
           </div>
           <table class="data-table">
             <thead>
@@ -505,11 +547,35 @@
           <div class="panel-header">
             <span class="panel-title">Live Stock Ledger & Inventory</span>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-primary btn-sm">Stock Summary</button>
+              <button class="btn btn-primary btn-sm" onclick="resetInventoryFilters()">Stock Summary</button>
               <button class="btn btn-outline btn-sm" onclick="navigateToScreen('purchase')">+ Intake Stock</button>
               <button class="btn btn-outline btn-sm" onclick="navigateToScreen('stock-transfer')">Transfer</button>
             </div>
           </div>
+
+          <!-- Inventory Search & Dynamic Filter Toolbar -->
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+            <div style="flex:2; min-width:200px;">
+              <input type="text" id="inventory-search-input" class="form-input" placeholder="🔍 Search product by name, code, barcode..." oninput="renderInventory()" />
+            </div>
+            <div style="flex:1; min-width:140px;">
+              <select id="inventory-category-select" class="form-input" onchange="renderInventory()">
+                <option value="ALL">All Categories</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:140px;">
+              <select id="inventory-status-filter" class="form-input" onchange="renderInventory()">
+                <option value="ALL">All Stock Levels</option>
+                <option value="OK">✅ In Stock</option>
+                <option value="LOW">⚠️ Low Stock</option>
+                <option value="OUT">❌ Out of Stock</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="resetInventoryFilters()" title="Reset Filters to Default">↺ Clear</button>
+            </div>
+          </div>
+
           <table class="data-table">
             <thead>
               <tr><th>Product (SKU)</th><th>Category</th><th>Available Stock</th><th>Reorder Level</th><th>Ledger Status</th></tr>
@@ -528,7 +594,10 @@
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">Purchase Bill & Stock Intake</span>
-            <button class="btn btn-outline btn-sm" onclick="openAddSupplierModal()">+ New Supplier</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="resetPurchaseForm(true)" title="Clear and reset purchase form">🔄 Clear & New</button>
+              <button class="btn btn-outline btn-sm" onclick="openAddSupplierModal()">+ New Supplier</button>
+            </div>
           </div>
           <div class="form-grid-3" style="margin-bottom:16px;">
             <div>
@@ -581,11 +650,17 @@
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">Customer Master Directory</span>
-            <button class="btn btn-primary" onclick="openAddCustomerModal()">+ Add Customer</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="refreshCustomers(true)" title="Clear search and refresh customer directory">🔄 Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddCustomerModal()">+ Add Customer</button>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <input type="text" id="cust-search-input" class="form-input" placeholder="🔍 Search customer by name, mobile, or GSTIN..." oninput="renderCustomers()" />
           </div>
           <table class="data-table">
             <thead>
-              <tr><th>Customer Name</th><th>Mobile</th><th>GSTIN</th><th>Current Balance</th><th>Status</th><th>Actions</th></tr>
+              <tr><th>Customer Name</th><th>Mobile</th><th>GSTIN</th><th>Current Khata Due</th><th>Credit Limit</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody id="customer-table-body">
               <!-- Dynamically populated -->
@@ -601,7 +676,13 @@
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">Supplier Master Directory</span>
-            <button class="btn btn-primary" onclick="openAddSupplierModal()">+ Add Supplier</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="refreshSuppliers(true)" title="Clear search and refresh supplier directory">🔄 Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddSupplierModal()">+ Add Supplier</button>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <input type="text" id="supp-search-input" class="form-input" placeholder="🔍 Search supplier by name, contact, mobile, or GSTIN..." oninput="renderSuppliers()" />
           </div>
           <table class="data-table">
             <thead>
@@ -619,12 +700,20 @@
            ======================================================================= -->
       <section id="screen-sales-return" class="screen-view">
         <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Sales Return & Restocking</span>
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <span class="panel-title">🔄 Returns Management Center</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Process customer sales returns & restocking, or switch to vendor purchase returns</p>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary btn-sm" onclick="navigateToScreen('sales-return')">🔄 Sales Return (Customer)</button>
+              <button class="btn btn-outline btn-sm" onclick="navigateToScreen('purchase-return')">📥 Purchase Return (Supplier / Debit Note)</button>
+              <button class="btn btn-outline btn-sm" onclick="navigateToReturnsReport('Sales Return')">📊 Returns Report</button>
+            </div>
           </div>
-          <div style="display:flex; gap:12px; margin-bottom:16px;">
-            <input type="text" id="return-inv-input" class="form-input" placeholder="Enter Invoice No (e.g. INV-0000125)" value="INV-0000125" />
-            <button class="btn btn-primary" onclick="lookupSaleForReturn()">Search Invoice</button>
+          <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="return-inv-input" class="form-input" placeholder="Enter Invoice No (e.g. INV-0000001)" value="" style="flex:1; min-width:260px;" />
+            <button class="btn btn-primary" onclick="lookupSaleForReturn()">🔍 Search Invoice</button>
           </div>
           <table class="data-table" style="margin-bottom:16px;">
             <thead>
@@ -635,16 +724,17 @@
             </tbody>
           </table>
           <div id="return-action-bar" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div style="display:flex; gap:10px; align-items:center;">
                 <label class="form-label" style="margin:0">Reason:</label>
-                <select class="form-input" style="width:200px;">
-                  <option>Damaged Product</option>
-                  <option>Expired Item</option>
+                <select id="sales-return-reason-select" class="form-input" style="width:220px;">
                   <option>Customer Exchange</option>
+                  <option>Damaged / Defective Product</option>
+                  <option>Expired Item</option>
+                  <option>Customer Dissatisfaction</option>
                 </select>
               </div>
-              <button class="btn btn-success" onclick="processReturn()">Process Return & Restock</button>
+              <button class="btn btn-success" onclick="processReturn()">✅ Process Return & Restock</button>
             </div>
           </div>
         </div>
@@ -655,20 +745,47 @@
            ======================================================================= -->
       <section id="screen-purchase-return" class="screen-view">
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">Purchase Return & Debit Note</span></div>
-          <div style="display:flex; gap:12px; margin-bottom:16px;">
-            <input type="text" class="form-input" placeholder="Enter Purchase Order No" value="PUR-000124" />
-            <button class="btn btn-primary" onclick="showToast('Loaded items for purchase PUR-000124', 'info')">Search</button>
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <span class="panel-title">📥 Purchase Return & Supplier Debit Note (सप्लायर माल वापसी)</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Return damaged/expired goods back to supplier, deduct inventory & generate Debit Note</p>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="navigateToScreen('sales-return')">🔄 Sales Return (Customer)</button>
+              <button class="btn btn-primary btn-sm" onclick="navigateToScreen('purchase-return')">📥 Purchase Return (Supplier / Debit Note)</button>
+              <button class="btn btn-outline btn-sm" onclick="navigateToReturnsReport('Purchase Return')">📊 Returns Report</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+            <select id="purch-return-po-select" class="form-input" style="flex:1; min-width:280px;" onchange="onSelectPurchaseForReturn(this.value)">
+              <!-- Dynamically populated with recent purchases -->
+            </select>
+            <input type="text" id="purch-return-po-input" class="form-input" placeholder="Or enter PO No (e.g. PUR-000001)" style="width:200px;" />
+            <button class="btn btn-primary" onclick="lookupPurchaseForReturn()">🔍 Search PO</button>
+            <button class="btn btn-outline" onclick="resetPurchaseReturnScreen()">↺ Clear</button>
           </div>
           <table class="data-table" style="margin-bottom:16px;">
-            <thead><tr><th>Product</th><th>Qty Received</th><th>Return Qty</th><th>Rate</th><th>Reason</th></tr></thead>
-            <tbody>
-              <tr><td>Milk (1 Ltr)</td><td>10</td><td><input type="number" value="2" style="width:60px;" class="form-input" /></td><td>₹ 45.00</td><td>Quality Issue</td></tr>
-              <tr><td>Bread (Pkt)</td><td>20</td><td><input type="number" value="0" style="width:60px;" class="form-input" /></td><td>₹ 28.00</td><td>-</td></tr>
+            <thead>
+              <tr><th>Product</th><th>Qty Received</th><th>Return Qty</th><th>Rate</th><th>Status</th></tr>
+            </thead>
+            <tbody id="purch-return-items-container">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted)">Search or select a purchase order above to load items</td></tr>
             </tbody>
           </table>
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-success" onclick="showToast('Purchase debit note generated! Supplier ledger debited.', 'success'); navigateToScreen('inventory');">Process Debit Note</button>
+          <div id="purch-return-action-bar" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; gap:10px; align-items:center;">
+                <label class="form-label" style="margin:0">Return Reason:</label>
+                <select id="purch-return-reason" class="form-input" style="width:260px;">
+                  <option value="Damaged in Transit / Goods Broken">Damaged in Transit / Goods Broken (माल टूटा/खराब)</option>
+                  <option value="Defective / Substandard Quality">Defective / Substandard Quality (क्वालिटी खराब)</option>
+                  <option value="Expired / Near Expiry Stock">Expired / Near Expiry Stock (एक्सपायर्ड स्टॉक)</option>
+                  <option value="Wrong Item Supplied">Wrong Item Supplied (गलत माल आ गया)</option>
+                  <option value="Excess / Unsold Goods Return">Excess / Unsold Goods Return (अतिरिक्त माल वापसी)</option>
+                </select>
+              </div>
+              <button class="btn btn-success" onclick="processPurchaseReturn()">✅ Process Debit Note & Deduct Stock</button>
+            </div>
           </div>
         </div>
       </section>
@@ -678,9 +795,12 @@
            ======================================================================= -->
       <section id="screen-stock-transfer" class="screen-view">
         <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Inter-Branch Stock Transfer</span>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Transfer stock seamlessly between company retail branches</span>
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <span class="panel-title">Inter-Branch Stock Transfer</span>
+              <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Transfer stock seamlessly between company retail branches</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="resetStockTransferScreen(true)" title="Reset manifest, branches and product dropdowns">🔄 Clear & Refresh</button>
           </div>
 
           <!-- Branch Selectors -->
@@ -788,27 +908,28 @@
           <div class="panel-header">
             <span class="panel-title">Customer / Supplier Financial Ledger</span>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-primary btn-sm">Customer Ledger</button>
-              <button class="btn btn-outline btn-sm">Supplier Ledger</button>
+              <button class="btn btn-primary btn-sm" id="ledger-tab-cust" onclick="switchLedgerType('customer')">Customer Ledger</button>
+              <button class="btn btn-outline btn-sm" id="ledger-tab-supp" onclick="switchLedgerType('supplier')">Supplier Ledger</button>
             </div>
           </div>
-          <div style="display:flex; gap:12px; margin-bottom:14px;">
-            <select class="form-input" style="width:280px;">
-              <option>Rohit Sharma (9876543210)</option>
-              <option>Priya Singh (9811122334)</option>
+          <div style="display:flex; gap:12px; margin-bottom:14px; align-items:center; flex-wrap:wrap;">
+            <select id="ledger-entity-select" class="form-input" style="width:280px;" onchange="renderLedger()">
+              <!-- Dynamically populated with customers or suppliers -->
             </select>
-            <button class="btn btn-outline btn-sm" onclick="showToast('Ledger refreshed', 'info')">Filter</button>
+            <button class="btn btn-outline btn-sm" id="btn-ledger-refresh" onclick="refreshLedger(true)" title="Clear and Refresh Ledger">🔄 Clear & Refresh</button>
+            <button class="btn btn-success btn-sm" id="ledger-rec-btn" onclick="openReceivePaymentModal()">💵 Receive / Clear Khata Payment</button>
+            <button class="btn btn-primary btn-sm" id="ledger-pay-supp-btn" style="display:none;" onclick="openPaySupplierModal()">💳 Pay Supplier / Settle Due</button>
           </div>
           <table class="data-table">
             <thead>
-              <tr><th>Date</th><th>Particulars</th><th>Debit</th><th>Credit</th><th>Running Balance</th></tr>
+              <tr><th>Date</th><th>Particulars / Ref</th><th>Debit (Dr)</th><th>Credit (Cr)</th><th>Running Balance</th></tr>
             </thead>
             <tbody id="ledger-table-body">
               <!-- Dynamically populated -->
             </tbody>
           </table>
           <div style="display:flex; justify-content:flex-end; margin-top:14px; font-weight:700;">
-            <span>Total Due: ₹ 0.00 &bull; <span class="badge badge-success">Status: Settled</span></span>
+            <span id="ledger-total-due">Total Due: ₹ 0.00 &bull; <span class="badge badge-success">Status: Settled</span></span>
           </div>
         </div>
       </section>
@@ -821,11 +942,18 @@
           <div class="panel-header">
             <span class="panel-title">Sales History & Invoice Archive</span>
           </div>
-          <div style="display:flex; gap:10px; margin-bottom:14px;">
-            <input type="date" class="form-input" value="2025-09-01" style="width:160px;" />
-            <input type="date" class="form-input" value="2025-09-08" style="width:160px;" />
-            <input type="text" class="form-input" placeholder="Search by customer or invoice..." />
-            <button class="btn btn-primary">Search</button>
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">From:</label>
+              <input type="date" id="sales-history-start-date" class="form-input" style="width:150px;" onchange="renderSalesHistory()" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">To:</label>
+              <input type="date" id="sales-history-end-date" class="form-input" style="width:150px;" onchange="renderSalesHistory()" />
+            </div>
+            <input type="text" id="sales-history-search-input" class="form-input" placeholder="🔍 Search by customer, invoice, mobile..." style="flex:1; min-width:200px;" oninput="renderSalesHistory()" />
+            <button class="btn btn-primary" onclick="renderSalesHistory()">Search</button>
+            <button class="btn btn-outline" onclick="resetSalesHistoryFilters(true)" title="Reset Filters and Refresh Invoices">🔄 Refresh</button>
           </div>
           <table class="data-table">
             <thead>
@@ -961,10 +1089,10 @@
             <span class="panel-title">Gross Profit & Margin Report</span>
           </div>
           <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-header">Total Sales</div><div class="kpi-value">₹ 58,420</div></div>
-            <div class="kpi-card"><div class="kpi-header">Total Purchase Cost</div><div class="kpi-value">₹ 32,600</div></div>
-            <div class="kpi-card"><div class="kpi-header">Gross Profit</div><div class="kpi-value" style="color:var(--success)">₹ 25,820</div></div>
-            <div class="kpi-card"><div class="kpi-header">Profit Margin</div><div class="kpi-value">44.2%</div></div>
+            <div class="kpi-card"><div class="kpi-header">Total Sales</div><div class="kpi-value" id="profit-kpi-sales">₹ 0.00</div></div>
+            <div class="kpi-card"><div class="kpi-header">Total Purchase Cost</div><div class="kpi-value" id="profit-kpi-cost">₹ 0.00</div></div>
+            <div class="kpi-card"><div class="kpi-header">Gross Profit</div><div class="kpi-value" id="profit-kpi-gross" style="color:var(--success)">₹ 0.00</div></div>
+            <div class="kpi-card"><div class="kpi-header">Profit Margin</div><div class="kpi-value" id="profit-kpi-margin">0.0%</div></div>
           </div>
           <table class="data-table">
             <thead>
@@ -1196,6 +1324,30 @@
             💡 <strong>Pro Tip</strong>: Press <code>F12</code> -> <strong>Application</strong> -> <strong>Local Storage</strong> to view or edit database records live in your browser. Export backups regularly to preserve your business data across different browsers and PCs.
           </small>
         </div>
+
+        <!-- 🏪 New Store Setup & Client Testing Controls -->
+        <div class="panel" style="margin-top:20px; border-left: 4px solid var(--primary); background: #ffffff;">
+          <div class="panel-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="panel-title">🏪 New Client Store Setup & Data Reset (क्लाइंट टेस्टिंग व फ्रेश स्टोर रीसेट)</span>
+              <span class="badge badge-primary">Client Ready</span>
+            </div>
+          </div>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:16px;">
+            Use these controls to prepare the POS software for a fresh new retail client or to wipe your testing bills so that invoice numbering starts at <strong>INV-0000001</strong> with <strong>₹0.00</strong> dashboard totals.
+          </p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="resetStoreToCleanState()" style="background:#059669; border-color:#059669;">
+              ✨ Reset Store to Fresh Clean State (0 Sales, INV-0000001)
+            </button>
+            <button type="button" class="btn btn-outline" onclick="clearSalesOnly()" style="color:#d97706; border-color:#d97706;">
+              🗑️ Clear Test Invoices Only (Keep Products Catalog)
+            </button>
+            <button type="button" class="btn btn-outline" onclick="loadDemoTestData()">
+              📦 Load Sample Demo Data (For Presentation)
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- =======================================================================
@@ -1205,7 +1357,10 @@
         <div class="panel">
           <div class="panel-header">
             <span class="panel-title">Branch Management Directory</span>
-            <button class="btn btn-primary" onclick="openAddBranchModal()">+ Add Branch</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="refreshBranches(true)" title="Refresh branch records">🔄 Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="openAddBranchModal()">+ Add Branch</button>
+            </div>
           </div>
           <table class="data-table">
             <thead><tr><th>Branch Name (Code)</th><th>Address</th><th>Phone</th><th>Status</th><th style="text-align:center;">Actions</th></tr></thead>
@@ -1309,6 +1464,304 @@
   </div>
 
   <!-- =============================================================================
+       MODAL: BULK PRODUCT UPLOAD & VERIFICATION (EXCEL / CSV)
+       ============================================================================= -->
+  <div id="modal-bulk-product-upload" class="modal-overlay">
+    <div class="modal-box modal-lg" style="max-width:860px; max-height:90vh; display:flex; flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div>
+          <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+            <span>📤</span> Bulk Product Import & Verification
+          </h3>
+          <p style="margin:3px 0 0 0; font-size:0.8rem; color:var(--text-muted);">
+            Review parsed items, auto-created categories, and duplicate prevention before database commit
+          </p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-bulk-product-upload')">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto; flex:1; padding-bottom:10px;">
+        <!-- Summary Stats Grid -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:14px;">
+          <div style="background:var(--bg-card); padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">TOTAL ITEMS IN FILE</div>
+            <div id="bulk-total-count" style="font-size:1.5rem; font-weight:800; color:var(--primary); margin-top:2px;">0</div>
+          </div>
+          <div style="background:var(--bg-card); padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">NEW ITEMS TO ADD</div>
+            <div id="bulk-new-count" style="font-size:1.5rem; font-weight:800; color:#10b981; margin-top:2px;">0</div>
+          </div>
+          <div style="background:var(--bg-card); padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">EXISTING (UPDATES)</div>
+            <div id="bulk-exist-count" style="font-size:1.5rem; font-weight:800; color:#f59e0b; margin-top:2px;">0</div>
+          </div>
+          <div style="background:var(--bg-card); padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">NEW CATEGORIES</div>
+            <div id="bulk-cat-count" style="font-size:1.5rem; font-weight:800; color:#6366f1; margin-top:2px;">0</div>
+          </div>
+        </div>
+
+        <!-- Dynamic Category Notice -->
+        <div id="bulk-cat-details-box" style="background:rgba(99, 102, 241, 0.08); border-left:4px solid #6366f1; padding:10px 14px; border-radius:4px; font-size:0.85rem; margin-bottom:12px; color:var(--text-main);">
+          <!-- Auto-populated -->
+        </div>
+
+        <!-- Duplicate Handling Option Checkbox -->
+        <div style="background:var(--bg-card); padding:8px 12px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="bulk-update-duplicates" checked style="width:18px; height:18px; cursor:pointer;" />
+          <label for="bulk-update-duplicates" style="font-size:0.85rem; cursor:pointer; font-weight:600; margin:0;">
+            Update price & add stock if Barcode / Code already exists (Recommended: Prevents duplicate records)
+          </label>
+        </div>
+
+        <!-- Live Preview Table -->
+        <div style="max-height:240px; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px;">
+          <table class="data-table" style="margin:0; font-size:0.82rem; width:100%;">
+            <thead>
+              <tr style="position:sticky; top:0; background:var(--bg-card); z-index:2;">
+                <th>#</th><th>Item Name</th><th>Code / Barcode</th><th>Category</th><th>Selling Price</th><th>Cost</th><th>Stock</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-preview-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-bulk-product-upload')">Cancel</button>
+        <button type="button" class="btn btn-success" id="btn-confirm-bulk-import" onclick="processBulkProductImport()">
+          ✅ Confirm & Import All Products
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL: PRODUCT PRICE & STOCK AUDIT TIMELINE (POINT 3)
+       ============================================================================= -->
+  <div id="modal-product-audit-history" class="modal-overlay">
+    <div class="modal-box modal-lg" style="max-width:820px; max-height:88vh; display:flex; flex-direction:column;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <div>
+          <h3 id="audit-modal-prod-title" style="margin:0; display:flex; align-items:center; gap:8px;">
+            <span>📜</span> Product Price & Stock Timeline
+          </h3>
+          <div id="audit-modal-prod-subtitle" style="margin:3px 0 0 0; font-size:0.85rem; color:var(--text-muted);">
+            <!-- Populated dynamically with current price & stock -->
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-product-audit-history')">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto; flex:1; padding:16px;">
+        <!-- Timeline Entries Container -->
+        <div id="audit-timeline-stream" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Dynamically populated timeline cards -->
+        </div>
+      </div>
+      <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:flex-end;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-product-audit-history')">Close Timeline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL: SECRET SUPER-ADMIN AUTHENTICATION (POINT 4)
+       ============================================================================= -->
+  <div id="modal-super-admin-auth" class="modal-overlay">
+    <div class="modal-box" style="max-width: 380px; text-align: center; border-radius: 14px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); border: 2px solid #6366f1; background: #0f172a; color: #f8fafc;">
+      <div style="font-size: 2.6rem; margin-top: 4px; filter: drop-shadow(0 4px 10px rgba(99,102,241,0.5));">🔐</div>
+      <h3 style="margin: 8px 0 2px 0; font-size: 1.25rem; font-weight: 800; color: #f8fafc;">Super-Admin Security</h3>
+      <p style="font-size: 0.82rem; color: #94a3b8; margin: 0 0 14px 0;">
+        Enter Master Security PIN to unlock Sentinel AI Diagnostic & Healing Console
+      </p>
+
+      <div style="margin-bottom: 12px; position: relative;">
+        <input type="password" id="super-admin-pin-input" maxlength="8" placeholder="••••" autocomplete="off"
+               style="letter-spacing: 8px; font-size: 1.6rem; text-align: center; font-weight: 700; width: 100%; padding: 8px 12px; border-radius: 8px; border: 2px solid #4f46e5; background: #020617; color: #38bdf8;"
+               onkeydown="if(event.key === 'Enter') verifySuperAdminPin()">
+        <div id="super-admin-pin-error" style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin-top: 6px; display: none;"></div>
+      </div>
+
+      <!-- Quick Numeric Keypad for Touch Screens -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px;">
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('1')">1</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('2')">2</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('3')">3</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('4')">4</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('5')">5</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('6')">6</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('7')">7</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('8')">8</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('9')">9</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#ef4444; border:1px solid #334155; font-size: 0.85rem; padding: 8px 0; font-weight: 700;" onclick="clearSuperAdminPin()">CLR</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#f8fafc; border:1px solid #334155; font-size: 1.1rem; padding: 8px 0; font-weight: 700;" onclick="appendSuperAdminPin('0')">0</button>
+        <button type="button" class="btn" style="background:#1e293b; color:#94a3b8; border:1px solid #334155; font-size: 0.85rem; padding: 8px 0; font-weight: 700;" onclick="backspaceSuperAdminPin()">⌫</button>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn" style="flex: 1; background:#1e293b; color:#94a3b8; border:1px solid #334155;" onclick="closeModal('modal-super-admin-auth')">Cancel</button>
+        <button type="button" class="btn btn-primary" style="flex: 2; background: #6366f1; border-color: #6366f1; font-weight: 700;" onclick="verifySuperAdminPin()">
+          Unlock Console 🔓
+        </button>
+      </div>
+      <div style="margin-top: 10px; font-size: 0.72rem; color: #64748b;">
+        Default Master PIN: <code style="color:#38bdf8;">7788</code> &bull; Shortcut: <code>Ctrl + Shift + D</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL: SECRET SUPER-ADMIN SENTINEL AI AGENT CONSOLE (POINT 4)
+       ============================================================================= -->
+  <div id="modal-super-admin-ai" class="modal-overlay">
+    <div class="modal-box modal-xl" style="max-width: 980px; width: 95vw; height: 90vh; max-height: 90vh; display: flex; flex-direction: column; padding: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.5); border: 1px solid #4f46e5;">
+      
+      <!-- Top Command Bar -->
+      <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="background: #4f46e5; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 0 15px rgba(99,102,241,0.6);">
+            🤖
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px;">MyPOS Sentinel AI Agent</span>
+              <span style="background: #10b981; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Super-Admin Core</span>
+              <span style="background: rgba(255,255,255,0.15); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">v2.4 Autonomous</span>
+            </div>
+            <div style="font-size: 0.78rem; opacity: 0.85; margin-top: 1px;">
+              Autonomous Database Integrity Scanner, Ledger Math Reconciler & Self-Healing Engine
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn btn-sm" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); font-weight: 600;" onclick="openModal('modal-dev-debugger')" title="Open Developer & Remote IT Console (Ctrl + Alt + S)">
+            🛠️ Developer Tools
+          </button>
+          <button type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.15); color: #fff; border: none; font-weight: 600;" onclick="triggerAIDiagnosticScan()" title="Re-scan database">
+            🔄 Scan Now
+          </button>
+          <button type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.15); color: #fff; border: none; font-weight: 600;" onclick="promptChangeMasterPin()" title="Change Master PIN">
+            🔑 Change PIN
+          </button>
+          <button type="button" class="btn btn-sm" style="background: #ef4444; color: #fff; border: none; font-weight: 700;" onclick="closeModal('modal-super-admin-ai')" title="Close & Lock Console">
+            ✕ Lock & Exit
+          </button>
+        </div>
+      </div>
+
+      <!-- Subheader: 4 Live Anomaly Diagnostic Metric Cards -->
+      <div style="background: #0f172a; padding: 12px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex-shrink: 0; border-bottom: 1px solid #1e293b;">
+        <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; border-left: 4px solid #ef4444;" id="kpi-card-stock">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Stock Discrepancies</div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+            <span id="ai-kpi-stock-count" style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;">0</span>
+            <span id="ai-kpi-stock-status" style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Healthy</span>
+          </div>
+        </div>
+
+        <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; border-left: 4px solid #f59e0b;" id="kpi-card-ledger">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Khata Ledger Balance</div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+            <span id="ai-kpi-ledger-count" style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;">0</span>
+            <span id="ai-kpi-ledger-status" style="font-size: 0.75rem; color: #10b981; font-weight: 700;">In Sync</span>
+          </div>
+        </div>
+
+        <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; border-left: 4px solid #3b82f6;" id="kpi-card-pricing">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Pricing & Margins</div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+            <span id="ai-kpi-pricing-count" style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;">0</span>
+            <span id="ai-kpi-pricing-status" style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Normal</span>
+          </div>
+        </div>
+
+        <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; border-left: 4px solid #8b5cf6;" id="kpi-card-integrity">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Data Integrity</div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+            <span id="ai-kpi-integrity-count" style="font-size: 1.3rem; font-weight: 800; color: #f8fafc;">100%</span>
+            <span id="ai-kpi-integrity-status" style="font-size: 0.75rem; color: #10b981; font-weight: 700;">Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action & Safety Snapshot Toolbar -->
+      <div style="background: #1e293b; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; flex-shrink: 0; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn btn-success btn-sm" id="btn-ai-auto-repair-all" onclick="executeAIAutoRepair('ALL')" style="font-weight: 800; padding: 7px 16px; box-shadow: 0 2px 10px rgba(16,185,129,0.3);">
+            ⚡ 1-Click Auto-Repair All Anomalies
+          </button>
+          <button type="button" class="btn btn-warning btn-sm" id="btn-ai-undo-action" onclick="undoLastAIAction()" disabled style="font-weight: 700; padding: 7px 14px; opacity: 0.5;">
+            ⏪ Undo Last AI Repair
+          </button>
+        </div>
+        <div id="ai-safety-snapshot-badge" style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+          <span>🛡️ Safety Snapshot:</span>
+          <strong id="ai-snapshot-status-text" style="color: #38bdf8;">Automatic before any repair</strong>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs: [Issues & Actions] vs [Natural Language Terminal] vs [Audit Trail] -->
+      <div style="background: #0f172a; padding: 0 20px; display: flex; gap: 20px; border-bottom: 1px solid #334155; flex-shrink: 0;">
+        <button type="button" class="ai-tab-btn active" id="tab-btn-ai-issues" onclick="switchAITab('issues')" style="background: none; border: none; color: #38bdf8; border-bottom: 2px solid #38bdf8; padding: 10px 4px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+          🛡️ Detected Anomalies (<span id="ai-tab-issues-count">0</span>)
+        </button>
+        <button type="button" class="ai-tab-btn" id="tab-btn-ai-terminal" onclick="switchAITab('terminal')" style="background: none; border: none; color: #94a3b8; padding: 10px 4px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+          💬 Natural Language AI Terminal
+        </button>
+        <button type="button" class="ai-tab-btn" id="tab-btn-ai-logs" onclick="switchAITab('logs')" style="background: none; border: none; color: #94a3b8; padding: 10px 4px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+          📜 Self-Healing Log History
+        </button>
+      </div>
+
+      <!-- Modal Body Tab Content -->
+      <div style="flex: 1; overflow-y: auto; background: #0b1120; color: #e2e8f0; padding: 16px 20px;" id="ai-modal-main-content">
+        
+        <!-- Tab 1: Issues Stream -->
+        <div id="ai-tab-content-issues">
+          <div id="ai-issues-list-container" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Dynamically populated issues cards -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Natural Language Terminal -->
+        <div id="ai-tab-content-terminal" style="display: none; height: 100%; flex-direction: column;">
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; flex: 1; min-height: 240px; max-height: 320px; overflow-y: auto; padding: 12px; font-family: monospace; font-size: 0.82rem; display: flex; flex-direction: column; gap: 8px;" id="ai-terminal-output">
+            <!-- Dynamic terminal chat logs -->
+          </div>
+          
+          <!-- Quick Prompt Chips -->
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;">
+            <button type="button" class="badge" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; cursor: pointer; padding: 4px 10px;" onclick="sendQuickPrompt('Scan entire database and give health status')">🔍 Scan All Database</button>
+            <button type="button" class="badge" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; cursor: pointer; padding: 4px 10px;" onclick="sendQuickPrompt('Fix all negative stock items')">📦 Fix Negative Stocks</button>
+            <button type="button" class="badge" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; cursor: pointer; padding: 4px 10px;" onclick="sendQuickPrompt('Reconcile customer and supplier khata ledgers')">⚖️ Reconcile Khata Ledgers</button>
+            <button type="button" class="badge" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; cursor: pointer; padding: 4px 10px;" onclick="sendQuickPrompt('Audit selling price and cost mistakes')">🏷️ Audit Pricing Mistakes</button>
+            <button type="button" class="badge" style="background: #1e293b; color: #f59e0b; border: 1px solid #78350f; cursor: pointer; padding: 4px 10px;" onclick="sendQuickPrompt('Undo last AI action')">⏪ Undo Last Action</button>
+          </div>
+
+          <!-- Input Bar -->
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="ai-terminal-input" class="form-input" placeholder="Type instruction in Hindi / English (e.g., 'Negative stock theek karo', 'Rahul ka khata match karo', 'Scan database')..."
+                   style="flex: 1; background: #0f172a; border-color: #334155; color: #fff; font-family: monospace;"
+                   onkeydown="if(event.key === 'Enter') submitAICommand()">
+            <button type="button" class="btn btn-primary" onclick="submitAICommand()" style="background: #4f46e5; border-color: #4f46e5; font-weight: 700; padding: 0 20px;">
+              Send 🚀
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 3: Self Healing Log History -->
+        <div id="ai-tab-content-logs" style="display: none;">
+          <div id="ai-healing-logs-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamically populated healing history -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =============================================================================
        MODAL 2: ADD / EDIT CATEGORY
        ============================================================================= -->
   <div id="modal-add-category" class="modal-overlay">
@@ -1382,6 +1835,106 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-customer')">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL: RECEIVE CUSTOMER KHATA PAYMENT (उधारी जमा)
+       ============================================================================= -->
+  <div id="modal-receive-payment" class="modal-overlay">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 id="modal-rec-title">💵 Receive Customer Khata Payment (उधारी जमा)</h3>
+        <button class="modal-close" onclick="closeModal('modal-receive-payment')">&times;</button>
+      </div>
+      <form id="rec-payment-form" onsubmit="saveCustomerPayment(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Customer Name</label>
+            <input type="text" id="pay-rec-cust-name" class="form-input" readonly style="background:var(--bg-card); font-weight:700;" />
+            <input type="hidden" id="pay-rec-cust-id" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Current Khata Due</label>
+              <input type="text" id="pay-rec-due" class="form-input" readonly style="background:var(--bg-card); font-weight:700; color:var(--danger);" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Amount (₹) *</label>
+              <input type="number" id="pay-rec-amount" class="form-input" step="0.01" min="1" required style="font-weight:700; font-size:16px; color:var(--success);" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Mode</label>
+            <select id="pay-rec-mode" class="form-input">
+              <option value="Cash">Cash (नकद)</option>
+              <option value="UPI">UPI / QR (PhonePe / GPay / Paytm)</option>
+              <option value="Bank Transfer">Bank Transfer / NEFT</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reference Note (Optional)</label>
+            <input type="text" id="pay-rec-notes" class="form-input" placeholder="e.g. UTR / Receipt No / Paid via UPI" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-receive-payment')">Cancel</button>
+          <button type="submit" class="btn btn-success">✅ Confirm & Settle Khata</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       MODAL: PAY SUPPLIER / SETTLE PAYABLE DUES (सप्लायर भुगतान)
+       ============================================================================= -->
+  <div id="modal-pay-supplier" class="modal-overlay">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 id="modal-pay-supp-title">💳 Pay Supplier / Settle Due (सप्लायर भुगतान)</h3>
+        <button class="modal-close" onclick="closeModal('modal-pay-supplier')">&times;</button>
+      </div>
+      <form id="pay-supplier-form" onsubmit="saveSupplierPayment(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Supplier / Company Name</label>
+            <input type="text" id="pay-supp-name" class="form-input" readonly style="background:var(--bg-card); font-weight:700;" />
+            <input type="hidden" id="pay-supp-id" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Total Payable Due</label>
+              <input type="text" id="pay-supp-due" class="form-input" readonly style="background:var(--bg-card); font-weight:700; color:var(--danger);" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Amount (₹) *</label>
+              <input type="number" id="pay-supp-amount" class="form-input" step="0.01" min="1" required style="font-weight:700; font-size:16px; color:var(--primary);" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Mode</label>
+            <select id="pay-supp-mode" class="form-input">
+              <option value="Bank Transfer (NEFT/RTGS)">Bank Transfer (NEFT / RTGS / IMPS)</option>
+              <option value="UPI / QR">UPI / QR (Current Account)</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Cash">Cash (कैश भुगतान)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank Reference / UTR / Cheque No *</label>
+            <input type="text" id="pay-supp-ref" class="form-input" placeholder="e.g. UTR-202609139812 or Cheque #44210" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks / Notes (Optional)</label>
+            <input type="text" id="pay-supp-notes" class="form-input" placeholder="e.g. Settle Purchase PUR-000125" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-pay-supplier')">Cancel</button>
+          <button type="submit" class="btn btn-primary">✅ Confirm & Pay Supplier</button>
         </div>
       </form>
     </div>
@@ -1568,7 +2121,7 @@
         <div class="pay-bill-banner">
           <div>
             <span class="pay-banner-label">Invoice Number</span>
-            <strong id="modal-bill-no" class="pay-banner-value">INV-0000125</strong>
+            <strong id="modal-bill-no" class="pay-banner-value">INV-0000001</strong>
           </div>
           <div style="text-align:right;">
             <span class="pay-banner-label">Total Payable</span>
@@ -1762,6 +2315,9 @@
               <input type="checkbox" id="credit-agree-chk" checked />
               <span>Authorize sale on customer credit ledger (Khata account).</span>
             </label>
+            <div id="credit-limit-warning" style="display:none; margin-top:12px; padding:10px; border-radius:6px; background:rgba(239, 68, 68, 0.15); border:1px solid var(--danger); color:var(--danger); font-size:0.85rem; font-weight:600;">
+              ⛔ <strong>CREDIT LIMIT EXCEEDED:</strong> This customer's credit limit will be breached. Payment on credit is blocked!
+            </div>
           </div>
         </div>
 
@@ -1792,6 +2348,185 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- =============================================================================
+       COMMERCIAL LICENSE ACTIVATION MODAL (ANTI-PIRACY HARDWARE LOCK)
+       ============================================================================= -->
+  <div id="modal-license-activation" class="modal-overlay" style="z-index: 10000; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px);">
+    <div class="modal-box" style="max-width: 520px; border: 2px solid var(--primary); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid var(--border-color);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.6rem;">🔐</span>
+          <div>
+            <h3 style="margin:0; font-size:1.15rem; color:var(--secondary);">MyPOS Software Activation</h3>
+            <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">Commercial Hardware-Locked License</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.85rem; color:#1e40af;">
+          <strong>Device Hardware Signature:</strong> This software is securely locked to this physical computer. Send your Machine ID to your vendor to receive your Activation Key.
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" style="font-weight:700;">Your Unique Machine ID:</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="lic-machine-id" class="form-input" readonly value="Detecting Machine ID..." style="font-family:monospace; font-weight:800; font-size:1.05rem; background:#f1f5f9; color:#0f172a;" />
+            <button type="button" class="btn btn-outline" onclick="copyMachineId()" title="Copy Machine ID">📋 Copy</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" style="font-weight:700;">Enter Activation License Key *</label>
+          <input type="text" id="lic-input-key" class="form-input" placeholder="e.g. LIC-2026-A1B2C3D4-LIFETIME" style="font-family:monospace; font-weight:700; text-transform:uppercase;" />
+          <small style="color:var(--text-muted); display:block; margin-top:4px;">Paste the key provided by your software provider.</small>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+          <span style="font-size:0.8rem; color:var(--text-muted);">Need activation assistance?</span>
+          <button type="button" class="btn btn-success btn-sm" onclick="contactVendorWhatsApp()">
+            📲 WhatsApp Vendor
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#f8fafc;">
+        <button type="button" class="btn btn-primary" style="width:100%; padding:10px; font-size:0.95rem;" onclick="submitLicenseKey()">
+          🚀 Activate & Unlock Full System
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       DEVELOPER & ANYDESK REMOTE SERVICE CONSOLE (PRESS CTRL+ALT+S OR VIA SENTINEL AI)
+       ============================================================================= -->
+  <div id="modal-dev-debugger" class="modal-overlay" style="z-index: 10001; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px);">
+    <div class="modal-box modal-lg" style="max-width: 780px; border: 2px solid #ef4444;">
+      <div class="modal-header" style="background:#1e293b; color:#fff;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">🛠️</span>
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; color:#f8fafc;">Developer & AnyDesk Remote Service Console (Ctrl + Alt + S)</h3>
+            <p style="margin:2px 0 0 0; font-size:0.75rem; color:#94a3b8;">For Software Engineer Remote Diagnostics & SQLite Database Management • Shortcut: <code>Ctrl + Alt + S</code></p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-dev-debugger')" style="color:#fff;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <!-- Auth state -->
+        <div id="dev-auth-box" style="display:block;">
+          <div class="form-group" style="max-width:300px; margin:20px auto; text-align:center;">
+            <label class="form-label">Enter Developer Master PIN (Default: 7788):</label>
+            <input type="password" id="dev-pin-input" class="form-input" placeholder="Enter PIN" style="text-align:center; font-size:1.2rem; font-family:monospace;" />
+            <button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="unlockDeveloperConsole()">Unlock Developer Tools</button>
+          </div>
+        </div>
+
+        <!-- Authenticated Developer Dashboard -->
+        <div id="dev-tools-content" style="display:none;">
+          <!-- Quick Action Buttons -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:16px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="devReconcileDatabase()" style="border-color:#10b981; color:#059669; font-weight:700;">
+              🔄 Auto-Recalculate Stock & Balances
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="devDownloadSqliteDb()" style="border-color:#2563eb; color:#2563eb; font-weight:700;">
+              📥 Download pos_database.db
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="devInspectStateInConsole()" style="border-color:#6366f1; color:#4f46e5; font-weight:700;">
+              🔍 Inspect posState in F12 Console
+            </button>
+          </div>
+
+          <!-- Direct SQLite Query Executor -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700; display:flex; justify-content:space-between;">
+              <span>Execute Live SQLite Query:</span>
+              <small style="color:var(--text-muted);">e.g. <code>SELECT * FROM products LIMIT 5</code></small>
+            </label>
+            <div style="display:flex; gap:8px;">
+              <textarea id="dev-sql-query" class="form-input" rows="3" style="font-family:monospace; font-size:0.85rem;" placeholder="SELECT * FROM products LIMIT 5;"></textarea>
+              <button type="button" class="btn btn-danger" style="align-self:flex-start;" onclick="devExecuteSqlQuery()">▶ Run SQL</button>
+            </div>
+          </div>
+
+          <!-- Query Output Table / Result -->
+          <div id="dev-sql-output-container" style="max-height:220px; overflow:auto; background:#0f172a; color:#10b981; font-family:monospace; font-size:0.75rem; padding:10px; border-radius:6px; border:1px solid #334155;">
+            // SQL Query results and diagnostic output will appear here...
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-dev-debugger')">Close Console</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       INTERACTIVE AI COPILOT CHAT DRAWER (TOP-RIGHT HEADER POPUP WINDOW)
+       ============================================================================= -->
+  <div id="ai-copilot-drawer" style="
+    display: none;
+    position: fixed;
+    top: 58px;
+    right: 16px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    height: 580px;
+    max-height: calc(100vh - 72px);
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.75);
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 100000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  ">
+    <!-- Drawer Header -->
+    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #4f46e5; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          🤖
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+            <span>MyPOS Smart AI Copilot</span>
+            <span style="background: #10b981; color: #fff; font-size: 0.62rem; font-weight: 800; padding: 1px 6px; border-radius: 10px;">LIVE</span>
+          </div>
+          <div style="font-size: 0.72rem; color: #cbd5e1;">Ask about any invoice, product, customer or issue</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button type="button" onclick="clearAICopilotChat()" style="background: none; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer;" title="Clear Chat">🧹 Clear</button>
+        <button type="button" onclick="toggleAICopilotDrawer()" style="background: rgba(255,255,255,0.15); border: none; color: #fff; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;" title="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Suggestion Quick Action Chips -->
+    <div style="background: #020617; padding: 8px 12px; display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; border-bottom: 1px solid #1e293b; scrollbar-width: none;">
+      <button type="button" onclick="sendAICopilotPrompt('Database scan karke sabhi issues find karo')" style="white-space: nowrap; background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">🔍 Scan All Issues</button>
+      <button type="button" onclick="sendAICopilotPrompt('Negative stock wale items check karo')" style="white-space: nowrap; background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">📦 Negative Stocks</button>
+      <button type="button" onclick="sendAICopilotPrompt('Customer khata mismatches check karo')" style="white-space: nowrap; background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">⚖️ Khata Mismatches</button>
+      <button type="button" onclick="sendAICopilotPrompt('Aaj ki total sales aur revenue report batao')" style="white-space: nowrap; background: #1e293b; color: #10b981; border: 1px solid #065f46; border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">📊 Today Sales</button>
+      <button type="button" onclick="sendAICopilotPrompt('Low stock items alert batao')" style="white-space: nowrap; background: #1e293b; color: #f59e0b; border: 1px solid #78350f; border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">⚠️ Low Stock Alert</button>
+    </div>
+
+    <!-- Messages Stream -->
+    <div id="ai-copilot-messages" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: #0b1120;">
+      <!-- Dynamically populated chat bubbles & issue resolution cards -->
+    </div>
+
+    <!-- Chat Input Bar -->
+    <div style="background: #0f172a; padding: 10px 12px; border-top: 1px solid #1e293b; display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+      <input type="text" id="ai-copilot-input" placeholder="Invoice, item, customer ya ledger ka issue likhein..."
+             style="flex: 1; background: #020617; border: 1px solid #334155; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; outline: none;"
+             onkeydown="if(event.key === 'Enter') submitAICopilotMessage()">
+      <button type="button" onclick="submitAICopilotMessage()" style="background: #4f46e5; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        Send 🚀
+      </button>
+    </div>
+
   </div>
 
   <div id="toast-container"></div>

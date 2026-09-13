@@ -1,4 +1,4 @@
-﻿# Operating System Files
+# Operating System Files
 Thumbs.db
 desktop.ini
 .DS_Store
@@ -12,3 +12,10 @@ desktop.ini
 
 # Local Environment
 .env.local
+
+# Local Client Database & License (NEVER commit client billing data)
+pos_database.db
+pos_database.db-journal
+pos_license.key
+*.db
+*.key
