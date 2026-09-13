@@ -2401,63 +2401,105 @@
   <!-- =============================================================================
        DEVELOPER & ANYDESK REMOTE SERVICE CONSOLE (PRESS CTRL+ALT+S OR VIA SENTINEL AI)
        ============================================================================= -->
-  <div id="modal-dev-debugger" class="modal-overlay" style="z-index: 10001; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px);">
-    <div class="modal-box modal-lg" style="max-width: 780px; border: 2px solid #ef4444;">
-      <div class="modal-header" style="background:#1e293b; color:#fff;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:1.3rem;">🛠️</span>
+  <div id="modal-dev-debugger" class="modal-overlay" style="z-index: 10001; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);">
+    <div class="modal-box modal-lg" style="max-width: 1100px; width: 96vw; border: 2px solid #6366f1; background: #0f172a; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); color:#fff; border-bottom: 1px solid #334155; padding: 12px 18px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.4rem;">💻</span>
           <div>
-            <h3 style="margin:0; font-size:1.1rem; color:#f8fafc;">Developer & AnyDesk Remote Service Console (Ctrl + Alt + S)</h3>
-            <p style="margin:2px 0 0 0; font-size:0.75rem; color:#94a3b8;">For Software Engineer Remote Diagnostics & SQLite Database Management • Shortcut: <code>Ctrl + Alt + S</code></p>
+            <h3 style="margin:0; font-size:1.15rem; color:#f8fafc; font-weight:800; display:flex; align-items:center; gap:8px;">
+              <span>SQLite Studio & Developer Compiler</span>
+              <span style="background: #4f46e5; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">SQL COMPILER</span>
+            </h3>
+            <p style="margin:2px 0 0 0; font-size:0.75rem; color:#94a3b8;">Direct Live SQLite Query Compiler & Engine • Database: <code>pos_database.db</code> • Shortcut: <code>Ctrl + Alt + S</code></p>
           </div>
         </div>
-        <button class="modal-close" onclick="closeModal('modal-dev-debugger')" style="color:#fff;">&times;</button>
+        <button class="modal-close" onclick="closeModal('modal-dev-debugger')" style="color:#fff; font-size:1.5rem;">&times;</button>
       </div>
       <div class="modal-body" style="padding:16px;">
         <!-- Auth state -->
         <div id="dev-auth-box" style="display:block;">
-          <div class="form-group" style="max-width:300px; margin:20px auto; text-align:center;">
-            <label class="form-label">Enter Developer Master PIN (Default: 7788):</label>
-            <input type="password" id="dev-pin-input" class="form-input" placeholder="Enter PIN" style="text-align:center; font-size:1.2rem; font-family:monospace;" />
-            <button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="unlockDeveloperConsole()">Unlock Developer Tools</button>
+          <div class="form-group" style="max-width:320px; margin:30px auto; text-align:center; background:#1e293b; padding:24px; border-radius:12px; border:1px solid #334155;">
+            <div style="font-size:2rem; margin-bottom:8px;">🔐</div>
+            <label class="form-label" style="font-weight:700; color:#f8fafc;">Enter Developer Master PIN:</label>
+            <input type="password" id="dev-pin-input" class="form-input" placeholder="Enter PIN (Default: 7788)" style="text-align:center; font-size:1.2rem; font-family:monospace; margin-bottom:12px; letter-spacing:4px;" onkeydown="if(event.key==='Enter') unlockDeveloperConsole()" />
+            <button type="button" class="btn btn-primary" style="width:100%; font-weight:700; padding:10px;" onclick="unlockDeveloperConsole()">Unlock SQL Studio 🚀</button>
+            <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:8px;">Default Developer Key: <code>7788</code></small>
           </div>
         </div>
 
         <!-- Authenticated Developer Dashboard -->
         <div id="dev-tools-content" style="display:none;">
           <!-- Quick Action Buttons -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:16px;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="devReconcileDatabase()" style="border-color:#10b981; color:#059669; font-weight:700;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="devReconcileDatabase()" style="border-color:#10b981; color:#10b981; font-weight:700; font-size:0.78rem;">
               🔄 Auto-Recalculate Stock & Balances
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="devDownloadSqliteDb()" style="border-color:#2563eb; color:#2563eb; font-weight:700;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="devDownloadSqliteDb()" style="border-color:#38bdf8; color:#38bdf8; font-weight:700; font-size:0.78rem;">
               📥 Download pos_database.db
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="devInspectStateInConsole()" style="border-color:#6366f1; color:#4f46e5; font-weight:700;">
-              🔍 Inspect posState in F12 Console
+            <button type="button" class="btn btn-outline btn-sm" onclick="devInspectStateInConsole()" style="border-color:#a855f7; color:#a855f7; font-weight:700; font-size:0.78rem;">
+              🔍 Inspect posState in F12
             </button>
           </div>
 
-          <!-- Direct SQLite Query Executor -->
-          <div class="form-group">
-            <label class="form-label" style="font-weight:700; display:flex; justify-content:space-between;">
-              <span>Execute Live SQLite Query:</span>
-              <small style="color:var(--text-muted);">e.g. <code>SELECT * FROM products LIMIT 5</code></small>
-            </label>
-            <div style="display:flex; gap:8px;">
-              <textarea id="dev-sql-query" class="form-input" rows="3" style="font-family:monospace; font-size:0.85rem;" placeholder="SELECT * FROM products LIMIT 5;"></textarea>
-              <button type="button" class="btn btn-danger" style="align-self:flex-start;" onclick="devExecuteSqlQuery()">▶ Run SQL</button>
+          <!-- Quick Table Chips (1-Click SQL Query Generator) -->
+          <div style="margin-bottom:10px;">
+            <div style="font-size:0.72rem; color:#94a3b8; font-weight:700; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">⚡ Quick Table Explorer (1-Click Query):</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM products;')">📦 products</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM categories;')">🏷️ categories</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM sales_orders ORDER BY id DESC;')">🧾 sales_orders</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM customers;')">👥 customers</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM branches;')">🏢 branches</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM suppliers;')">🚚 suppliers</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM purchases;')">📥 purchases</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM returns_log;')">↩️ returns_log</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM stock_transfers;')">🔄 stock_transfers</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM system_users;')">🔑 system_users</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM company_settings;')">⚙️ company_settings</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#f59e0b; border:1px solid #78350f; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('PRAGMA table_info(products);')">📋 PRAGMA products</button>
             </div>
           </div>
 
-          <!-- Query Output Table / Result -->
-          <div id="dev-sql-output-container" style="max-height:220px; overflow:auto; background:#0f172a; color:#10b981; font-family:monospace; font-size:0.75rem; padding:10px; border-radius:6px; border:1px solid #334155;">
-            // SQL Query results and diagnostic output will appear here...
+          <!-- Direct SQLite Query Executor Box -->
+          <div class="form-group" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label class="form-label" style="font-weight:700; color:#f8fafc; margin-bottom:0; font-size:0.85rem;">
+                SQL Query Editor:
+              </label>
+              <span style="color:#64748b; font-size:0.72rem;">Press <kbd style="background:#1e293b; color:#f8fafc; padding:1px 5px; border-radius:3px;">Ctrl + Enter</kbd> to execute</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <textarea id="dev-sql-query" class="form-input" rows="3" style="font-family:'Fira Code', Consolas, Monaco, monospace; font-size:0.88rem; background:#020617; border:1px solid #334155; color:#38bdf8; line-height:1.4;" placeholder="SELECT * FROM products;"></textarea>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="btn btn-primary" style="font-weight:800; padding:6px 16px; font-size:0.85rem; display:flex; align-items:center; gap:6px; background:#4f46e5; border-color:#4f46e5;" onclick="devExecuteSqlQuery()">
+                    ▶ Execute Query
+                  </button>
+                  <button type="button" class="btn btn-outline" style="border-color:#475569; color:#94a3b8; font-size:0.8rem; padding:6px 12px;" onclick="clearDevSqlQuery()">
+                    🗑️ Clear
+                  </button>
+                </div>
+                <div id="dev-query-status-pill" style="font-size:0.75rem; color:#64748b; font-family:monospace;">
+                  Ready for execution
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Query Output Table / Result (Table Grid Container) -->
+          <div id="dev-sql-output-container" style="min-height:160px; max-height:380px; overflow:auto; background:#020617; color:#e2e8f0; font-size:0.8rem; border-radius:8px; border:1px solid #334155;">
+            <div style="padding:40px 20px; text-align:center; color:#64748b;">
+              <div style="font-size:2rem; margin-bottom:8px;">📊</div>
+              <strong style="color:#94a3b8;">SQL Query Output Grid</strong>
+              <div style="font-size:0.75rem; margin-top:4px;">Type any SQL query above or click any table chip to view tabular rows & columns.</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modal-dev-debugger')">Close Console</button>
+      <div class="modal-footer" style="background:#0f172a; border-top:1px solid #1e293b; padding:10px 16px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-dev-debugger')">Close Studio</button>
       </div>
     </div>
   </div>

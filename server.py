@@ -825,15 +825,16 @@ class MyPOSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 conn.row_factory = sqlite3.Row
                 c = conn.cursor()
                 c.execute(query)
-                if query.upper().startswith('SELECT') or query.upper().startswith('PRAGMA'):
+                if c.description:
+                    columns = [col[0] for col in c.description]
                     rows = [dict(r) for r in c.fetchall()]
                     conn.close()
-                    self._send_json({"status": "success", "rows": rows, "count": len(rows)})
+                    self._send_json({"status": "success", "columns": columns, "rows": rows, "count": len(rows)})
                 else:
                     affected = c.rowcount
                     conn.commit()
                     conn.close()
-                    self._send_json({"status": "success", "message": f"Query executed successfully ({affected} rows affected)."})
+                    self._send_json({"status": "success", "message": f"Query executed successfully ({affected} rows affected).", "rows_affected": affected})
             except Exception as e:
                 self._send_json({"status": "error", "message": str(e)}, status=400)
             return

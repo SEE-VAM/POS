@@ -8579,7 +8579,7 @@ function contactVendorWhatsApp() {
 }
 
 /**
- * AnyDesk Remote Developer Debugger (Ctrl+Shift+D)
+ * AnyDesk Remote Developer Debugger (Ctrl+Alt+S)
  */
 function unlockDeveloperConsole() {
   const pinInput = document.getElementById('dev-pin-input');
@@ -8587,15 +8587,187 @@ function unlockDeveloperConsole() {
   if (pin === '7788') {
     document.getElementById('dev-auth-box').style.display = 'none';
     document.getElementById('dev-tools-content').style.display = 'block';
-    showToast('Developer Console unlocked for remote diagnostics.', 'success');
+    
+    // Attach Ctrl+Enter handler to SQL query textarea
+    const queryEl = document.getElementById('dev-sql-query');
+    if (queryEl && !queryEl._hasKeyHandler) {
+      queryEl._hasKeyHandler = true;
+      queryEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          devExecuteSqlQuery();
+        }
+      });
+    }
+    showToast('Developer SQL Studio unlocked.', 'success');
   } else {
     showToast('Invalid Developer Master PIN.', 'danger');
   }
 }
 
+function setDevSqlQuery(sql) {
+  const queryEl = document.getElementById('dev-sql-query');
+  if (queryEl) {
+    queryEl.value = sql;
+    devExecuteSqlQuery();
+  }
+}
+
+function clearDevSqlQuery() {
+  const queryEl = document.getElementById('dev-sql-query');
+  const outEl = document.getElementById('dev-sql-output-container');
+  const pillEl = document.getElementById('dev-query-status-pill');
+  if (queryEl) queryEl.value = '';
+  if (pillEl) pillEl.textContent = 'Query cleared';
+  if (outEl) {
+    outEl.innerHTML = `
+      <div style="padding:40px 20px; text-align:center; color:#64748b;">
+        <div style="font-size:2rem; margin-bottom:8px;">📊</div>
+        <strong style="color:#94a3b8;">SQL Query Output Grid</strong>
+        <div style="font-size:0.75rem; margin-top:4px;">Type any SQL query above or click any table chip to view tabular rows & columns.</div>
+      </div>
+    `;
+  }
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderSqlResultTable(columns, rows, executionTime) {
+  const container = document.getElementById('dev-sql-output-container');
+  const pillEl = document.getElementById('dev-query-status-pill');
+  if (!container) return;
+
+  if (pillEl) {
+    pillEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${rows.length} rows</span> (${executionTime}ms)`;
+  }
+
+  if (!rows || rows.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 30px; text-align: center; color: #94a3b8;">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">📭</div>
+        <strong style="color: #f1f5f9; font-size: 0.95rem;">Query Executed Successfully (0 rows returned)</strong>
+        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">The table is currently empty or no records matched the given criteria.</div>
+      </div>
+    `;
+    return;
+  }
+
+  // Derive columns if not provided
+  if (!columns || columns.length === 0) {
+    const colSet = new Set();
+    rows.forEach(r => Object.keys(r).forEach(k => colSet.add(k)));
+    columns = Array.from(colSet);
+  }
+
+  // Save for CSV export
+  window._lastSqlResult = { columns, rows };
+
+  const tableId = 'dev-sql-result-table-' + Date.now();
+
+  const headerHtml = columns.map(col => `
+    <th style="background:#1e293b; color:#38bdf8; position:sticky; top:0; z-index:10; font-weight:800; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; padding:10px 14px; border:1px solid #334155; text-align:left; white-space:nowrap;">
+      ${escapeHtml(String(col))}
+    </th>
+  `).join('');
+
+  const rowsHtml = rows.map((r, idx) => {
+    const bg = idx % 2 === 0 ? '#0b1120' : '#020617';
+    const cells = columns.map(col => {
+      let val = r[col];
+      let displayVal = '';
+      if (val === null || val === undefined) {
+        displayVal = `<span style="color:#64748b; font-style:italic;">NULL</span>`;
+      } else if (typeof val === 'object') {
+        displayVal = `<span style="color:#a855f7;">${escapeHtml(JSON.stringify(val))}</span>`;
+      } else if (typeof val === 'number') {
+        displayVal = `<span style="color:#38bdf8; font-weight:600;">${val}</span>`;
+      } else {
+        displayVal = escapeHtml(String(val));
+      }
+      return `<td style="padding:8px 14px; border:1px solid #1e293b; font-size:0.78rem; font-family:'Fira Code', Consolas, Monaco, monospace; color:#e2e8f0; white-space:nowrap;">${displayVal}</td>`;
+    }).join('');
+    return `<tr style="background:${bg};" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='${bg}'">${cells}</tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:8px 14px; border-bottom:1px solid #334155; position:sticky; top:0; z-index:20;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="background:#065f46; color:#34d399; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:12px;">✓ SUCCESS</span>
+        <span style="color:#f8fafc; font-weight:700; font-size:0.82rem;">${rows.length} Rows</span>
+        <span style="color:#64748b; font-size:0.75rem;">•</span>
+        <span style="color:#94a3b8; font-size:0.75rem;">${columns.length} Columns</span>
+        ${executionTime ? `<span style="color:#64748b; font-size:0.75rem;">• ${executionTime}ms</span>` : ''}
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="text" placeholder="Filter rows..." style="background:#020617; border:1px solid #334155; color:#fff; padding:3px 8px; border-radius:4px; font-size:0.75rem; width:140px; outline:none;" oninput="filterSqlResultTable('${tableId}', this.value)" />
+        <button type="button" class="btn btn-sm btn-outline" style="padding:3px 10px; font-size:0.74rem; border-color:#475569; color:#cbd5e1;" onclick="exportLastSqlResultCsv()">📥 Export CSV</button>
+      </div>
+    </div>
+    <div style="overflow:auto; max-height:330px;">
+      <table id="${tableId}" style="width:100%; border-collapse:collapse; text-align:left;">
+        <thead><tr>${headerHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function filterSqlResultTable(tableId, query) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const q = (query || '').toLowerCase().trim();
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(tr => {
+    if (!q) {
+      tr.style.display = '';
+    } else {
+      const text = tr.textContent.toLowerCase();
+      tr.style.display = text.includes(q) ? '' : 'none';
+    }
+  });
+}
+
+function exportLastSqlResultCsv() {
+  if (!window._lastSqlResult || !Array.isArray(window._lastSqlResult.rows) || window._lastSqlResult.rows.length === 0) {
+    showToast('No SQL data to export.', 'warning');
+    return;
+  }
+  const { columns, rows } = window._lastSqlResult;
+  let csv = columns.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\r\n';
+  rows.forEach(r => {
+    const line = columns.map(col => {
+      let v = r[col];
+      if (v === null || v === undefined) v = '';
+      else if (typeof v === 'object') v = JSON.stringify(v);
+      return `"${String(v).replace(/"/g, '""')}"`;
+    }).join(',');
+    csv += line + '\r\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `SQL_Export_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('SQL data exported to CSV successfully.', 'success');
+}
+
 async function devExecuteSqlQuery() {
   const queryEl = document.getElementById('dev-sql-query');
   const outEl = document.getElementById('dev-sql-output-container');
+  const pillEl = document.getElementById('dev-query-status-pill');
   const rawQuery = (queryEl ? queryEl.value : '').trim();
   if (!rawQuery) {
     showToast('Please type a SQL query to run.', 'warning');
@@ -8604,29 +8776,55 @@ async function devExecuteSqlQuery() {
 
   // Normalize query
   const query = rawQuery.replace(/;+$/, '').trim();
+  if (pillEl) pillEl.textContent = 'Executing...';
+  const startTime = Date.now();
 
   // If backend SQLite server is active and running over HTTP, send to server
   if (isSqliteBackendActive && window.location.protocol.startsWith('http')) {
     try {
-      outEl.textContent = 'Executing query on pos_database.db...';
+      outEl.innerHTML = `
+        <div style="padding:30px; text-align:center; color:#38bdf8;">
+          <div class="spinner" style="margin:0 auto 10px auto;"></div>
+          Executing query on pos_database.db...
+        </div>
+      `;
       const res = await fetch('/api/admin/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, pin: '7788' })
       });
       const result = await res.json();
+      const execTime = Date.now() - startTime;
+
       if (res.ok && result.status === 'success') {
-        if (result.rows && result.rows.length > 0) {
-          outEl.innerHTML = `<div style="margin-bottom:6px; color:#38bdf8; font-weight:bold;">Query OK: ${result.count} rows returned from pos_database.db</div><pre style="margin:0; max-height:160px; overflow:auto;">` + JSON.stringify(result.rows, null, 2) + `</pre>`;
+        if (result.rows && Array.isArray(result.rows)) {
+          renderSqlResultTable(result.columns, result.rows, execTime);
         } else {
-          outEl.innerHTML = `<div style="color:#10b981; font-weight:bold;">✓ ${result.message} (Rows affected: ${result.rows_affected})</div>`;
+          const aff = result.rows_affected !== undefined ? result.rows_affected : (result.affected || 0);
+          outEl.innerHTML = `
+            <div style="padding:30px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:8px;">✅</div>
+              <strong style="color:#10b981; font-size:1.05rem;">Query Executed Successfully</strong>
+              <div style="color:#94a3b8; font-size:0.85rem; margin-top:6px;">${escapeHtml(result.message || 'Rows affected: ' + aff)}</div>
+              <div style="color:#64748b; font-size:0.75rem; margin-top:4px;">Execution time: ${execTime}ms</div>
+            </div>
+          `;
+          if (pillEl) pillEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Done</span> (${execTime}ms)`;
         }
         showToast('SQL executed successfully.', 'success');
         await loadStateFromSqlite();
         return;
       } else {
-        outEl.innerHTML = `<div style="color:#ef4444; font-weight:bold;">SQL Error: ${result.message || 'Error executing query'}</div>`;
-        showToast('SQL execution error', 'danger');
+        const execTime = Date.now() - startTime;
+        outEl.innerHTML = `
+          <div style="padding:24px; background:#1c1917; border:1px solid #7f1d1d; border-radius:6px; color:#ef4444;">
+            <div style="font-weight:800; font-size:0.95rem; margin-bottom:6px;">❌ SQLite Execution Error:</div>
+            <div style="font-family:monospace; font-size:0.82rem; color:#fca5a5;">${escapeHtml(result.message || 'Error executing query')}</div>
+            <div style="color:#78716c; font-size:0.72rem; margin-top:8px;">Execution time: ${execTime}ms</div>
+          </div>
+        `;
+        if (pillEl) pillEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">✗ Error</span> (${execTime}ms)`;
+        showToast('SQL error: ' + (result.message || 'Execution failed'), 'danger');
         return;
       }
     } catch (err) {
@@ -8635,10 +8833,14 @@ async function devExecuteSqlQuery() {
   }
 
   // IN-BROWSER SMART SQL ENGINE (Works 100% in file:/// mode & standalone browser!)
-  outEl.textContent = 'Executing query against in-memory database...';
+  outEl.innerHTML = `
+    <div style="padding:20px; text-align:center; color:#38bdf8;">
+      Executing in-memory query...
+    </div>
+  `;
 
-  // Match: SELECT * FROM <table> or SELECT <cols> FROM <table>
-  const selectMatch = query.match(/^SELECT\s+(.+?)\s+FROM\s+([a-zA-Z0-9_]+)(\s+WHERE\s+(.+?))?(\s+LIMIT\s+(\d+))?$/i);
+  // Match: SELECT * FROM <table> or SELECT <cols> FROM <table> [WHERE ...] [ORDER BY ...] [LIMIT ...]
+  const selectMatch = query.match(/^SELECT\s+(.+?)\s+FROM\s+([a-zA-Z0-9_]+)(\s+WHERE\s+(.+?))?(\s+ORDER\s+BY\s+(.+?))?(\s+LIMIT\s+(\d+))?$/i);
 
   if (selectMatch) {
     const tableMap = {
@@ -8649,23 +8851,35 @@ async function devExecuteSqlQuery() {
       'SALES_ORDERS': posState.salesHistory,
       'SALES': posState.salesHistory,
       'PURCHASES': posState.purchases,
+      'RETURNS_LOG': posState.returns,
+      'RETURNS': posState.returns,
+      'STOCK_TRANSFERS': posState.transferHistory,
+      'TRANSFERS': posState.transferHistory,
       'BRANCHES': posState.branches,
       'USERS': posState.users,
-      'SETTINGS': [posState.settings]
+      'SYSTEM_USERS': posState.users,
+      'SETTINGS': [posState.settings],
+      'COMPANY_SETTINGS': [posState.settings]
     };
 
     const tableName = selectMatch[2].toUpperCase();
     const tableData = tableMap[tableName];
 
     if (!tableData) {
-      outEl.innerHTML = `<div style="color:#ef4444; font-weight:bold;">Error: Table '${selectMatch[2]}' not found in memory database.</div>
-<div style="color:#94a3b8; font-size:0.75rem; margin-top:4px;">Available tables: products, customers, suppliers, categories, sales_orders, purchases, branches, users.</div>`;
+      outEl.innerHTML = `
+        <div style="padding:24px; color:#ef4444;">
+          <strong>Error: Table '${escapeHtml(selectMatch[2])}' not found.</strong>
+          <div style="color:#94a3b8; font-size:0.75rem; margin-top:6px;">
+            Available tables: <code>products</code>, <code>categories</code>, <code>sales_orders</code>, <code>customers</code>, <code>branches</code>, <code>suppliers</code>, <code>purchases</code>, <code>returns_log</code>, <code>stock_transfers</code>, <code>system_users</code>.
+          </div>
+        </div>
+      `;
       return;
     }
 
     let rows = [...tableData];
 
-    // Handle WHERE clause (basic key=val or key < val or key > val)
+    // Handle WHERE clause (e.g. col = val, col < val, col > val)
     if (selectMatch[4]) {
       const whereStr = selectMatch[4].trim();
       const whereEq = whereStr.match(/^([a-zA-Z0-9_]+)\s*(=|<|>|<=|>=)\s*['"]?([^'"]+)['"]?$/);
@@ -8685,25 +8899,63 @@ async function devExecuteSqlQuery() {
       }
     }
 
-    // Handle LIMIT
+    // Handle ORDER BY
     if (selectMatch[6]) {
-      const limit = parseInt(selectMatch[6], 10);
+      const orderPart = selectMatch[6].trim();
+      const orderTokens = orderPart.split(/\s+/);
+      const orderCol = orderTokens[0];
+      const isDesc = orderTokens.length > 1 && orderTokens[1].toUpperCase() === 'DESC';
+      rows.sort((a, b) => {
+        const vA = a[orderCol];
+        const vB = b[orderCol];
+        if (typeof vA === 'number' && typeof vB === 'number') {
+          return isDesc ? vB - vA : vA - vB;
+        }
+        return isDesc ? String(vB).localeCompare(String(vA)) : String(vA).localeCompare(String(vB));
+      });
+    }
+
+    // Handle LIMIT
+    if (selectMatch[8]) {
+      const limit = parseInt(selectMatch[8], 10);
       if (!isNaN(limit)) rows = rows.slice(0, limit);
     }
 
-    outEl.innerHTML = `<div style="margin-bottom:6px; color:#38bdf8; font-weight:bold;">Query OK: ${rows.length} rows returned from memory table '${tableName}'</div><pre style="margin:0; max-height:160px; overflow:auto;">` + JSON.stringify(rows, null, 2) + `</pre>`;
+    // Handle specific projected columns (SELECT col1, col2)
+    const rawCols = selectMatch[1].trim();
+    let columns = null;
+    if (rawCols !== '*') {
+      const colList = rawCols.split(',').map(c => c.trim()).filter(c => c);
+      if (colList.length > 0) {
+        columns = colList;
+        rows = rows.map(r => {
+          const proj = {};
+          colList.forEach(c => proj[c] = r[c]);
+          return proj;
+        });
+      }
+    }
+
+    const execTime = Date.now() - startTime;
+    renderSqlResultTable(columns, rows, execTime);
     showToast(`SQL executed: ${rows.length} rows returned.`, 'success');
   } else {
-    outEl.innerHTML = `<div style="color:#f59e0b; font-weight:bold;">⚡ Standalone / Offline Mode Notice:</div>
-<div style="color:#e2e8f0; font-size:0.8rem; margin:6px 0;">You are running in Standalone Browser Mode (<code>file:///</code>). The in-memory SQL engine supports standard queries like:
-<ul style="margin:4px 0 0 16px; padding:0;">
-  <li><code>SELECT * FROM products;</code></li>
-  <li><code>SELECT * FROM products WHERE stock < 5;</code></li>
-  <li><code>SELECT * FROM customers;</code></li>
-  <li><code>SELECT * FROM sales_orders LIMIT 10;</code></li>
-</ul>
-</div>
-<div style="color:#94a3b8; font-size:0.75rem;">💡 For raw SQLite engine access via Python backend, double-click <strong>Start_POS.bat</strong> in the project folder.</div>`;
+    outEl.innerHTML = `
+      <div style="padding:20px; color:#f59e0b;">
+        <div style="font-weight:800; font-size:0.95rem; margin-bottom:6px;">⚡ Query Format Notice:</div>
+        <div style="color:#e2e8f0; font-size:0.8rem; margin-bottom:8px;">
+          For in-memory browser mode, use standard syntax:
+          <ul style="margin:6px 0 0 16px; padding:0;">
+            <li><code>SELECT * FROM products;</code></li>
+            <li><code>SELECT name, price, stock FROM products WHERE stock < 10;</code></li>
+            <li><code>SELECT * FROM sales_orders ORDER BY id DESC;</code></li>
+            <li><code>SELECT * FROM customers;</code></li>
+          </ul>
+        </div>
+        <div style="color:#94a3b8; font-size:0.75rem;">💡 For direct full SQLite execution with JOINs and PRAGMA, run <strong>Start_POS.bat</strong> in the project folder.</div>
+      </div>
+    `;
+    if (pillEl) pillEl.textContent = 'Syntax error';
   }
 }
 
