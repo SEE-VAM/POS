@@ -351,6 +351,40 @@ def init_sqlite_db():
             (8, 'P008', 'Basmati Rice', 'Food', 60.00, 45.00, 50, 10, 'Kg', 0, '🌾', '890100100008')
         ])
 
+    # Auto-seed from 100_Sample_Products_for_Testing.csv if available and count < 10
+    c.execute("SELECT COUNT(*) FROM products")
+    if c.fetchone()[0] < 10:
+        csv_path = os.path.join(STATIC_DIR, '100_Sample_Products_for_Testing.csv')
+        if os.path.exists(csv_path):
+            try:
+                import csv
+                with open(csv_path, mode='r', encoding='utf-8-sig') as f:
+                    rdr = csv.reader(f)
+                    rows = [r for r in rdr if any(cell.strip() for cell in r)]
+                if len(rows) > 1:
+                    c.execute("SELECT MAX(id) FROM products")
+                    mid = c.fetchone()[0] or 0
+                    for r in rows[1:]:
+                        name = r[0].strip()
+                        code = r[1].strip()
+                        cat = r[2].strip()
+                        unit = r[3].strip()
+                        cost = float(r[4].strip())
+                        price = float(r[5].strip())
+                        stock = int(r[6].strip())
+                        min_stock = int(r[7].strip())
+                        tax = float(r[8].strip())
+                        c.execute("INSERT INTO categories (name, description, status) VALUES (?, ?, 'Active') ON CONFLICT(name) DO NOTHING", (cat, f"{cat} Products"))
+                        mid += 1
+                        c.execute("""
+                        INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '📦', ?)
+                        ON CONFLICT(code) DO NOTHING
+                        """, (mid, code, name, cat, price, cost, stock, min_stock, unit, tax, code))
+                    print(f"[SQLite DB] Seeded bulk products from CSV successfully.")
+            except Exception as e:
+                print(f"[SQLite DB CSV Seed Warning] {e}")
+
     c.execute("SELECT COUNT(*) FROM customers")
     if c.fetchone()[0] == 0:
         c.executemany("""
@@ -566,21 +600,55 @@ class MyPOSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Sync Products
                 if 'products' in body and isinstance(body['products'], list):
                     for p in body['products']:
-                        c.execute("""
-                        INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(id) DO UPDATE SET
-                            code=excluded.code, name=excluded.name, category=excluded.category,
-                            price=excluded.price, cost=excluded.cost, stock=excluded.stock,
-                            min_stock=excluded.min_stock, unit=excluded.unit, tax=excluded.tax,
-                            icon=excluded.icon, barcode=excluded.barcode
-                        """, (
-                            p.get('id'), p.get('code'), p.get('name'), p.get('category'),
-                            float(p.get('price', 0)), float(p.get('cost', 0)),
-                            int(p.get('stock', 0)), int(p.get('minStock', 5)),
-                            p.get('unit', 'Pkt'), float(p.get('tax', 0)),
-                            p.get('icon', '📦'), p.get('barcode', '')
-                        ))
+                        try:
+                            code = str(p.get('code', '')).strip()
+                            if not code:
+                                continue
+                            c.execute("SELECT id FROM products WHERE code = ?", (code,))
+                            row_c = c.fetchone()
+                            if row_c:
+                                c.execute("""
+                                UPDATE products SET
+                                    name=?, category=?, price=?, cost=?, stock=?, min_stock=?, unit=?, tax=?, icon=?, barcode=?
+                                WHERE code = ?
+                                """, (
+                                    p.get('name'), p.get('category'),
+                                    float(p.get('price', 0)), float(p.get('cost', 0)),
+                                    int(p.get('stock', 0)), int(p.get('minStock', 5)),
+                                    p.get('unit', 'Pkt'), float(p.get('tax', 0)),
+                                    p.get('icon', '📦'), p.get('barcode', code),
+                                    code
+                                ))
+                            else:
+                                p_id = p.get('id')
+                                if p_id is not None:
+                                    c.execute("SELECT id FROM products WHERE id = ?", (p_id,))
+                                    if c.fetchone():
+                                        p_id = None
+                                if p_id is not None:
+                                    c.execute("""
+                                    INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """, (
+                                        p_id, code, p.get('name'), p.get('category'),
+                                        float(p.get('price', 0)), float(p.get('cost', 0)),
+                                        int(p.get('stock', 0)), int(p.get('minStock', 5)),
+                                        p.get('unit', 'Pkt'), float(p.get('tax', 0)),
+                                        p.get('icon', '📦'), p.get('barcode', code)
+                                    ))
+                                else:
+                                    c.execute("""
+                                    INSERT INTO products (code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """, (
+                                        code, p.get('name'), p.get('category'),
+                                        float(p.get('price', 0)), float(p.get('cost', 0)),
+                                        int(p.get('stock', 0)), int(p.get('minStock', 5)),
+                                        p.get('unit', 'Pkt'), float(p.get('tax', 0)),
+                                        p.get('icon', '📦'), p.get('barcode', code)
+                                    ))
+                        except Exception as p_err:
+                            print(f"[Product Sync Warning] {p_err}")
 
                 # Sync Sales History
                 if 'salesHistory' in body and isinstance(body['salesHistory'], list):
@@ -664,17 +732,22 @@ class MyPOSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Sync Categories
                 if 'categories' in body and isinstance(body['categories'], list):
                     for cat in body['categories']:
-                        if isinstance(cat, dict):
-                            c.execute("""
-                            INSERT INTO categories (id, name, description, status)
-                            VALUES (?, ?, ?, ?)
-                            ON CONFLICT(id) DO UPDATE SET
-                                name=excluded.name, description=excluded.description, status=excluded.status
-                            """, (
-                                cat.get('id'), cat.get('name'), cat.get('desc', cat.get('description', '')), cat.get('status', 'Active')
-                            ))
-                        elif isinstance(cat, str):
-                            c.execute("INSERT OR IGNORE INTO categories (name, status) VALUES (?, 'Active')", (cat,))
+                        try:
+                            if isinstance(cat, dict):
+                                cat_name = str(cat.get('name', '')).strip()
+                                if cat_name:
+                                    c.execute("""
+                                    INSERT INTO categories (name, description, status)
+                                    VALUES (?, ?, ?)
+                                    ON CONFLICT(name) DO UPDATE SET
+                                        description=excluded.description, status=excluded.status
+                                    """, (
+                                        cat_name, cat.get('desc', cat.get('description', '')), cat.get('status', 'Active')
+                                    ))
+                            elif isinstance(cat, str) and cat.strip():
+                                c.execute("INSERT OR IGNORE INTO categories (name, status) VALUES (?, 'Active')", (cat.strip(),))
+                        except Exception as cat_err:
+                            print(f"[Category Sync Warning] {cat_err}")
 
                 # Sync Suppliers
                 if 'suppliers' in body and isinstance(body['suppliers'], list):

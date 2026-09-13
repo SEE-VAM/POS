@@ -18,4 +18,6 @@ pos_database.db
 pos_database.db-journal
 pos_license.key
 *.db
+__pycache__/
+*.pyc
 *.key
