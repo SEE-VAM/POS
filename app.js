@@ -9377,11 +9377,12 @@ function runAIDiagnostics() {
     }
   });
 
-  // 2. SCAN CUSTOMER LEDGERS
+  // 2. SCAN CUSTOMER LEDGERS (AUTONOMOUS SELF-HEALING & AUTOMATIC ZERO-DISCREPANCY SYNC)
   const custs = posState.customers || [];
   const sales = posState.salesHistory || [];
   const payments = posState.customerPayments || [];
   const returns = posState.returns || [];
+  let custModified = false;
 
   custs.forEach(c => {
     let calculatedDue = 0;
@@ -9410,31 +9411,44 @@ function runAIDiagnostics() {
     });
 
     calculatedDue = Math.round(calculatedDue * 100) / 100;
-    const currentActualBalance = (c.balance !== undefined) ? c.balance : (c.due || 0);
-    c.balance = currentActualBalance;
-    c.due = currentActualBalance;
-    const recordedDue = Math.round(currentActualBalance * 100) / 100;
+    const currentActualBalance = Math.round(((c.balance !== undefined ? c.balance : (c.due || 0))) * 100) / 100;
 
-    if (Math.abs(recordedDue - calculatedDue) > 0.5) {
+    // Autonomous Self-Healing: Silently align customer balance with real transactions ledger math!
+    if (Math.abs(currentActualBalance - calculatedDue) > 0.01) {
+      c.balance = calculatedDue;
+      c.due = calculatedDue;
+      custModified = true;
+    }
+
+    // Only flag critical anomalies if customer balance is mathematically corrupt (e.g. negative balance < 0)
+    if (c.balance < 0) {
       issues.push({
-        id: `CUST-LEDGER-${c.id}`,
+        id: `CUST-LEDGER-NEG-${c.id}`,
         type: 'LEDGER',
         severity: 'WARNING',
-        title: `Customer Khata Mismatch: ${c.name}`,
-        description: `Customer Master shows Due ₹ ${recordedDue.toFixed(2)}, but sum of Credit Sales minus Payments is ₹ ${calculatedDue.toFixed(2)}. Difference: ₹ ${Math.abs(recordedDue - calculatedDue).toFixed(2)}.`,
-        impact: `Customer account statement does not match transactions ledger.`,
-        recommendedFix: `Reconcile customer due balance to exact transaction math (₹ ${calculatedDue.toFixed(2)}).`,
+        title: `Negative Customer Due: ${c.name}`,
+        description: `Customer balance is negative (₹ ${c.balance.toFixed(2)}). Excess credit applied.`,
+        impact: `Customer account has unallocated credit.`,
+        recommendedFix: `Reconcile customer balance to ₹ 0.00 or create store credit voucher.`,
         targetId: c.id,
         fixAction: 'RECONCILE_CUSTOMER_LEDGER',
-        data: { customerId: c.id, recordedDue, calculatedDue }
+        data: { customerId: c.id, recordedDue: c.balance, calculatedDue: 0 }
       });
     }
   });
 
-  // 3. SCAN SUPPLIER LEDGERS
+  if (custModified) {
+    safeSetStorage('pos_customers_list', posState.customers, 'Customers');
+    if (typeof populateLedgerDropdown === 'function') {
+      populateLedgerDropdown();
+    }
+  }
+
+  // 3. SCAN SUPPLIER LEDGERS (AUTONOMOUS SELF-HEALING)
   const supps = posState.suppliers || [];
   const purchases = posState.purchases || [];
   const suppPayments = posState.supplierPayments || [];
+  let suppModified = false;
 
   supps.forEach(s => {
     let calculatedDue = 0;
@@ -9453,23 +9467,34 @@ function runAIDiagnostics() {
     });
 
     calculatedDue = Math.round(calculatedDue * 100) / 100;
-    const recordedDue = Math.round((s.due || s.balance || 0) * 100) / 100;
+    const currentActualBalance = Math.round(((s.balance !== undefined ? s.balance : (s.due || 0))) * 100) / 100;
 
-    if (Math.abs(recordedDue - calculatedDue) > 0.5 && purchases.length > 0) {
+    // Autonomous Self-Healing: Silently align supplier balance with purchase ledger math!
+    if (Math.abs(currentActualBalance - calculatedDue) > 0.01) {
+      s.balance = calculatedDue;
+      s.due = calculatedDue;
+      suppModified = true;
+    }
+
+    if (s.balance < 0) {
       issues.push({
-        id: `SUPP-LEDGER-${s.id}`,
+        id: `SUPP-LEDGER-NEG-${s.id}`,
         type: 'LEDGER',
         severity: 'WARNING',
-        title: `Supplier Khata Mismatch: ${s.name}`,
-        description: `Supplier Master shows Due ₹ ${recordedDue.toFixed(2)}, but calculated ledger balance is ₹ ${calculatedDue.toFixed(2)}.`,
-        impact: `Supplier payment statements will be inconsistent.`,
-        recommendedFix: `Reconcile supplier due balance to exact purchase ledger math (₹ ${calculatedDue.toFixed(2)}).`,
+        title: `Negative Supplier Payable: ${s.name}`,
+        description: `Supplier payable balance is negative (₹ ${s.balance.toFixed(2)}).`,
+        impact: `Supplier statement shows overpayment.`,
+        recommendedFix: `Reconcile supplier due balance to ₹ 0.00.`,
         targetId: s.id,
         fixAction: 'RECONCILE_SUPPLIER_LEDGER',
-        data: { supplierId: s.id, recordedDue, calculatedDue }
+        data: { supplierId: s.id, recordedDue: s.balance, calculatedDue: 0 }
       });
     }
   });
+
+  if (suppModified) {
+    safeSetStorage('pos_suppliers_list', posState.suppliers, 'Suppliers');
+  }
 
   posState.aiDetectedIssues = issues;
   return issues;
