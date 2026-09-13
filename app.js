@@ -26,6 +26,7 @@ const posState = {
     let saved = JSON.parse(localStorage.getItem('pos_settings') || 'null');
     if (!saved || typeof saved !== 'object') {
       saved = {
+        companyCode: 'COMP001',
         storeName: 'ABC Retail Store',
         legalName: 'ABC Supermarkets India Pvt Ltd',
         gstin: '07ABCDE1234F1Z5',
@@ -35,6 +36,10 @@ const posState = {
         currency: '₹',
         allowNegativeStock: false
       };
+      localStorage.setItem('pos_settings', JSON.stringify(saved));
+    }
+    if (!saved.companyCode) {
+      saved.companyCode = 'COMP001';
       localStorage.setItem('pos_settings', JSON.stringify(saved));
     }
     return saved;
@@ -1933,6 +1938,36 @@ const posState = {
   aiDetectedIssues: []
 };
 window.posState = posState;
+
+// --- ENTERPRISE RELATIONAL HELPERS (COMPANY & BRANCH CODES) ---
+function getBranchCodeByName(name) {
+  if (!name) return 'B001';
+  const clean = String(name).trim().toLowerCase();
+  if (clean === 'all branches' || clean === 'all') return 'B001';
+  const b = (posState.branches || []).find(x => (x.name && x.name.toLowerCase() === clean) || (x.code && x.code.toLowerCase() === clean));
+  return b ? b.code : 'B001';
+}
+
+function getBranchNameByCode(code) {
+  if (!code) return 'Main Branch';
+  const clean = String(code).trim().toLowerCase();
+  const b = (posState.branches || []).find(x => (x.code && x.code.toLowerCase() === clean) || (x.name && x.name.toLowerCase() === clean));
+  return b ? b.name : 'Main Branch';
+}
+
+function getCurrentCompanyCode() {
+  return (posState.settings && posState.settings.companyCode) ? posState.settings.companyCode : 'COMP001';
+}
+
+function getCurrentBranchCode() {
+  return getBranchCodeByName(posState.selectedBranch || 'Main Branch');
+}
+
+window.getBranchCodeByName = getBranchCodeByName;
+window.getBranchNameByCode = getBranchNameByCode;
+window.getCurrentCompanyCode = getCurrentCompanyCode;
+window.getCurrentBranchCode = getCurrentBranchCode;
+
 
 // Safe Storage Helpers: Save entities to localStorage with error handling & console logging
 function safeSetStorage(key, data, label) {
@@ -4335,12 +4370,15 @@ function savePurchase() {
                       (itemsAdded * 50);
   const today = new Date().toLocaleDateString('en-GB');
 
+  const purBranch = posState.selectedBranch || 'Main Branch';
   posState.purchases.unshift({
     id: posState.nextPurchaseSeq,
+    companyCode: getCurrentCompanyCode(),
+    branchCode: getBranchCodeByName(purBranch),
     poNumber: poNumber,
     date: today,
     supplier: supplierName,
-    branch: posState.selectedBranch || 'Main Branch',
+    branch: purBranch,
     itemsCount: purchaseItems.length,
     items: purchaseItems,
     totalQty: itemsAdded,
@@ -4480,6 +4518,7 @@ function saveBranch(e) {
     const nextId = posState.branches.length > 0 ? Math.max(...posState.branches.map(x => x.id)) + 1 : 1;
     posState.branches.push({
       id: nextId,
+      companyCode: getCurrentCompanyCode(),
       code, name, address, phone, status: 'Active'
     });
     showToast(`Branch "${name}" added to company network!`, 'success');
@@ -4736,6 +4775,8 @@ function saveUser(e) {
     const newId = posState.users.length > 0 ? Math.max(...posState.users.map(x => x.id)) + 1 : 1;
     posState.users.push({
       id: newId,
+      companyCode: getCurrentCompanyCode(),
+      branchCode: getBranchCodeByName(branch),
       name,
       username,
       password,
@@ -4885,6 +4926,8 @@ function savePermissions() {
 
 // --- 12. COMPANY SETTINGS (SCREEN 23) ---
 function loadSettings() {
+  const compCodeInput = document.getElementById('set-company-code');
+  if (compCodeInput) compCodeInput.value = posState.settings.companyCode || 'COMP001';
   document.getElementById('set-store-name').value = posState.settings.storeName;
   document.getElementById('set-legal-name').value = posState.settings.legalName;
   document.getElementById('set-gstin').value = posState.settings.gstin;
@@ -4898,6 +4941,8 @@ function loadSettings() {
 
 function saveSettings(e) {
   if (e) e.preventDefault();
+  const compCodeInput = document.getElementById('set-company-code');
+  if (compCodeInput) posState.settings.companyCode = compCodeInput.value.trim() || 'COMP001';
   posState.settings.storeName = document.getElementById('set-store-name').value.trim();
   posState.settings.legalName = document.getElementById('set-legal-name').value.trim();
   posState.settings.gstin = document.getElementById('set-gstin').value.trim();
@@ -5900,13 +5945,16 @@ function completeSale() {
   localStorage.setItem('pos_next_invoice_seq', String(posState.nextInvoiceSeq));
   const today = new Date().toLocaleDateString('en-GB');
 
+  const curBranchName = posState.selectedBranch || 'Main Branch';
   const newSale = {
     id: currentSeq,
+    companyCode: getCurrentCompanyCode(),
+    branchCode: getBranchCodeByName(curBranchName),
     invoiceNo: invoiceNum,
     date: today,
     customer: customerName,
     customerMobile: customerMobile,
-    branch: posState.selectedBranch || 'Main Branch',
+    branch: curBranchName,
     cashier: posState.currentUser.name || posState.currentUser.username || 'Admin',
     amount: grandTotal,
     payment: paymentDetails,
@@ -6517,6 +6565,7 @@ function renderLedger() {
 
     // Keep customer balance in 100% mathematical sync with calculated runningBal
     cust.balance = runningBal;
+    cust.due = runningBal;
     safeSetStorage('pos_customers_list', posState.customers, 'Customers');
 
     const totalDue = runningBal;
@@ -6690,6 +6739,7 @@ function saveCustomerPayment(e) {
   const today = new Date().toLocaleDateString('en-GB');
 
   cust.balance = Math.max(0, (cust.balance || 0) - amount);
+  cust.due = cust.balance;
 
   if (!Array.isArray(posState.customerPayments)) posState.customerPayments = [];
   posState.customerPayments.unshift({
@@ -7780,13 +7830,16 @@ function processReturn() {
   const today = new Date().toLocaleDateString('en-GB');
   const retId = 'RET-' + Date.now().toString().slice(-6);
 
+  const retBranch = sale.branch || posState.selectedBranch || 'Main Branch';
   posState.returns.unshift({
     id: retId,
+    companyCode: getCurrentCompanyCode(),
+    branchCode: getBranchCodeByName(retBranch),
     date: today,
     type: 'Sales Return',
     refNo: sale.invoiceNo,
     party: sale.customer || 'Walk-in Customer',
-    branch: sale.branch || posState.selectedBranch || 'Main Branch',
+    branch: retBranch,
     amount: returnTotal,
     reason: 'Customer return: ' + returnedLines.join(', '),
     status: 'Completed'
@@ -8214,6 +8267,9 @@ function executeTransfer() {
 
   const transferRecord = {
     id: transferId,
+    companyCode: getCurrentCompanyCode(),
+    fromBranchCode: getBranchCodeByName(fromB),
+    toBranchCode: getBranchCodeByName(toB),
     date: today,
     from: fromB,
     to: toB,
@@ -8877,7 +8933,12 @@ async function devExecuteSqlQuery() {
       return;
     }
 
-    let rows = [...tableData];
+    let rows = tableData.map(item => {
+      const copy = { ...item };
+      copy.company_code = copy.companyCode || (typeof getCurrentCompanyCode === 'function' ? getCurrentCompanyCode() : 'COMP001');
+      copy.branch_code = copy.branchCode || (copy.branch ? (typeof getBranchCodeByName === 'function' ? getBranchCodeByName(copy.branch) : 'B001') : 'B001');
+      return copy;
+    });
 
     // Handle WHERE clause (e.g. col = val, col < val, col > val)
     if (selectMatch[4]) {
@@ -8888,7 +8949,11 @@ async function devExecuteSqlQuery() {
         const op = whereEq[2];
         const val = whereEq[3];
         rows = rows.filter(r => {
-          const rVal = r[col];
+          let rVal = r[col];
+          if (rVal === undefined) {
+            const camel = col.replace(/_([a-z])/g, (_, l) => l.toUpperCase());
+            rVal = r[camel];
+          }
           if (op === '=') return String(rVal).toLowerCase() === String(val).toLowerCase();
           if (op === '<') return Number(rVal) < Number(val);
           if (op === '>') return Number(rVal) > Number(val);
@@ -9345,7 +9410,10 @@ function runAIDiagnostics() {
     });
 
     calculatedDue = Math.round(calculatedDue * 100) / 100;
-    const recordedDue = Math.round((c.due || 0) * 100) / 100;
+    const currentActualBalance = (c.balance !== undefined) ? c.balance : (c.due || 0);
+    c.balance = currentActualBalance;
+    c.due = currentActualBalance;
+    const recordedDue = Math.round(currentActualBalance * 100) / 100;
 
     if (Math.abs(recordedDue - calculatedDue) > 0.5) {
       issues.push({
@@ -9645,6 +9713,7 @@ function executeAIAutoRepair(targetAction, specificId) {
       const c = posState.customers.find(x => x.id === issue.data.customerId);
       if (c) {
         c.due = issue.data.calculatedDue;
+        c.balance = issue.data.calculatedDue;
         fixedLedgers++;
       }
     } else if (issue.fixAction === 'RECONCILE_SUPPLIER_LEDGER') {

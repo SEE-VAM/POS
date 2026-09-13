@@ -1216,6 +1216,13 @@
           <div class="panel-header"><span class="panel-title">Company & POS Configuration</span></div>
           <form onsubmit="saveSettings(event)">
             <div class="form-grid-2">
+              <div class="form-group" style="grid-column: span 2;">
+                <label class="form-label" style="display:flex; justify-content:space-between;">
+                  <span>🏢 Enterprise Company Code</span>
+                  <span style="font-size:11px; color:var(--text-muted);">Universal Master Foreign Key</span>
+                </label>
+                <input type="text" id="set-company-code" class="form-input" style="font-family:monospace; font-weight:700; letter-spacing:1px;" placeholder="COMP001" />
+              </div>
               <div class="form-group">
                 <label class="form-label">Store / Legal Name</label>
                 <input type="text" id="set-store-name" class="form-input" />
@@ -2459,6 +2466,8 @@
               <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM system_users;')">🔑 system_users</button>
               <button type="button" class="btn btn-sm" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('SELECT * FROM company_settings;')">⚙️ company_settings</button>
               <button type="button" class="btn btn-sm" style="background:#1e293b; color:#f59e0b; border:1px solid #78350f; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery('PRAGMA table_info(products);')">📋 PRAGMA products</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#a855f7; border:1px solid #6b21a8; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery(&quot;SELECT id, company_code, branch_code, code, name, stock FROM products WHERE branch_code = 'B001';&quot;)">🌿 B001 Stock</button>
+              <button type="button" class="btn btn-sm" style="background:#1e293b; color:#a855f7; border:1px solid #6b21a8; padding:3px 8px; font-size:0.72rem; border-radius:6px;" onclick="setDevSqlQuery(&quot;SELECT id, company_code, branch_code, invoice_no, customer, amount, branch FROM sales_orders WHERE branch_code = 'B001';&quot;)">🧾 B001 Sales</button>
             </div>
           </div>
 
