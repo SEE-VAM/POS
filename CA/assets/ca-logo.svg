@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <filter id="caGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Clean Premium Emblem Container -->
+  <rect x="2" y="2" width="96" height="96" rx="18" fill="#ffffff" stroke="#c5a059" stroke-width="2.5" />
+
+  <!-- Letter 'C' in ICAI Royal Navy Blue -->
+  <path d="M 45 32
+           C 40 25 32 23 23 23
+           C 12 23 4 33 4 50
+           C 4 67 12 77 23 77
+           C 32 77 40 75 45 68
+           L 39 61
+           C 35 66 30 68 23 68
+           C 17 68 12 61 12 50
+           C 12 39 17 32 23 32
+           C 30 32 35 34 39 39
+           Z"
+        transform="translate(4, 0)"
+        fill="#002b66"/>
+
+  <!-- Letter 'A' in ICAI Royal Navy Blue -->
+  <path d="M 68 23
+           L 53 77
+           L 62 77
+           L 66 62
+           L 82 62
+           L 86 77
+           L 96 77
+           L 81 23
+           Z
+           M 74 34
+           L 79 53
+           L 69 53
+           Z"
+        transform="translate(-4, 0)"
+        fill="#002b66"/>
+
+  <!-- Official ICAI Emerald Green Swoosh / Tick Mark -->
+  <path d="M 23 52
+           L 42 74
+           C 43.5 75.8 46.5 75.8 48 74
+           L 92 24
+           L 80 24
+           L 45 64
+           L 32 49
+           Z"
+        fill="#009e49"
+        filter="url(#caGlow)"/>
+</svg>
