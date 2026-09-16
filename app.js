@@ -1,5 +1,5 @@
 /* =============================================================================
-   MYPOS RETAIL APPLICATION - COMPLETE INTERACTIVE CONTROLLER
+   BRAINSHOP RETAIL APPLICATION - COMPLETE INTERACTIVE CONTROLLER
    Full Forms, Modals, State Management, Real-Time Calculations & Exports
    ============================================================================= */
 
@@ -1877,6 +1877,21 @@ const posState = {
   posCustomerName: 'Walk-in Customer',
   posCustomerMobile: '9999999999',
 
+  // Suspended Held Orders & Draft Quotations (Persisted in localStorage)
+  heldOrders: (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('pos_held_orders') || 'null');
+      return Array.isArray(saved) ? saved : [];
+    } catch(e) { return []; }
+  })(),
+  draftOrders: (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('pos_draft_orders') || 'null');
+      return Array.isArray(saved) ? saved : [];
+    } catch(e) { return []; }
+  })(),
+  activeHeldDraftTab: 'hold',
+
   // Past Sales History (Persisted in localStorage)
   salesHistory: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_sales_history') || 'null');
@@ -2246,7 +2261,13 @@ function navigateToScreen(screenId) {
 
   // Refresh dynamic screen content & clear old recent selection states
   if (screenId === 'dashboard') renderDashboard();
-  if (screenId === 'pos') { renderPosProducts(); renderCart(); initPosCustomerBar(); }
+  if (screenId === 'pos') {
+    updatePosCustomerDropdown();
+    renderPosProducts();
+    renderCart();
+    initPosCustomerBar();
+    updateHeldDraftBadges();
+  }
   if (screenId === 'inventory') resetInventoryFilters();
   if (screenId === 'products') renderProductMaster();
   if (screenId === 'categories') renderCategories();
@@ -3209,7 +3230,7 @@ function downloadProductExcelTemplate() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'MyPOS_Product_Upload_Template.csv';
+  a.download = 'BrainShop_Product_Upload_Template.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -4110,15 +4131,348 @@ function initPosCustomerBar() {
   if (mobileInput && !mobileInput.value) mobileInput.value = posState.posCustomerMobile || '9999999999';
 }
 
-function updatePosCustomerDropdown() {
+function updatePosCustomerDropdown(selectedId = null) {
   const select = document.getElementById('pos-customer-select');
   if (!select) return;
-  const currentVal = select.value;
+
+  if (!posState.customers || !Array.isArray(posState.customers) || posState.customers.length === 0) {
+    posState.customers = [
+      { id: 1, name: 'Walk-in Customer', mobile: '9999999999', balance: 0, due: 0, status: 'Active' }
+    ];
+  }
+
+  // Preserve previous selection if valid, or default to first customer (Walk-in Customer)
+  const currentVal = selectedId || select.value || (posState.customers[0] ? posState.customers[0].id : 1);
+
   select.innerHTML = '';
   posState.customers.forEach(c => {
-    select.innerHTML += `<option value="${c.id}">${c.name} (${c.mobile})</option>`;
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `${c.name} (${c.mobile || 'No Mobile'})`;
+    select.appendChild(opt);
   });
-  if (currentVal) select.value = currentVal;
+
+  const matchingOption = select.querySelector(`option[value="${currentVal}"]`);
+  if (matchingOption) {
+    select.value = currentVal;
+  } else if (select.options.length > 0) {
+    select.selectedIndex = 0;
+  }
+
+  onPosCustomerSelectChange();
+}
+
+// =============================================================================
+// HELD & DRAFT ORDERS CONTROLLER (COUNTER SUSPENSION & QUOTATION SYSTEM)
+// =============================================================================
+function saveHeldOrdersToStorage() {
+  safeSetStorage('pos_held_orders', posState.heldOrders, 'Held Orders');
+  updateHeldDraftBadges();
+}
+
+function saveDraftOrdersToStorage() {
+  safeSetStorage('pos_draft_orders', posState.draftOrders, 'Draft Orders');
+  updateHeldDraftBadges();
+}
+
+function updateHeldDraftBadges() {
+  const heldCount = (posState.heldOrders || []).length;
+  const draftCount = (posState.draftOrders || []).length;
+
+  // Header pill counters
+  const headerHeld = document.getElementById('header-held-count');
+  if (headerHeld) headerHeld.textContent = heldCount.toString();
+  const headerDraft = document.getElementById('header-draft-count');
+  if (headerDraft) headerDraft.textContent = draftCount.toString();
+
+  // Bottom action button badges
+  const btnHeldBadge = document.getElementById('btn-hold-count');
+  if (btnHeldBadge) {
+    btnHeldBadge.textContent = heldCount.toString();
+    btnHeldBadge.style.display = heldCount > 0 ? 'inline-block' : 'none';
+  }
+  const btnDraftBadge = document.getElementById('btn-draft-count');
+  if (btnDraftBadge) {
+    btnDraftBadge.textContent = draftCount.toString();
+    btnDraftBadge.style.display = draftCount > 0 ? 'inline-block' : 'none';
+  }
+
+  // Modal tab counters if modal open
+  const tabHeld = document.getElementById('tab-count-held');
+  if (tabHeld) tabHeld.textContent = heldCount.toString();
+  const tabDraft = document.getElementById('tab-count-draft');
+  if (tabDraft) tabDraft.textContent = draftCount.toString();
+}
+
+function handlePosHoldClick() {
+  if (!posState.cart || posState.cart.length === 0) {
+    // If cart is empty, open Held Orders modal so cashier can recall previously held bills!
+    if ((posState.heldOrders || []).length > 0) {
+      openHeldDraftsModal('hold');
+    } else {
+      showToast('⚠️ Cart is empty! Add products first to hold this bill.', 'warning');
+    }
+    return;
+  }
+
+  // Cart has items: place current bill on hold
+  const subtotal = posState.cart.reduce((sum, item) => sum + (item.price * (item.qty || item.quantity || 1)), 0);
+  const tax = subtotal * 0.05;
+  const total = subtotal + tax;
+
+  const order = {
+    id: 'HOLD-' + Math.floor(100000 + Math.random() * 900000),
+    type: 'HOLD',
+    timestamp: Date.now(),
+    timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dateStr: new Date().toLocaleDateString(),
+    customerName: posState.posCustomerName || 'Walk-in Customer',
+    customerMobile: posState.posCustomerMobile || '9999999999',
+    customerId: document.getElementById('pos-customer-select')?.value || 1,
+    items: JSON.parse(JSON.stringify(posState.cart)),
+    subtotal: Math.round(subtotal * 100) / 100,
+    tax: Math.round(tax * 100) / 100,
+    total: Math.round(total * 100) / 100
+  };
+
+  if (!Array.isArray(posState.heldOrders)) posState.heldOrders = [];
+  posState.heldOrders.unshift(order);
+  saveHeldOrdersToStorage();
+
+  posState.cart = [];
+  renderCart();
+  showToast(`⏸️ Bill placed on Hold (${order.id})! Counter ready for next customer.`, 'info');
+}
+
+function handlePosDraftClick() {
+  if (!posState.cart || posState.cart.length === 0) {
+    // If cart is empty, open Draft Orders modal so user can view/convert drafts
+    if ((posState.draftOrders || []).length > 0) {
+      openHeldDraftsModal('draft');
+    } else {
+      showToast('⚠️ Cart is empty! Add products first to save as draft quotation.', 'warning');
+    }
+    return;
+  }
+
+  const subtotal = posState.cart.reduce((sum, item) => sum + (item.price * (item.qty || item.quantity || 1)), 0);
+  const tax = subtotal * 0.05;
+  const total = subtotal + tax;
+
+  const order = {
+    id: 'DFT-' + Math.floor(100000 + Math.random() * 900000),
+    type: 'DRAFT',
+    timestamp: Date.now(),
+    timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dateStr: new Date().toLocaleDateString(),
+    customerName: posState.posCustomerName || 'Walk-in Customer',
+    customerMobile: posState.posCustomerMobile || '9999999999',
+    customerId: document.getElementById('pos-customer-select')?.value || 1,
+    items: JSON.parse(JSON.stringify(posState.cart)),
+    subtotal: Math.round(subtotal * 100) / 100,
+    tax: Math.round(tax * 100) / 100,
+    total: Math.round(total * 100) / 100
+  };
+
+  if (!Array.isArray(posState.draftOrders)) posState.draftOrders = [];
+  posState.draftOrders.unshift(order);
+  saveDraftOrdersToStorage();
+
+  posState.cart = [];
+  renderCart();
+  showToast(`📝 Saved as Draft Quotation (${order.id})!`, 'success');
+}
+
+function openHeldDraftsModal(tab = 'hold') {
+  posState.activeHeldDraftTab = tab;
+  switchHeldDraftsTab(tab);
+  openModal('modal-held-drafts');
+}
+
+function switchHeldDraftsTab(tab) {
+  posState.activeHeldDraftTab = tab;
+  const btnHeld = document.getElementById('tab-btn-held');
+  const btnDraft = document.getElementById('tab-btn-draft');
+  const icon = document.getElementById('modal-held-drafts-icon');
+  const title = document.getElementById('modal-held-drafts-title');
+
+  if (tab === 'hold') {
+    if (btnHeld) { btnHeld.className = 'btn btn-sm held-tab-active'; }
+    if (btnDraft) { btnDraft.className = 'btn btn-sm held-tab-inactive'; }
+    if (icon) icon.textContent = '⏸️';
+    if (title) title.textContent = 'Held Orders (Suspended Bills)';
+  } else {
+    if (btnHeld) { btnHeld.className = 'btn btn-sm held-tab-inactive'; }
+    if (btnDraft) { btnDraft.className = 'btn btn-sm held-tab-active'; }
+    if (icon) icon.textContent = '📝';
+    if (title) title.textContent = 'Draft Orders (Saved Quotations)';
+  }
+  renderHeldDraftsList();
+  updateHeldDraftBadges();
+}
+
+function renderHeldDraftsList() {
+  const container = document.getElementById('held-drafts-list-container');
+  if (!container) return;
+
+  const isHold = (posState.activeHeldDraftTab === 'hold');
+  const list = isHold ? (posState.heldOrders || []) : (posState.draftOrders || []);
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+        <div style="font-size: 2.8rem; margin-bottom: 8px;">${isHold ? '⏸️' : '📝'}</div>
+        <h4 style="margin: 0 0 6px 0; color: var(--secondary); font-size: 1.05rem;">
+          ${isHold ? 'Koi Held Bill Nahi Hai' : 'Koi Draft Quotation Nahi Hai'}
+        </h4>
+        <p style="font-size: 0.825rem; margin: 0; max-width: 320px; margin: 0 auto; line-height: 1.5;">
+          ${isHold 
+            ? 'Jab counter par customer ka bill temporarily hold karna ho, to cart me items daal kar "Hold" button dabayein.' 
+            : 'Jab quotation save karni ho ya baad me bill banana ho, to cart me items daal kar "Draft" button dabayein.'}
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(order => {
+    const itemCount = (order.items || []).reduce((sum, it) => sum + (it.qty || it.quantity || 1), 0);
+    const summary = (order.items || []).map(it => `${it.name} x${it.qty || it.quantity || 1}`).join(', ');
+
+    return `
+      <div class="held-order-card">
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+            <span style="font-weight: 800; font-size: 0.95rem; color: var(--primary);">${order.id}</span>
+            <span class="badge ${isHold ? 'badge-warning' : 'badge-info'}" style="font-size: 0.68rem; font-weight: 700;">
+              ${isHold ? '⏸️ ON HOLD' : '📝 DRAFT'}
+            </span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">🕒 ${order.timeStr || ''} &bull; ${order.dateStr || ''}</span>
+          </div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--secondary);">
+            👤 ${order.customerName || 'Walk-in Customer'} 
+            <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(${order.customerMobile || ''})</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${summary}">
+            📦 <strong>${itemCount} items:</strong> ${summary}
+          </div>
+        </div>
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
+          <div style="font-size: 1.15rem; font-weight: 800; color: var(--success);">
+            ₹ ${Number(order.total || 0).toFixed(2)}
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-sm btn-success" onclick="resumeHeldOrDraftOrder('${order.id}')" title="Resume this order on POS Counter" style="font-weight: 700; padding: 5px 12px; font-size: 0.8rem;">
+              🟢 Resume
+            </button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="deleteHeldOrDraftOrder('${order.id}')" title="Delete this order" style="color: var(--danger); border-color: var(--danger); padding: 5px 8px;">
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function resumeHeldOrDraftOrder(orderId) {
+  let isHold = true;
+  let list = posState.heldOrders || [];
+  let idx = list.findIndex(o => o.id === orderId);
+
+  if (idx === -1) {
+    isHold = false;
+    list = posState.draftOrders || [];
+    idx = list.findIndex(o => o.id === orderId);
+  }
+
+  if (idx === -1) return;
+
+  const order = list[idx];
+
+  // If active cart already has items, prompt cashier
+  if (posState.cart && posState.cart.length > 0) {
+    const ok = confirm('⚠️ Active cart me already items hain! Kya aap current cart ko replace karke yeh order load karna chahte hain?');
+    if (!ok) return;
+  }
+
+  // 1. Restore Cart items
+  posState.cart = JSON.parse(JSON.stringify(order.items || []));
+
+  // 2. Restore Customer selection
+  if (order.customerId) {
+    updatePosCustomerDropdown(order.customerId);
+  } else if (order.customerName) {
+    const cust = (posState.customers || []).find(c => c.name === order.customerName || c.mobile === order.customerMobile);
+    if (cust) {
+      updatePosCustomerDropdown(cust.id);
+    } else {
+      const nameInput = document.getElementById('pos-cust-name-input');
+      const mobInput = document.getElementById('pos-cust-mobile-input');
+      if (nameInput) nameInput.value = order.customerName;
+      if (mobInput) mobInput.value = order.customerMobile;
+      posState.posCustomerName = order.customerName;
+      posState.posCustomerMobile = order.customerMobile;
+    }
+  }
+
+  // 3. Remove resumed order from storage
+  list.splice(idx, 1);
+  if (isHold) {
+    saveHeldOrdersToStorage();
+  } else {
+    saveDraftOrdersToStorage();
+  }
+
+  // 4. Close modal & refresh cart UI
+  closeModal('modal-held-drafts');
+  renderCart();
+  navigateToScreen('pos');
+  showToast(`✅ Order ${order.id} counter par successfully load ho gaya!`, 'success');
+}
+
+function deleteHeldOrDraftOrder(orderId) {
+  let isHold = true;
+  let list = posState.heldOrders || [];
+  let idx = list.findIndex(o => o.id === orderId);
+
+  if (idx === -1) {
+    isHold = false;
+    list = posState.draftOrders || [];
+    idx = list.findIndex(o => o.id === orderId);
+  }
+
+  if (idx === -1) return;
+
+  if (confirm(`Kya aap order ${orderId} ko delete karna chahte hain?`)) {
+    list.splice(idx, 1);
+    if (isHold) {
+      saveHeldOrdersToStorage();
+    } else {
+      saveDraftOrdersToStorage();
+    }
+    renderHeldDraftsList();
+    showToast(`🗑️ Order ${orderId} delete kar diya gaya.`, 'info');
+  }
+}
+
+function clearAllHeldOrDrafts() {
+  const isHold = (posState.activeHeldDraftTab === 'hold');
+  const list = isHold ? posState.heldOrders : posState.draftOrders;
+  if (!list || list.length === 0) return;
+
+  const label = isHold ? 'saare Held bills' : 'saare Draft orders';
+  if (confirm(`Kya aap sach me ${label} delete karna chahte hain?`)) {
+    if (isHold) {
+      posState.heldOrders = [];
+      saveHeldOrdersToStorage();
+    } else {
+      posState.draftOrders = [];
+      saveDraftOrdersToStorage();
+    }
+    renderHeldDraftsList();
+    showToast(`🗑️ Sabhi orders successfully clear ho gaye!`, 'info');
+  }
 }
 
 // --- 8. SUPPLIER MASTER (SCREEN 12) & MODAL ---
@@ -4978,7 +5332,7 @@ function renderStorageDiagnostics() {
 
 function exportFullDatabaseBackup() {
   const fullBackup = {
-    appName: 'MyPOS Commercial Retail',
+    appName: 'BrainShop Commercial Retail',
     backupVersion: '2.0',
     exportTimestamp: new Date().toISOString(),
     storeSettings: posState.settings,
@@ -5001,7 +5355,7 @@ function exportFullDatabaseBackup() {
   const a = document.createElement('a');
   const dStr = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `MyPOS_FullDatabaseBackup_${dStr}.json`;
+  a.download = `BrainShop_FullDatabaseBackup_${dStr}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -5069,7 +5423,7 @@ function importFullDatabaseBackup(e) {
 }
 
 function inspectStorageInConsole() {
-  console.group('=== 🗄️ MyPOS Full Storage Inspection ===');
+  console.group('=== 🗄️ BrainShop Full Storage Inspection ===');
   console.log('Storage Origin:', window.location.origin);
   console.log('Total Products:', posState.products.length);
   console.table(posState.products);
@@ -5371,18 +5725,22 @@ function updateCartQty(productId, delta) {
   renderCart();
 }
 
-function clearCart() {
+function clearCart(promptConfirm = true) {
   if (posState.cart.length === 0) return;
-  if (confirm('Are you sure you want to clear the active cart?')) {
+  if (!promptConfirm || confirm('Are you sure you want to clear the active cart?')) {
     posState.cart = [];
     renderCart();
-    showToast('Cart cleared.', 'info');
+    if (promptConfirm) showToast('Cart cleared.', 'info');
   }
 }
 
 function renderCart() {
   const container = document.getElementById('cart-items-list');
   if (!container) return;
+
+  if (typeof updateHeldDraftBadges === 'function') {
+    updateHeldDraftBadges();
+  }
 
   container.innerHTML = '';
   let subtotal = 0;
@@ -7588,7 +7946,7 @@ function exportReportToCsv() {
   const entityLabel = activeReportEntity.toUpperCase();
   const dateStr = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `MyPOS_Report_${entityLabel}_${dateStr}.csv`;
+  a.download = `BrainShop_Report_${entityLabel}_${dateStr}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -7628,7 +7986,7 @@ function exportReportToJson() {
   const a = document.createElement('a');
   const dateStr = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `MyPOS_Report_${activeReportEntity.toUpperCase()}_${dateStr}.json`;
+  a.download = `BrainShop_Report_${activeReportEntity.toUpperCase()}_${dateStr}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -8304,6 +8662,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCategoryChips();
   populateCategorySelects();
   populatePurchaseDropdowns();
+  updatePosCustomerDropdown();
+  updateHeldDraftBadges();
 
   // Reset all recent selection states for a fresh clean session
   resetInventoryFilters();
@@ -8630,7 +8990,7 @@ function copyMachineId() {
 function contactVendorWhatsApp() {
   const licInput = document.getElementById('lic-machine-id');
   const machineId = licInput ? licInput.value : '';
-  const text = encodeURIComponent(`Namaste! I need activation key for MyPOS Retail. Machine ID: ${machineId}`);
+  const text = encodeURIComponent(`Namaste! I need activation key for BrainShop Retail. Machine ID: ${machineId}`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
@@ -9092,7 +9452,7 @@ function devDownloadSqliteDb() {
   // If in offline browser mode (file:/// or server offline), generate comprehensive DB backup right now!
   try {
     const backupData = {
-      format: 'MyPOS Database Full Backup',
+      format: 'BrainShop Database Full Backup',
       exportedAt: new Date().toISOString(),
       timestamp: Date.now(),
       engine: 'In-Memory / LocalStorage Engine',
@@ -9941,7 +10301,7 @@ function dispatchAIQuery(rawText, target = 'copilot') {
   if (isGreeting) {
     reply(`
       <div style="line-height:1.5;">
-        <strong style="color:#38bdf8;">👋 Namaste! Main aapka MyPOS Universal AI Copilot hoon.</strong><br>
+        <strong style="color:#38bdf8;">👋 Namaste! Main aapka BrainShop Universal AI Copilot hoon.</strong><br>
         <span style="font-size:0.8rem; color:#cbd5e1;">Aap mujhse poore POS application, stock, sale, munafa, ledgers ya kisi bhi screen ke baare me pooch sakte hain:</span>
         <div style="margin-top:6px; font-size:0.78rem; background:rgba(0,0,0,0.3); padding:8px 10px; border-radius:6px; line-height:1.6;">
           &bull; 💰 <em>"Dukaan me kitne ka maal pada hai"</em> (Stock Valuation & Gross Margin)<br>
@@ -9967,7 +10327,7 @@ function dispatchAIQuery(rawText, target = 'copilot') {
   if (isScopeCheck) {
     reply(`
       <div style="line-height:1.5;">
-        <strong style="color:#10b981;">🤖 Haan! MyPOS AI Copilot poore application ko 24/7 autonomously monitor karta hai:</strong><br>
+        <strong style="color:#10b981;">🤖 Haan! BrainShop AI Copilot poore application ko 24/7 autonomously monitor karta hai:</strong><br>
         <span style="font-size:0.8rem; color:#cbd5e1;">Aapko kisi manual calculation ya complex reports ki zaroorat nahi hai. Yeh sab AI live sambhalta hai:</span>
         <div style="margin-top:6px; font-size:0.78rem; background:rgba(0,0,0,0.3); padding:8px 10px; border-radius:6px; line-height:1.6;">
           &bull; 📦 <strong>Inventory & Valuation:</strong> Live stock, 0-stock alerts, negative stock reconcile, dukaan me total kitne ka maal hai.<br>
@@ -9989,7 +10349,7 @@ function dispatchAIQuery(rawText, target = 'copilot') {
   if (isShortcutQuery) {
     reply(`
       <div style="line-height:1.5;">
-        <strong style="color:#38bdf8;">⌨️ MyPOS Keyboard Shortcut Keys:</strong>
+        <strong style="color:#38bdf8;">⌨️ BrainShop Keyboard Shortcut Keys:</strong>
         <div style="margin-top:6px; background:#020617; border:1px solid #1e293b; border-radius:6px; padding:8px 10px; font-size:0.78rem; line-height:1.8;">
           &bull; <kbd style="background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:700;">F2</kbd> : <strong>Barcode Search:</strong> Barcode scanner field par turant cursor focus karein.<br>
           &bull; <kbd style="background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:700;">F4</kbd> : <strong>Product Catalog Modal:</strong> Fullscreen product search aur price checker khole.<br>
@@ -11254,7 +11614,7 @@ function clearAICopilotChat() {
 function initAICopilotGreeting() {
   const welcomeHtml = `
     <div style="line-height:1.45;">
-      <strong>👋 Namaste! Main aapka MyPOS AI Copilot hoon.</strong><br>
+      <strong>👋 Namaste! Main aapka BrainShop AI Copilot hoon.</strong><br>
       Aap mujhse kisi bhi <strong>Invoice, Product, Customer ya Khata Ledger</strong> ka issue pooch sakte hain.<br><br>
       Main pehle database me <em>find</em> karke issue aapko yahan dikhaunga, aur fir aapke <strong>1-Click</strong> karte hi safe auto-repair kar dunga!
     </div>
@@ -11592,7 +11952,7 @@ function aiFixEntity(actionType, entityId, btnElement) {
         newStock: 0,
         changeType: 'AI_AUTO_RECONCILE',
         reason: 'AI Copilot: Negative stock reconciled to 0',
-        changedBy: 'MyPOS AI Copilot'
+        changedBy: 'BrainShop AI Copilot'
       });
       fixMessage = `Product "${prod.name}" ka negative stock (${oldStock}) theek karke <strong>0 ${prod.unit}</strong> reconcile kar diya gaya hai!`;
     }
@@ -11615,7 +11975,7 @@ function aiFixEntity(actionType, entityId, btnElement) {
         newStock: prod.stock,
         changeType: 'AI_AUTO_RECONCILE',
         reason: 'AI Copilot: Zero price set to cost + 20% margin',
-        changedBy: 'MyPOS AI Copilot'
+        changedBy: 'BrainShop AI Copilot'
       });
       fixMessage = `Product "${prod.name}" ka selling price ₹ ${oldPrice} se badha kar <strong>₹ ${newPrice.toFixed(2)}</strong> (Cost + 20% margin) kar diya gaya hai!`;
     }
@@ -11638,7 +11998,7 @@ function aiFixEntity(actionType, entityId, btnElement) {
           newStock: 0,
           changeType: 'AI_AUTO_RECONCILE',
           reason: 'AI Copilot: Batch negative stock reconcile',
-          changedBy: 'MyPOS AI Copilot'
+          changedBy: 'BrainShop AI Copilot'
         });
       }
     });

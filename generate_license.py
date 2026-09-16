@@ -1,10 +1,10 @@
 """
 =============================================================================
-MYPOS PRIVATE LICENSE KEY GENERATOR (FOR VENDOR / DEVELOPER ONLY)
+BRAINSHOP PRIVATE LICENSE KEY GENERATOR (FOR VENDOR / DEVELOPER ONLY)
 DO NOT SHARE OR DISTRIBUTE THIS FILE TO CLIENTS
 =============================================================================
 Use this tool to generate an Activation License Key when a client pays you.
-Input client's Machine ID (e.g. MYPOS-7B29-4A1C-99E3) and select validity.
+Input client's Machine ID (e.g. BRAINSHOP-7B29-4A1C-99E3) and select validity.
 =============================================================================
 """
 
@@ -18,8 +18,8 @@ SECRET_SALT = b"MYPOS_SECURE_RETAIL_ENTERPRISE_KEYGEN_SALT_2026"
 
 def generate_key(machine_id, lic_type='LIFETIME', valid_year=None):
     machine_id = machine_id.strip().upper()
-    if not machine_id.startswith('MYPOS-'):
-        print("[!] Warning: Machine ID should usually start with 'MYPOS-'")
+    if not machine_id.startswith('BRAINSHOP-') and not machine_id.startswith('MYPOS-'):
+        print("[!] Warning: Machine ID should usually start with 'BRAINSHOP-' or 'MYPOS-'")
 
     if not valid_year:
         if lic_type == 'LIFETIME':
@@ -34,14 +34,14 @@ def generate_key(machine_id, lic_type='LIFETIME', valid_year=None):
 
 def main():
     print("=" * 65)
-    print("    MYPOS PRIVATE LICENSE GENERATOR (DEVELOPER USE ONLY)    ")
+    print("    BRAINSHOP PRIVATE LICENSE GENERATOR (DEVELOPER USE ONLY)    ")
     print("=" * 65)
 
     if len(sys.argv) >= 2:
         m_id = sys.argv[1].strip()
         l_type = sys.argv[2].upper() if len(sys.argv) >= 3 else 'LIFETIME'
     else:
-        m_id = input("\nEnter Client Machine ID (e.g. MYPOS-7B29-4A1C-99E3): ").strip()
+        m_id = input("\nEnter Client Machine ID (e.g. BRAINSHOP-7B29-4A1C-99E3): ").strip()
         if not m_id:
             print("[!] Error: Machine ID is required!")
             return
@@ -69,7 +69,7 @@ def main():
 
     print("\n📋 Ready-to-Send WhatsApp Message for Client:\n")
     print("-" * 50)
-    print(f"Namaste! Aapka MyPOS Retail Software License ready hai.\n")
+    print(f"Namaste! Aapka BrainShop Retail Software License ready hai.\n")
     print(f"Machine ID: {m_id}")
     print(f"Activation Key: {key}")
     print(f"Plan: {l_type} Active\n")

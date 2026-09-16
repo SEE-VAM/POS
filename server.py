@@ -1,6 +1,6 @@
 """
 =============================================================================
-MYPOS COMMERCIAL SERVER & SQLITE DATABASE ENGINE
+BRAINSHOP COMMERCIAL SERVER & SQLITE DATABASE ENGINE
 Pure Python Standard Library (Zero pip install dependencies required)
 Features:
 - Hardware Machine ID Lock (Motherboard UUID + CPU + MAC)
@@ -63,8 +63,8 @@ def get_machine_hardware_id():
 
     raw_signature = "##".join(system_info).encode('utf-8')
     digest = hashlib.sha256(raw_signature).hexdigest().upper()
-    # Format as clean 16-character code: MYPOS-XXXX-XXXX-XXXX
-    return f"MYPOS-{digest[0:4]}-{digest[4:8]}-{digest[8:12]}"
+    # Format as clean 16-character code: BRAINSHOP-XXXX-XXXX-XXXX
+    return f"BRAINSHOP-{digest[0:4]}-{digest[4:8]}-{digest[8:12]}"
 
 def verify_license_key(machine_id, license_key):
     """Cryptographically verifies if the license key belongs to this machine ID."""
@@ -860,9 +860,12 @@ def init_sqlite_db():
 # =============================================================================
 # 3. HTTP REQUEST HANDLER WITH REST APIS & DEVELOPER REMOTE DEBUGGER
 # =============================================================================
-class MyPOSRequestHandler(http.server.SimpleHTTPRequestHandler):
+class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
+
+# Compatibility alias for legacy references
+MyPOSRequestHandler = BrainShopRequestHandler
 
     def _send_json(self, data, status=200):
         self.send_response(status)
@@ -1427,7 +1430,7 @@ def start_server():
     for p in candidate_ports:
         try:
             socketserver.TCPServer.allow_reuse_address = True
-            httpd = socketserver.TCPServer(("", p), MyPOSRequestHandler)
+            httpd = socketserver.TCPServer(("", p), BrainShopRequestHandler)
             PORT = p
             break
         except OSError:
@@ -1442,14 +1445,14 @@ def start_server():
         return
 
     print("=" * 70)
-    print("      MYPOS COMMERCIAL RETAIL SERVER (STANDALONE ENGINE)      ")
+    print("      BRAINSHOP COMMERCIAL RETAIL SERVER (STANDALONE ENGINE)      ")
     print("=" * 70)
     print(f"[*] Computer Machine ID : {machine_id}")
     print(f"[*] License Status      : {'ACTIVATED (' + status.get('type') + ')' if status.get('activated') else 'UNACTIVATED (Activation Required)'}")
     print(f"[*] SQLite Database     : {DB_FILE}")
     print(f"[*] Local Web Address   : http://localhost:{PORT}")
     print("=" * 70)
-    print("[*] Launching MyPOS in your browser...")
+    print("[*] Launching BrainShop in your browser...")
     print("[*] Press Ctrl+C in this window to stop the server.")
 
     # Open browser automatically after 1 second
@@ -1469,7 +1472,7 @@ def start_server():
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n[!] Shutting down MyPOS server cleanly.")
+            print("\n[!] Shutting down BrainShop server cleanly.")
             httpd.server_close()
 
 if __name__ == '__main__':

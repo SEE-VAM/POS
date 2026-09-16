@@ -106,7 +106,7 @@ html = """
   <!-- TOP APPLICATION BAR -->
   <header class="app-topbar">
     <div class="top-brand">
-      <span>🛒 MyPOS</span>
+      <span>🛒 BrainShop</span>
       <span class="top-store">ABC Retail Store &bull; Main Branch</span>
     </div>
     <div class="screen-switcher">
