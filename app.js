@@ -2268,7 +2268,13 @@ function navigateToScreen(screenId) {
     initPosCustomerBar();
     updateHeldDraftBadges();
   }
-  if (screenId === 'inventory') resetInventoryFilters();
+  if (screenId === 'inventory') {
+    if (window._preserveInventoryFilter) {
+      window._preserveInventoryFilter = false;
+    } else {
+      resetInventoryFilters();
+    }
+  }
   if (screenId === 'products') renderProductMaster();
   if (screenId === 'categories') renderCategories();
   if (screenId === 'customers') renderCustomers();
@@ -2900,6 +2906,167 @@ function renderDashboardChart(period = '7days') {
   // X labels
   labelsContainer.innerHTML = pointsData.map(p => `<span>${p.shortLabel || p.label}</span>`).join('');
 }
+
+// --- LOW STOCK & REORDER MANAGER (SCREEN 2 KPI CLICK & MODAL) ---
+function openLowStockModal() {
+  const searchInput = document.getElementById('low-stock-modal-search');
+  if (searchInput) searchInput.value = '';
+  renderLowStockModalTable();
+  openModal('modal-low-stock-items');
+}
+window.openLowStockModal = openLowStockModal;
+
+function renderLowStockModalTable() {
+  const tbody = document.getElementById('low-stock-modal-tbody');
+  const summaryBadge = document.getElementById('low-stock-summary-badge');
+  const searchInput = document.getElementById('low-stock-modal-search');
+  const query = (searchInput?.value || '').trim().toLowerCase();
+
+  // Find all products where stock <= minStock
+  const allLowStock = posState.products.filter(p => (p.stock || 0) <= (p.minStock || 0));
+
+  if (summaryBadge) {
+    if (allLowStock.length === 0) {
+      summaryBadge.innerHTML = `<span style="color:var(--success); display:flex; align-items:center; gap:6px;">✅ <span>All Stock Healthy (0 items need reorder)</span></span>`;
+    } else {
+      summaryBadge.innerHTML = `<span style="display:flex; align-items:center; gap:6px;">⚠️ <span><strong>${allLowStock.length}</strong> item${allLowStock.length === 1 ? '' : 's'} require immediate replenishment</span></span>`;
+    }
+  }
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const filtered = allLowStock.filter(p => {
+    if (!query) return true;
+    return (p.name && p.name.toLowerCase().includes(query)) ||
+           (p.code && p.code.toLowerCase().includes(query)) ||
+           (p.barcode && p.barcode.includes(query)) ||
+           (p.category && p.category.toLowerCase().includes(query));
+  });
+
+  if (filtered.length === 0) {
+    if (allLowStock.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding:36px 16px; color:var(--text-muted);">
+            <div style="font-size:2.2rem; margin-bottom:8px;">🎉</div>
+            <strong style="color:var(--success); font-size:1.05rem;">All Stock Levels Healthy!</strong>
+            <p style="margin:4px 0 0 0; font-size:0.85rem;">None of your products are currently at or below their minimum reorder limits.</p>
+          </td>
+        </tr>`;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; padding:24px 16px; color:var(--text-muted);">
+            No low stock products match your search "<em>${escapeHtml(query)}</em>".
+          </td>
+        </tr>`;
+    }
+    return;
+  }
+
+  filtered.forEach(p => {
+    const stockVal = p.stock || 0;
+    const minVal = p.minStock || 0;
+    const isOut = stockVal <= 0;
+    const shortage = Math.max(0, minVal - stockVal);
+    const unit = p.unit || 'Pcs';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.35rem; line-height:1;">${p.icon || '📦'}</span>
+          <div>
+            <strong style="font-size:0.9rem; color:var(--secondary);">${escapeHtml(p.name)}</strong>
+            <div style="font-size:0.75rem; color:var(--text-muted);">SKU: <strong>${escapeHtml(p.code)}</strong> ${p.barcode ? '| ' + escapeHtml(p.barcode) : ''}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span class="badge badge-info" style="font-size:0.75rem;">${escapeHtml(p.category || 'General')}</span>
+      </td>
+      <td style="text-align:center;">
+        <span class="badge ${isOut ? 'badge-danger' : 'badge-warning'}" style="font-size:0.82rem; font-weight:800; padding:4px 10px;">
+          ${stockVal} ${unit} ${isOut ? '❌ OUT' : '⚠️ LOW'}
+        </span>
+      </td>
+      <td style="text-align:center; font-weight:700; color:var(--secondary);">
+        ${minVal} ${unit}
+      </td>
+      <td style="text-align:center;">
+        <span style="font-weight:800; color:var(--danger); font-size:0.9rem;">
+          -${shortage} ${unit}
+        </span>
+      </td>
+      <td style="text-align:center;">
+        <div style="display:inline-flex; gap:6px; justify-content:center;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickRestockProduct(${p.id})" title="Intake Stock / Purchase this product" style="font-size:0.78rem; font-weight:700; color:var(--primary); border-color:var(--primary); padding:4px 10px; white-space:nowrap;">
+            📥 Restock
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="viewProductInInventory(${p.id})" title="View stock ledger & history" style="font-size:0.78rem; padding:4px 8px;" aria-label="View in ledger">
+            👁️
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+window.renderLowStockModalTable = renderLowStockModalTable;
+
+function goToInventoryWithLowStockFilter() {
+  closeModal('modal-low-stock-items');
+  window._preserveInventoryFilter = true;
+  navigateToScreen('inventory');
+  const searchInput = document.getElementById('inventory-search-input');
+  if (searchInput) searchInput.value = '';
+  const catSelect = document.getElementById('inventory-category-select');
+  if (catSelect) catSelect.value = 'ALL';
+  const statusSelect = document.getElementById('inventory-status-filter');
+  if (statusSelect) statusSelect.value = 'LOW';
+  renderInventory();
+  showToast('⚠️ Filtered Inventory: Showing all items requiring reorder', 'info');
+}
+window.goToInventoryWithLowStockFilter = goToInventoryWithLowStockFilter;
+
+function quickRestockProduct(productId) {
+  closeModal('modal-low-stock-items');
+  const prod = posState.products.find(x => x.id === productId);
+  navigateToScreen('purchase');
+  setTimeout(() => {
+    if (typeof addPurchaseRow === 'function') {
+      addPurchaseRow();
+      const rows = document.querySelectorAll('#purchase-items-table-body tr');
+      if (rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        const prodSelect = lastRow.querySelector('select');
+        if (prodSelect) {
+          prodSelect.value = productId;
+          prodSelect.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+  }, 120);
+  showToast(`📥 Restocking "${prod ? prod.name : 'Item'}": Added to Purchase intake form`, 'success');
+}
+window.quickRestockProduct = quickRestockProduct;
+
+function viewProductInInventory(productId) {
+  closeModal('modal-low-stock-items');
+  const prod = posState.products.find(x => x.id === productId);
+  window._preserveInventoryFilter = true;
+  navigateToScreen('inventory');
+  const searchInput = document.getElementById('inventory-search-input');
+  if (searchInput && prod) {
+    searchInput.value = prod.code || prod.name;
+  }
+  const statusSelect = document.getElementById('inventory-status-filter');
+  if (statusSelect) statusSelect.value = 'ALL';
+  renderInventory();
+  showToast(`🔍 Showing inventory history for "${prod ? prod.name : 'Item'}"`, 'info');
+}
+window.viewProductInInventory = viewProductInInventory;
 
 // --- 5. PRODUCT MASTER (SCREEN 7) & ADD/EDIT PRODUCT MODAL ---
 function refreshProductMaster(showToastFlag = true) {
@@ -6561,10 +6728,20 @@ function renderInventory() {
 
     // 3. Stock Level Status Filter
     let pStatus = 'OK';
-    if (p.stock <= 0) pStatus = 'OUT';
-    else if (p.stock <= p.minStock) pStatus = 'LOW';
+    if ((p.stock || 0) <= 0) pStatus = 'OUT';
+    else if ((p.stock || 0) <= (p.minStock || 0)) pStatus = 'LOW';
 
-    const matchStatus = (statusFilter === 'ALL' || statusFilter === pStatus);
+    let matchStatus = false;
+    if (statusFilter === 'ALL') {
+      matchStatus = true;
+    } else if (statusFilter === 'OK') {
+      matchStatus = (pStatus === 'OK');
+    } else if (statusFilter === 'OUT') {
+      matchStatus = ((p.stock || 0) <= 0);
+    } else if (statusFilter === 'LOW') {
+      // Low Stock shows all products at or below reorder threshold (including 0 stock)
+      matchStatus = ((p.stock || 0) <= (p.minStock || 0));
+    }
 
     return matchCat && matchQuery && matchStatus;
   });
