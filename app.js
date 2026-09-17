@@ -6026,6 +6026,27 @@ function openPaymentModal() {
   const payTotalDisplay = document.getElementById('modal-payable-total');
   if (payTotalDisplay) payTotalDisplay.textContent = `₹ ${grandTotal.toFixed(2)}`;
 
+  // Pre-fill customer mobile for instant WhatsApp bill dispatch
+  const mobileInput = document.getElementById('pos-cust-mobile-input');
+  const custSelect = document.getElementById('pos-customer-select');
+  let custMobile = (mobileInput && mobileInput.value.trim()) || '';
+  if (!custMobile && custSelect) {
+    const custId = parseInt(custSelect.value);
+    const cObj = posState.customers.find(c => c.id === custId);
+    if (cObj && cObj.mobile && cObj.mobile !== '9999999999') {
+      custMobile = cObj.mobile;
+    }
+  }
+
+  const waMobileInput = document.getElementById('pay-whatsapp-mobile-input');
+  if (waMobileInput) {
+    waMobileInput.value = (custMobile && custMobile !== '9999999999') ? custMobile.replace(/\D/g, '').slice(-10) : '';
+  }
+  const waChk = document.getElementById('pay-auto-whatsapp-chk');
+  if (waChk) {
+    waChk.checked = Boolean(custMobile && custMobile !== '9999999999');
+  }
+
   openModal('payment-modal');
   selectPaymentMode(selectedPaymentMode || 'CASH');
 }
@@ -6505,6 +6526,12 @@ function completeSale() {
   posState.lastCompletedSale = newSale;
   renderDashboard();
 
+  // Check auto-WhatsApp preference and recipient mobile
+  const autoWhatsAppChk = document.getElementById('pay-auto-whatsapp-chk');
+  const customWaMobile = (document.getElementById('pay-whatsapp-mobile-input')?.value || '').trim();
+  const shouldSendWhatsApp = autoWhatsAppChk ? autoWhatsAppChk.checked : true;
+  let waTargetMobile = customWaMobile || customerMobile;
+
   closePaymentModal();
   posState.cart = [];
   renderCart();
@@ -6512,6 +6539,16 @@ function completeSale() {
   showToast(`Sale completed! Invoice ${invoiceNum} generated.`, 'success');
   renderReceipt(newSale);
   navigateToScreen('receipt');
+
+  // Automatic WhatsApp bill dispatch if 10-digit mobile is provided
+  if (shouldSendWhatsApp && waTargetMobile) {
+    const cleaned = waTargetMobile.replace(/\D/g, '').slice(-10);
+    if (cleaned && cleaned.length === 10 && cleaned !== '9999999999') {
+      setTimeout(() => {
+        shareReceiptWhatsApp(cleaned, newSale, true);
+      }, 350);
+    }
+  }
 }
 
 // --- 15. RECEIPT (SCREEN 6) ---
@@ -6539,6 +6576,11 @@ function renderReceipt(sale) {
   if (custEl) custEl.textContent = s.customer || 'Walk-in Customer';
   const mobEl = document.getElementById('rcpt-customer-mobile');
   if (mobEl) mobEl.textContent = s.customerMobile || s.mobile || '9999999999';
+  const rcptTargetMob = document.getElementById('rcpt-target-mobile');
+  if (rcptTargetMob) {
+    const m = (s.customerMobile || s.mobile || '').replace(/\D/g, '').slice(-10);
+    rcptTargetMob.value = (m && m !== '9999999999') ? m : '';
+  }
   const cashierEl = document.getElementById('rcpt-cashier');
   if (cashierEl) cashierEl.textContent = s.cashier || (posState.currentUser && posState.currentUser.name) || 'Admin';
   const branchEl = document.getElementById('rcpt-branch');
@@ -6673,6 +6715,200 @@ function printReceiptForSale(saleRef) {
   }, 150);
 }
 window.printReceiptForSale = printReceiptForSale;
+
+// --- BRAINSHOP DIGITAL RECEIPT: WHATSAPP & SMS DISPATCH CONTROLLER ---
+
+function generateBrainShopReceiptText(sale) {
+  const s = sale || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!s) return '';
+
+  const storeName = (posState.settings && posState.settings.storeName) || 'ABC Retail Store';
+  const storePhone = (posState.settings && posState.settings.phone) || '';
+  const storeAddress = (posState.settings && posState.settings.address) || '';
+  const gstin = (posState.settings && posState.settings.gstin) || '';
+
+  const dateStr = s.date || new Date().toLocaleDateString('en-GB');
+  const invNo = s.invoiceNo || `INV-${s.id}`;
+  const custName = s.customer || 'Valued Customer';
+  const custMobile = (s.customerMobile && s.customerMobile !== '9999999999') ? s.customerMobile : '';
+  const payMode = s.payment || s.paymentMode || 'Cash';
+  const totalAmt = typeof s.amount === 'number' ? s.amount.toFixed(2) : parseFloat(s.amount || 0).toFixed(2);
+
+  let itemsText = '';
+  if (Array.isArray(s.items) && s.items.length > 0) {
+    s.items.forEach((item, index) => {
+      const qty = item.qty || 1;
+      const rate = parseFloat(item.price || 0).toFixed(2);
+      const lineTotal = (qty * parseFloat(item.price || 0)).toFixed(2);
+      const unit = item.unit ? ` ${item.unit}` : '';
+      itemsText += `${index + 1}. *${item.name}* (${qty}${unit}) @ ₹${rate} = *₹${lineTotal}*\n`;
+    });
+  } else {
+    itemsText = '1. General Sale - ₹' + totalAmt + '\n';
+  }
+
+  const subtotal = Array.isArray(s.items)
+    ? s.items.reduce((sum, i) => sum + ((i.qty || 1) * parseFloat(i.price || 0)), 0).toFixed(2)
+    : totalAmt;
+
+  const tax = Math.max(0, (parseFloat(totalAmt) - parseFloat(subtotal))).toFixed(2);
+
+  return (
+    `🧾 *BRAINSHOP DIGITAL INVOICE*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🏬 *${storeName}*\n` +
+    (storeAddress ? `📍 ${storeAddress}\n` : '') +
+    (storePhone ? `📞 Store Tel: ${storePhone}\n` : '') +
+    (gstin && gstin !== 'Unregistered' ? `🏛️ GSTIN: ${gstin}\n` : '') +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📄 *Invoice No:* ${invNo}\n` +
+    `📅 *Date:* ${dateStr}\n` +
+    `👤 *Customer:* ${custName}` + (custMobile ? ` (${custMobile})` : '') + `\n` +
+    `💳 *Payment Mode:* ${payMode}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🛒 *ITEMS PURCHASED:*\n` +
+    `${itemsText}` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `💰 *Subtotal:* ₹${subtotal}\n` +
+    (parseFloat(tax) > 0 ? `📊 *Tax/GST:* ₹${tax}\n` : '') +
+    `🌟 *GRAND TOTAL: ₹${totalAmt}*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🙏 *Thank you for shopping with us!*\n` +
+    `Visit us again soon! 🛍️\n\n` +
+    `⚡ _Billed seamlessly via *BrainShop POS*_`
+  );
+}
+window.generateBrainShopReceiptText = generateBrainShopReceiptText;
+
+function generateBrainShopSmsText(sale) {
+  const s = sale || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!s) return '';
+  const storeName = (posState.settings && posState.settings.storeName) || 'ABC Retail Store';
+  const invNo = s.invoiceNo || `INV-${s.id}`;
+  const totalAmt = typeof s.amount === 'number' ? s.amount.toFixed(2) : parseFloat(s.amount || 0).toFixed(2);
+  const dateStr = s.date || new Date().toLocaleDateString('en-GB');
+
+  return `Dear ${s.customer || 'Customer'}, thank you for shopping at ${storeName}! Bill No: ${invNo}, Date: ${dateStr}, Amount: Rs ${totalAmt} (${s.paymentMode || 'Paid'}). Powered by BrainShop POS.`;
+}
+window.generateBrainShopSmsText = generateBrainShopSmsText;
+
+function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) {
+  const sale = saleObj || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!sale) {
+    showToast('No receipt data available to share.', 'warning');
+    return;
+  }
+
+  let mob = (targetMobile || document.getElementById('rcpt-target-mobile')?.value || sale.customerMobile || '').trim().replace(/\D/g, '');
+  if (mob.length > 10) mob = mob.slice(-10);
+
+  if (!mob || mob === '9999999999' || mob.length !== 10) {
+    if (autoTrigger) {
+      // Don't interrupt flow with alert if auto-triggering on generic walk-in
+      return;
+    }
+    const userEntered = prompt('Customer ka 10-digit WhatsApp mobile number enter karein:', mob === '9999999999' ? '' : mob);
+    if (!userEntered) return;
+    mob = userEntered.trim().replace(/\D/g, '').slice(-10);
+    if (mob.length !== 10) {
+      showToast('❌ Please enter a valid 10-digit mobile number.', 'danger');
+      return;
+    }
+  }
+
+  // Update input on receipt screen if visible
+  const rcptMobileInput = document.getElementById('rcpt-target-mobile');
+  if (rcptMobileInput) rcptMobileInput.value = mob;
+
+  const messageText = generateBrainShopReceiptText(sale);
+  const encodedMsg = encodeURIComponent(messageText);
+  const waUrl = `https://wa.me/91${mob}?text=${encodedMsg}`;
+
+  window.open(waUrl, '_blank');
+  showToast(`📲 BrainShop WhatsApp bill dispatched for +91 ${mob}!`, 'success');
+}
+window.shareReceiptWhatsApp = shareReceiptWhatsApp;
+
+function shareReceiptSMS(targetMobile, saleObj) {
+  const sale = saleObj || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!sale) {
+    showToast('No receipt data available to share.', 'warning');
+    return;
+  }
+
+  let mob = (targetMobile || document.getElementById('rcpt-target-mobile')?.value || sale.customerMobile || '').trim().replace(/\D/g, '');
+  if (mob.length > 10) mob = mob.slice(-10);
+
+  if (!mob || mob === '9999999999' || mob.length !== 10) {
+    const userEntered = prompt('Customer ka 10-digit mobile number enter karein SMS bhejne ke liye:', mob === '9999999999' ? '' : mob);
+    if (!userEntered) return;
+    mob = userEntered.trim().replace(/\D/g, '').slice(-10);
+    if (mob.length !== 10) {
+      showToast('❌ Please enter a valid 10-digit mobile number.', 'danger');
+      return;
+    }
+  }
+
+  const rcptMobileInput = document.getElementById('rcpt-target-mobile');
+  if (rcptMobileInput) rcptMobileInput.value = mob;
+
+  const smsBody = encodeURIComponent(generateBrainShopSmsText(sale));
+  const smsUrl = `sms:+91${mob}?body=${smsBody}`;
+  window.location.href = smsUrl;
+  showToast(`💬 SMS draft generated for +91 ${mob}`, 'info');
+}
+window.shareReceiptSMS = shareReceiptSMS;
+
+function copyReceiptText(saleObj) {
+  const sale = saleObj || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!sale) {
+    showToast('No receipt available to copy.', 'warning');
+    return;
+  }
+  const text = generateBrainShopReceiptText(sale);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 BrainShop Digital Receipt text copied to clipboard!', 'success');
+    }).catch(() => fallbackCopyText(text));
+  } else {
+    fallbackCopyText(text);
+  }
+}
+window.copyReceiptText = copyReceiptText;
+
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
+  showToast('📋 BrainShop Digital Receipt text copied to clipboard!', 'success');
+}
+
+function previewBrainShopReceipt() {
+  const subtotal = posState.cart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+  const totalTax = posState.cart.reduce((sum, i) => sum + (i.qty * i.price * i.taxRate / 100), 0);
+  const grandTotal = Math.round(subtotal + totalTax);
+  const invoiceNum = getNextInvoiceNumber();
+  const mobileInput = document.getElementById('pay-whatsapp-mobile-input');
+  const enteredMobile = mobileInput ? mobileInput.value.trim() : '';
+
+  const sampleSale = {
+    id: posState.nextInvoiceSeq || 1,
+    invoiceNo: invoiceNum,
+    date: new Date().toLocaleDateString('en-GB'),
+    customer: document.getElementById('pos-cust-name-input')?.value || 'Walk-in Customer',
+    customerMobile: enteredMobile || '9876543210',
+    amount: grandTotal,
+    payment: selectedPaymentMode || 'Cash',
+    items: posState.cart.length > 0 ? posState.cart : [{ name: 'Sample Item', qty: 1, price: 100 }]
+  };
+
+  const previewText = generateBrainShopReceiptText(sampleSale);
+  alert(`📱 BRAINSHOP WHATSAPP RECEIPT PREVIEW:\n\n${previewText}`);
+}
+window.previewBrainShopReceipt = previewBrainShopReceipt;
 
 // --- 16. INVENTORY (SCREEN 9) CONTROLLERS ---
 

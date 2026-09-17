@@ -414,12 +414,27 @@
            SCREEN 6: INVOICE / RECEIPT
            ======================================================================= -->
       <section id="screen-receipt" class="screen-view">
-        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;" class="no-print">
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;" class="no-print">
           <button class="btn btn-primary" onclick="printReceipt()">🖨️ Print Receipt</button>
-          <button class="btn btn-danger" onclick="downloadReceiptPdf()">📥 Download / Save as PDF</button>
-          <button class="btn btn-outline" onclick="toggleReceiptLayout()" id="btn-rcpt-toggle-layout" title="Toggle between 80mm thermal roll & full A4 invoice layout">📄 A4 / 80mm Format</button>
+          <button class="btn btn-success" onclick="shareReceiptWhatsApp()" style="background:#16a34a; border-color:#15803d; font-weight:700; display:inline-flex; align-items:center; gap:6px;"><span>📲</span> <span>WhatsApp Bill</span></button>
+          <button class="btn btn-primary" onclick="shareReceiptSMS()" style="background:#0284c7; border-color:#0369a1; font-weight:700; display:inline-flex; align-items:center; gap:6px;"><span>💬</span> <span>Direct SMS</span></button>
+          <button class="btn btn-danger" onclick="downloadReceiptPdf()">📥 Save as PDF</button>
+          <button class="btn btn-outline" onclick="copyReceiptText()" style="font-weight:600; display:inline-flex; align-items:center; gap:6px;"><span>📋</span> <span>Copy Bill Text</span></button>
+          <button class="btn btn-outline" onclick="toggleReceiptLayout()" id="btn-rcpt-toggle-layout" title="Toggle between 80mm thermal roll & full A4 invoice layout">📄 A4 / 80mm</button>
           <button class="btn btn-outline" onclick="openModal('modal-email-receipt')">✉️ Email Receipt</button>
           <button class="btn btn-success" onclick="navigateToScreen('pos')">+ New Sale</button>
+        </div>
+
+        <!-- Quick Digital Send Bar for Cashier -->
+        <div class="no-print" style="max-width:520px; margin:0 auto 16px auto; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; box-shadow:var(--shadow-sm);">
+          <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:210px;">
+            <span style="font-size:1.25rem;">📱</span>
+            <input type="tel" id="rcpt-target-mobile" class="form-input" placeholder="Customer 10-digit mobile" maxlength="10" style="padding:6px 10px; font-size:0.85rem; background:#fff; border-color:#86efac;" />
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-success btn-sm" onclick="shareReceiptWhatsApp(document.getElementById('rcpt-target-mobile').value)" style="background:#16a34a; border-color:#15803d; font-weight:700; padding:6px 14px;">📲 Send WhatsApp</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="shareReceiptSMS(document.getElementById('rcpt-target-mobile').value)" style="color:#0284c7; border-color:#0284c7; font-weight:700; padding:6px 10px;">💬 SMS</button>
+          </div>
         </div>
 
         <div class="receipt-wrapper" id="printable-receipt-card">
@@ -2461,6 +2476,22 @@
             <div>Total Bill: <strong id="split-bill-total">₹ 0.00</strong></div>
             <div>Split Paid: <strong id="split-sum-paid" style="color:var(--primary);">₹ 0.00</strong></div>
             <div>Remaining Due: <strong id="split-remaining" style="color:var(--danger);">₹ 0.00</strong></div>
+          </div>
+        </div>
+
+        <!-- WhatsApp & SMS Digital Receipt Auto-Dispatch -->
+        <div class="whatsapp-dispatch-card" style="margin-top:16px; padding:12px 14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.88rem; font-weight:700; color:#166534; margin:0;">
+              <input type="checkbox" id="pay-auto-whatsapp-chk" checked style="width:17px; height:17px; accent-color:#16a34a; cursor:pointer;" />
+              <span>📲 Send BrainShop Digital Bill on WhatsApp</span>
+            </label>
+            <span style="font-size:0.75rem; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:12px; font-weight:700;">⚡ Instant Delivery</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <span style="font-size:0.82rem; font-weight:700; color:#166534; white-space:nowrap;">Customer Mobile:</span>
+            <input type="tel" id="pay-whatsapp-mobile-input" class="form-input" placeholder="10-digit WhatsApp number" maxlength="10" style="padding:5px 10px; font-size:0.85rem; flex:1; max-width:220px; background:#fff; border-color:#86efac;" />
+            <button type="button" class="btn btn-sm btn-outline" onclick="previewBrainShopReceipt()" style="color:#166534; border-color:#16a34a; padding:4px 10px; font-size:0.75rem; font-weight:700;" title="Preview WhatsApp bill format">👁️ Preview</button>
           </div>
         </div>
 
