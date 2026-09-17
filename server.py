@@ -27,8 +27,6 @@ import shutil
 import datetime
 import webbrowser
 import urllib.parse
-import urllib.request
-import re
 
 PORT = 8080
 DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pos_database.db')
@@ -123,142 +121,6 @@ def get_db_connection(row_factory=False):
         conn.row_factory = sqlite3.Row
     return conn
 
-def get_gateway_settings():
-    """Retrieves automated WhatsApp & SMS Cloud Gateway configuration from SQLite."""
-    try:
-        conn = get_db_connection(row_factory=True)
-        c = conn.cursor()
-        c.execute("SELECT whatsapp_provider, whatsapp_instance_id, whatsapp_token, custom_webhook_url, auto_dispatch_on_sale FROM company_settings WHERE id = 1")
-        row = c.fetchone()
-        conn.close()
-        if row:
-            return {
-                "provider": row['whatsapp_provider'] or 'ultramsg',
-                "instanceId": row['whatsapp_instance_id'] or '',
-                "token": row['whatsapp_token'] or '',
-                "customUrl": row['custom_webhook_url'] or '',
-                "autoDispatch": bool(row['auto_dispatch_on_sale'])
-            }
-    except Exception:
-        pass
-    return {"provider": "ultramsg", "instanceId": "", "token": "", "customUrl": "", "autoDispatch": True}
-
-def dispatch_cloud_message(provider, instance_id, token, custom_url, mobile, message, sms_text, channel='whatsapp'):
-    """
-    Sends automated WhatsApp / SMS via Cloud Gateway without requiring WhatsApp login on counter PC.
-    Zero external dependencies - uses pure Python standard library urllib.request!
-    """
-    clean_mobile = re.sub(r'\D', '', str(mobile))
-    if len(clean_mobile) > 10:
-        clean_mobile = clean_mobile[-10:]
-    full_mobile_91 = "91" + clean_mobile
-
-    if provider == 'demo':
-        print(f"[DEMO GATEWAY] Zero-login simulated {channel.upper()} dispatched to +91 {clean_mobile}")
-        return True, f"Delivered in Demo Mode to +91 {clean_mobile} (Simulated)"
-
-    if provider == 'ultramsg':
-        if not instance_id or not token:
-            return False, "UltraMsg Instance ID and Token not yet configured in Settings."
-        try:
-            url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-            params = urllib.parse.urlencode({
-                "token": token,
-                "to": f"+{full_mobile_91}",
-                "body": message
-            }).encode('utf-8')
-            req = urllib.request.Request(url, data=params, headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "BrainShop-POS/1.0"
-            })
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                if data.get('sent') == 'true' or data.get('id'):
-                    return True, f"Delivered via UltraMsg Cloud (Message ID: {data.get('id', 'OK')})"
-                return True, f"Delivered via UltraMsg Cloud"
-        except Exception as e:
-            return False, f"UltraMsg dispatch error: {str(e)}"
-
-    elif provider == 'greenapi':
-        if not instance_id or not token:
-            return False, "GreenAPI Instance ID and Token not yet configured in Settings."
-        try:
-            url = f"https://api.green-api.com/waInstance{instance_id}/sendMessage/{token}"
-            payload = json.dumps({
-                "chatId": f"{full_mobile_91}@c.us",
-                "message": message
-            }).encode('utf-8')
-            req = urllib.request.Request(url, data=payload, headers={
-                "Content-Type": "application/json",
-                "User-Agent": "BrainShop-POS/1.0"
-            })
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                return True, f"Delivered via GreenAPI Cloud (Message ID: {data.get('idMessage', 'OK')})"
-        except Exception as e:
-            return False, f"GreenAPI dispatch error: {str(e)}"
-
-    elif provider == 'fast2sms':
-        if not token:
-            return False, "Fast2SMS API Key not yet configured in Settings."
-        try:
-            # Route 'q' is Quick transactional SMS that delivers to any Indian mobile number
-            url = "https://www.fast2sms.com/dev/bulkV2"
-            payload = json.dumps({
-                "route": "q",
-                "message": sms_text or message,
-                "language": "english",
-                "flash": 0,
-                "numbers": clean_mobile
-            }).encode('utf-8')
-            req = urllib.request.Request(url, data=payload, headers={
-                "authorization": token,
-                "Content-Type": "application/json",
-                "User-Agent": "BrainShop-POS/1.0"
-            })
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                if data.get('return'):
-                    return True, "Delivered via Fast2SMS Direct Mobile SMS"
-                err_msg = data.get('message', 'Failed')
-                if isinstance(err_msg, list) and len(err_msg) > 0:
-                    err_msg = err_msg[0]
-                return False, f"Fast2SMS error: {err_msg}"
-        except Exception as e:
-            # Fallback to GET request for Fast2SMS
-            try:
-                get_url = f"https://www.fast2sms.com/dev/bulkV2?authorization={urllib.parse.quote(token)}&route=q&message={urllib.parse.quote(sms_text or message)}&language=english&flash=0&numbers={clean_mobile}"
-                req_get = urllib.request.Request(get_url, headers={"User-Agent": "BrainShop-POS/1.0"})
-                with urllib.request.urlopen(req_get, timeout=10) as resp_get:
-                    data_get = json.loads(resp_get.read().decode('utf-8'))
-                    if data_get.get('return'):
-                        return True, "Delivered via Fast2SMS Direct Mobile SMS"
-                    return False, f"Fast2SMS error: {data_get.get('message', 'Failed')}"
-            except Exception as e2:
-                return False, f"Fast2SMS error: {str(e)}"
-
-    elif provider == 'custom':
-        if not custom_url:
-            return False, "Custom Webhook URL not provided in Settings."
-        try:
-            payload = json.dumps({
-                "to": full_mobile_91,
-                "mobile": clean_mobile,
-                "message": message,
-                "smsText": sms_text,
-                "token": token
-            }).encode('utf-8')
-            req = urllib.request.Request(custom_url, data=payload, headers={
-                "Content-Type": "application/json",
-                "User-Agent": "BrainShop-POS/1.0"
-            })
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                return True, "Delivered via Custom Webhook"
-        except Exception as e:
-            return False, f"Custom Webhook error: {str(e)}"
-
-    return False, "Gateway provider is set to browser direct mode."
-
 def migrate_database_schema(conn):
     """
     Enterprise Schema Migration:
@@ -319,19 +181,7 @@ def migrate_database_schema(conn):
             FROM _old_company_settings
             """)
             c.execute("DROP TABLE _old_company_settings")
-        # Automated WhatsApp / SMS Gateway columns migration
-        c.execute("PRAGMA table_info(company_settings)")
-        gw_cols = [r[1] for r in c.fetchall()]
-        if 'whatsapp_provider' not in gw_cols:
-            c.execute("ALTER TABLE company_settings ADD COLUMN whatsapp_provider TEXT DEFAULT 'ultramsg'")
-        if 'whatsapp_instance_id' not in gw_cols:
-            c.execute("ALTER TABLE company_settings ADD COLUMN whatsapp_instance_id TEXT DEFAULT ''")
-        if 'whatsapp_token' not in gw_cols:
-            c.execute("ALTER TABLE company_settings ADD COLUMN whatsapp_token TEXT DEFAULT ''")
-        if 'custom_webhook_url' not in gw_cols:
-            c.execute("ALTER TABLE company_settings ADD COLUMN custom_webhook_url TEXT DEFAULT ''")
-        if 'auto_dispatch_on_sale' not in gw_cols:
-            c.execute("ALTER TABLE company_settings ADD COLUMN auto_dispatch_on_sale INTEGER DEFAULT 1")
+            print("[Migration] Upgraded company_settings with company_code PK/UNIQUE.")
     except Exception as e:
         print(f"[Migration Warning company_settings] {e}")
 
@@ -1014,6 +864,9 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
+# Compatibility alias for legacy references
+MyPOSRequestHandler = BrainShopRequestHandler
+
     def _send_json(self, data, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -1054,11 +907,6 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
                 settings['legalName'] = settings.get('legal_name', 'ABC Supermarkets')
                 settings['invoicePrefix'] = settings.get('invoice_prefix', 'INV')
                 settings['allowNegativeStock'] = bool(settings.get('allow_negative_stock', 0))
-                settings['whatsappProvider'] = settings.get('whatsapp_provider') or 'demo'
-                settings['whatsappInstanceId'] = settings.get('whatsapp_instance_id', '')
-                settings['whatsappToken'] = settings.get('whatsapp_token', '')
-                settings['customWebhookUrl'] = settings.get('custom_webhook_url', '')
-                settings['autoDispatchOnSale'] = bool(settings.get('auto_dispatch_on_sale', 1))
 
                 # Products
                 c.execute("SELECT * FROM products ORDER BY id ASC")
@@ -1205,11 +1053,6 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
             self.wfile.write(data)
-            return
-
-        elif path == '/api/gateway/settings':
-            st = get_gateway_settings()
-            self._send_json({"status": "success", "settings": st})
             return
 
         super().do_GET()
@@ -1566,110 +1409,6 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
                 conn.commit()
                 conn.close()
                 self._send_json({"status": "success", "message": f"SQLite database reset ({action}) successfully."})
-            except Exception as e:
-                self._send_json({"status": "error", "message": str(e)}, status=500)
-        # 6. Automated Digital Receipt Dispatch Endpoint (Zero-Login WhatsApp / SMS)
-        elif path == '/api/dispatch/digital_receipt':
-            mobile = str(body.get('mobile', '')).strip()
-            message = str(body.get('message', '')).strip()
-            sms_text = str(body.get('smsText', '')).strip() or message
-            channel = str(body.get('channel', 'whatsapp')).strip()
-
-            clean_digits = re.sub(r'\D', '', mobile)
-            if len(clean_digits) > 10:
-                clean_digits = clean_digits[-10:]
-
-            if len(clean_digits) != 10:
-                self._send_json({"status": "error", "message": "Invalid 10-digit mobile number"}, status=400)
-                return
-
-            gw = get_gateway_settings()
-            provider = body.get('provider') or gw.get('provider', 'demo')
-            instance_id = body.get('instanceId') or gw.get('instanceId', '')
-            token = body.get('token') or gw.get('token', '')
-            custom_url = body.get('customUrl') or gw.get('customUrl', '')
-
-            # If user has not configured gateway credentials yet
-            if provider in ('ultramsg', 'greenapi') and (not instance_id or not token):
-                self._send_json({
-                    "status": "fallback_needed",
-                    "delivered": False,
-                    "provider": provider,
-                    "mobile": clean_digits,
-                    "message": f"Cloud {provider.capitalize()} API key not configured yet in Settings. Please add Instance ID & Token in Settings -> WhatsApp Gateway."
-                })
-                return
-            elif provider == 'fast2sms' and not token:
-                self._send_json({
-                    "status": "fallback_needed",
-                    "delivered": False,
-                    "provider": provider,
-                    "mobile": clean_digits,
-                    "message": "Fast2SMS API key not configured yet in Settings."
-                })
-                return
-            elif provider == 'browser':
-                self._send_json({
-                    "status": "fallback_needed",
-                    "delivered": False,
-                    "provider": "browser",
-                    "mobile": clean_digits,
-                    "message": "Gateway configured for Browser Direct Mode."
-                })
-                return
-
-            success, info = dispatch_cloud_message(
-                provider=provider,
-                instance_id=instance_id,
-                token=token,
-                custom_url=custom_url,
-                mobile=clean_digits,
-                message=message,
-                sms_text=sms_text,
-                channel=channel
-            )
-
-            if success:
-                self._send_json({
-                    "status": "success",
-                    "delivered": True,
-                    "provider": provider,
-                    "mobile": clean_digits,
-                    "message": info
-                })
-            else:
-                self._send_json({
-                    "status": "fallback_needed",
-                    "delivered": False,
-                    "provider": provider,
-                    "mobile": clean_digits,
-                    "message": info
-                })
-            return
-
-        # 7. Gateway Settings Update Endpoint
-        elif path == '/api/gateway/settings':
-            provider = str(body.get('provider', 'ultramsg')).strip()
-            instance_id = str(body.get('instanceId', '')).strip()
-            token = str(body.get('token', '')).strip()
-            custom_url = str(body.get('customUrl', '')).strip()
-            auto_dispatch = 1 if body.get('autoDispatch', True) else 0
-
-            try:
-                conn = get_db_connection()
-                c = conn.cursor()
-                c.execute("""
-                UPDATE company_settings SET
-                    whatsapp_provider = ?,
-                    whatsapp_instance_id = ?,
-                    whatsapp_token = ?,
-                    custom_webhook_url = ?,
-                    auto_dispatch_on_sale = ?
-                WHERE id = 1
-                """, (provider, instance_id, token, custom_url, auto_dispatch))
-                conn.commit()
-                conn.close()
-                self._send_json({"status": "success", "message": "WhatsApp / SMS Cloud Gateway settings saved successfully."})
             except Exception as e:
                 self._send_json({"status": "error", "message": str(e)}, status=500)
             return
