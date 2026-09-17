@@ -864,9 +864,6 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
-# Compatibility alias for legacy references
-MyPOSRequestHandler = BrainShopRequestHandler
-
     def _send_json(self, data, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')

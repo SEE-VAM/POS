@@ -8831,7 +8831,7 @@ function executeTransfer() {
 }
 
 // --- INITIALIZATION ON DOM READY ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderCart();
   renderDashboard();
   renderPosProducts();
@@ -8846,6 +8846,13 @@ document.addEventListener('DOMContentLoaded', () => {
   resetInventoryFilters();
   resetStockTransferScreen();
   resetReportsScreen();
+
+  // 1. HARDWARE LICENSE VERIFICATION (MANDATORY BEFORE ANY SESSION RESTORE)
+  const isLicensed = await checkLicenseAndSyncSqlite();
+  if (isLicensed === false) {
+    console.log('[BrainShop Lock] Unlicensed machine. System locked until valid activation key is entered.');
+    return;
+  }
 
   // Check automated preview query parameters
   const urlParams = new URLSearchParams(window.location.search);
