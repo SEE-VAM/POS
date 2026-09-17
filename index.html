@@ -1285,6 +1285,81 @@
           </form>
         </div>
 
+        <!-- Automated WhatsApp & SMS Cloud Gateway Configuration -->
+        <div class="panel" style="margin-top:20px; border-left: 4px solid #16a34a;">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="background:#16a34a; color:#fff; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+                📲
+              </div>
+              <div>
+                <span class="panel-title" style="font-size:1.05rem; font-weight:700;">WhatsApp & SMS Cloud Automation (Zero-Login Delivery)</span>
+                <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">
+                  Send BrainShop digital bills directly to customer phones in background without logging into WhatsApp on this PC!
+                </p>
+              </div>
+            </div>
+            <span class="badge badge-success" id="wa-gateway-status-badge">⚡ Automated Cloud Active</span>
+          </div>
+
+          <form onsubmit="saveGatewaySettings(event)">
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Gateway Provider *</label>
+                <select id="set-wa-provider" class="form-input" onchange="toggleGatewayProviderFields()">
+                  <option value="demo">⚡ Demo / Simulation Mode (Immediate Zero-Login Test)</option>
+                  <option value="fast2sms">Fast2SMS (Direct Indian Mobile SMS - Instant Delivery)</option>
+                  <option value="ultramsg">UltraMsg Cloud API (WhatsApp - Recommended for Retail)</option>
+                  <option value="greenapi">GreenAPI (Official WhatsApp Business Cloud)</option>
+                  <option value="custom">Custom Webhook / REST API URL</option>
+                  <option value="browser">Browser Direct Mode (wa.me / WhatsApp Web)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-wa-instance" style="display:none;">
+                <label class="form-label">Instance ID / Account ID</label>
+                <input type="text" id="set-wa-instance" class="form-input" placeholder="e.g. instance104820" />
+              </div>
+
+              <div class="form-group" id="group-wa-token" style="display:none;">
+                <label class="form-label">API Token / Secret Key</label>
+                <input type="password" id="set-wa-token" class="form-input" placeholder="Enter Gateway API Token / Key" />
+              </div>
+
+              <div class="form-group" id="group-custom-url" style="display:none; grid-column: span 2;">
+                <label class="form-label">Custom Webhook / API Endpoint URL</label>
+                <input type="url" id="set-custom-webhook" class="form-input" placeholder="https://api.yourprovider.com/v1/messages" />
+              </div>
+
+              <!-- Live Gateway Helper Information Box -->
+              <div id="wa-gateway-help-box" style="grid-column: span 2; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:8px 12px; font-size:0.85rem; color:#166534;">
+                <div id="wa-gateway-help-text">
+                  ⚡ <b>Demo Mode Active:</b> Bills will be simulated instantly with zero login and zero third-party account required!
+                </div>
+              </div>
+
+              <div class="form-group" style="grid-column: span 2;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600;">
+                  <input type="checkbox" id="set-auto-dispatch" checked />
+                  <span>Automatically dispatch digital invoice on payment completion (Silent Background Send - No WhatsApp Web Scan)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Quick Test Send Section -->
+            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:12px 14px; margin-top:10px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
+                <span style="font-size:0.85rem; font-weight:700; color:var(--secondary);">Test Send to Mobile:</span>
+                <input type="tel" id="gateway-test-mobile" class="form-input" placeholder="10-digit mobile" maxlength="10" style="padding:6px 10px; font-size:0.85rem; max-width:180px; background:#fff;" />
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-success btn-sm" onclick="sendTestGatewayMessage()" style="font-weight:700; background:#16a34a; border-color:#15803d; padding:6px 14px;">🚀 Test Send Digital Bill</button>
+                <button type="submit" class="btn btn-primary btn-sm" style="padding:6px 14px;">💾 Save Gateway</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
         <!-- Database & Backend Storage Health Inspector -->
         <div class="panel" style="margin-top:20px;">
           <div class="panel-header">
@@ -2200,6 +2275,73 @@
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-low-stock-items')">
             Close
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================
+       DIGITAL RECEIPT & CLOUD DISPATCH MODAL (ZERO-LOGIN DELIVERY)
+       ============================================================================= -->
+  <div id="modal-digital-receipt" class="modal-overlay">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-bottom: 1px solid #bbf7d0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #16a34a; color: #fff; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            📲
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #166534;">BrainShop Digital Receipt Dispatch</h3>
+            <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #15803d;">Instant zero-login dispatch via WhatsApp / SMS</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-digital-receipt')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px;">
+        <div id="digital-receipt-status-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px;">
+          <span style="font-size: 1.25rem;">ℹ️</span>
+          <div style="font-size: 0.85rem; color: #1e40af;" id="digital-receipt-status-text">
+            Automatic cloud delivery sends bills silently in the background without scanning QR codes!
+          </div>
+        </div>
+
+        <div class="form-grid-2" style="margin-bottom: 14px;">
+          <div class="form-group">
+            <label class="form-label">Customer Mobile (+91)</label>
+            <input type="tel" id="digital-receipt-mobile" class="form-input" placeholder="10-digit mobile" maxlength="10" style="font-weight: 700; font-size: 1rem; letter-spacing: 0.5px;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dispatch Channel</label>
+            <select id="digital-receipt-channel" class="form-input" onchange="updateDigitalReceiptPreviewChannel()">
+              <option value="whatsapp">WhatsApp Cloud (BrainShop Invoice)</option>
+              <option value="sms">Direct Mobile SMS (Fast2SMS)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Digital Bill Text Preview</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="copyReceiptText()" style="padding: 2px 8px; font-size: 0.75rem;">📋 Copy Text</button>
+          </label>
+          <textarea id="digital-receipt-preview" class="form-input" rows="7" readonly style="font-family: monospace; font-size: 0.8rem; background: #f8fafc; color: #334155; resize: none;"></textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+          <button type="button" class="btn btn-success" onclick="dispatchDigitalReceiptNow()" style="background: #16a34a; border-color: #15803d; font-weight: 700; padding: 10px 16px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>⚡ Send Now in Background (No PC Login)</span>
+          </button>
+          <div style="display: flex; gap: 8px; justify-content: space-between;">
+            <button type="button" class="btn btn-outline" onclick="copyReceiptText(); closeModal('modal-digital-receipt');" style="flex: 1; font-weight: 600;">
+              📋 Copy Bill
+            </button>
+            <button type="button" class="btn btn-outline" onclick="navigateToSettingsGateway()" style="flex: 1; font-weight: 600; color: #0284c7; border-color: #0284c7;">
+              ⚙️ Gateway Setup
+            </button>
+            <button type="button" class="btn btn-outline" onclick="openWhatsAppManualLink()" style="flex: 1; font-weight: 600; color: #64748b;" title="Open WhatsApp Web manually only if you have paired device">
+              🌐 Open Web
+            </button>
+          </div>
         </div>
       </div>
     </div>

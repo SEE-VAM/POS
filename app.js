@@ -5446,6 +5446,14 @@ function savePermissions() {
 }
 
 // --- 12. COMPANY SETTINGS (SCREEN 23) ---
+function getApiUrl(endpoint) {
+  if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+    return endpoint;
+  }
+  return `http://localhost:8080${endpoint}`;
+}
+window.getApiUrl = getApiUrl;
+
 function loadSettings() {
   const compCodeInput = document.getElementById('set-company-code');
   if (compCodeInput) compCodeInput.value = posState.settings.companyCode || 'COMP001';
@@ -5457,6 +5465,7 @@ function loadSettings() {
   document.getElementById('set-prefix').value = posState.settings.invoicePrefix;
   document.getElementById('set-currency').value = posState.settings.currency;
   document.getElementById('set-negative-stock').checked = posState.settings.allowNegativeStock;
+  loadGatewaySettings();
   renderStorageDiagnostics();
 }
 
@@ -5478,6 +5487,178 @@ function saveSettings(e) {
   showToast('Company settings updated successfully!', 'success');
   renderStorageDiagnostics();
 }
+
+function loadGatewaySettings() {
+  const settings = posState.settings || {};
+  const prov = settings.whatsappProvider || 'demo';
+  const inst = settings.whatsappInstanceId || '';
+  const tok = settings.whatsappToken || '';
+  const url = settings.customWebhookUrl || '';
+  const autoDisp = settings.autoDispatchOnSale !== false;
+
+  const provEl = document.getElementById('set-wa-provider');
+  if (provEl) provEl.value = prov;
+  const instEl = document.getElementById('set-wa-instance');
+  if (instEl) instEl.value = inst;
+  const tokEl = document.getElementById('set-wa-token');
+  if (tokEl) tokEl.value = tok;
+  const urlEl = document.getElementById('set-custom-webhook');
+  if (urlEl) urlEl.value = url;
+  const autoEl = document.getElementById('set-auto-dispatch');
+  if (autoEl) autoEl.checked = autoDisp;
+
+  toggleGatewayProviderFields();
+  updateGatewayBadge();
+}
+window.loadGatewaySettings = loadGatewaySettings;
+
+function toggleGatewayProviderFields() {
+  const prov = document.getElementById('set-wa-provider')?.value || 'demo';
+  const grpInst = document.getElementById('group-wa-instance');
+  const grpTok = document.getElementById('group-wa-token');
+  const grpUrl = document.getElementById('group-custom-url');
+  const tokLabel = grpTok ? grpTok.querySelector('.form-label') : null;
+  const instLabel = grpInst ? grpInst.querySelector('.form-label') : null;
+  const gwHelp = document.getElementById('wa-gateway-help-text');
+
+  if (grpInst) grpInst.style.display = (prov === 'ultramsg' || prov === 'greenapi') ? 'block' : 'none';
+  if (grpTok) grpTok.style.display = (prov === 'browser' || prov === 'demo') ? 'none' : 'block';
+  if (grpUrl) grpUrl.style.display = (prov === 'custom') ? 'block' : 'none';
+
+  if (prov === 'demo') {
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>Demo / Simulation Mode:</b> Instantly simulates automated bill delivery without any API key or login. Bills complete cleanly with zero popups!';
+  } else if (prov === 'fast2sms') {
+    if (tokLabel) tokLabel.textContent = 'Fast2SMS API Key / Authorization Token *';
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>Fast2SMS (Direct Indian SMS):</b> Sends instant SMS directly to customer mobile phone (+91) without WhatsApp or QR scan. <a href="https://www.fast2sms.com" target="_blank" style="color:#16a34a; font-weight:700;">Get Free Key from Fast2SMS.com</a>';
+  } else if (prov === 'ultramsg') {
+    if (instLabel) instLabel.textContent = 'UltraMsg Instance ID *';
+    if (tokLabel) tokLabel.textContent = 'UltraMsg Token *';
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>UltraMsg Cloud API:</b> Sends automated WhatsApp messages 24/7 in background without WhatsApp Web or QR scan on this PC. <a href="https://ultramsg.com" target="_blank" style="color:#16a34a; font-weight:700;">Get Free Trial on UltraMsg.com</a>';
+  } else if (prov === 'greenapi') {
+    if (instLabel) instLabel.textContent = 'GreenAPI Instance ID *';
+    if (tokLabel) tokLabel.textContent = 'GreenAPI Token *';
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>GreenAPI:</b> Official WhatsApp Business Cloud API integration.';
+  } else if (prov === 'custom') {
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>Custom Webhook:</b> POSTs invoice JSON to your custom SMS/WhatsApp endpoint or connected Android phone gateway.';
+  } else {
+    if (gwHelp) gwHelp.innerHTML = '⚡ <b>Browser Direct:</b> Opens wa.me links manually only when cashier clicks the button.';
+  }
+}
+window.toggleGatewayProviderFields = toggleGatewayProviderFields;
+
+function updateGatewayBadge() {
+  const badge = document.getElementById('wa-gateway-status-badge');
+  if (!badge) return;
+  const prov = (posState.settings && posState.settings.whatsappProvider) || document.getElementById('set-wa-provider')?.value || 'demo';
+  if (prov === 'demo') {
+    badge.textContent = '⚡ Demo Simulation Mode';
+    badge.className = 'badge badge-primary';
+  } else if (prov === 'fast2sms') {
+    badge.textContent = '💬 Fast2SMS Direct SMS';
+    badge.className = 'badge badge-success';
+  } else if (prov === 'ultramsg') {
+    badge.textContent = '📲 UltraMsg Cloud WhatsApp';
+    badge.className = 'badge badge-success';
+  } else if (prov === 'greenapi') {
+    badge.textContent = '📲 GreenAPI WhatsApp';
+    badge.className = 'badge badge-success';
+  } else if (prov === 'custom') {
+    badge.textContent = '🔗 Custom Webhook';
+    badge.className = 'badge badge-warning';
+  } else {
+    badge.textContent = '🌐 Browser Direct';
+    badge.className = 'badge badge-secondary';
+  }
+}
+window.updateGatewayBadge = updateGatewayBadge;
+
+async function saveGatewaySettings(e) {
+  if (e) e.preventDefault();
+  const provider = document.getElementById('set-wa-provider')?.value || 'demo';
+  const instanceId = (document.getElementById('set-wa-instance')?.value || '').trim();
+  const token = (document.getElementById('set-wa-token')?.value || '').trim();
+  const customUrl = (document.getElementById('set-custom-webhook')?.value || '').trim();
+  const autoDispatch = document.getElementById('set-auto-dispatch')?.checked !== false;
+
+  if (!posState.settings) posState.settings = {};
+  posState.settings.whatsappProvider = provider;
+  posState.settings.whatsappInstanceId = instanceId;
+  posState.settings.whatsappToken = token;
+  posState.settings.customWebhookUrl = customUrl;
+  posState.settings.autoDispatchOnSale = autoDispatch;
+
+  saveSettingsToStorage();
+  updateGatewayBadge();
+
+  try {
+    const res = await fetch(getApiUrl('/api/gateway/settings'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider,
+        instanceId,
+        token,
+        customUrl,
+        autoDispatch
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showToast('✅ WhatsApp & SMS Cloud Gateway configuration saved successfully!', 'success');
+    } else {
+      showToast('⚠️ Saved locally to POS! Server noted: ' + (data.message || 'Updated'), 'warning');
+    }
+  } catch (err) {
+    showToast('✅ Gateway settings saved locally to POS storage!', 'success');
+  }
+}
+window.saveGatewaySettings = saveGatewaySettings;
+
+async function sendTestGatewayMessage() {
+  const mobInput = document.getElementById('gateway-test-mobile');
+  const mob = (mobInput?.value || '').trim().replace(/\D/g, '').slice(-10);
+  if (!mob || mob.length !== 10) {
+    showToast('❌ Please enter a valid 10-digit mobile number for test send.', 'danger');
+    if (mobInput) mobInput.focus();
+    return;
+  }
+
+  const provider = document.getElementById('set-wa-provider')?.value || 'demo';
+  const instanceId = (document.getElementById('set-wa-instance')?.value || '').trim();
+  const token = (document.getElementById('set-wa-token')?.value || '').trim();
+  const customUrl = (document.getElementById('set-custom-webhook')?.value || '').trim();
+
+  const testMsg = `🧾 *BRAINSHOP TEST BILL*\n━━━━━━━━━━━━━━━━━━━━\nTesting automated zero-login dispatch!\nDate: ${new Date().toLocaleString('en-IN')}\nStatus: System Connected ✅\n━━━━━━━━━━━━━━━━━━━━\n⚡ Powered by *BrainShop POS*`;
+  const testSms = `BrainShop Test Invoice: Gateway connected successfully at ${new Date().toLocaleTimeString('en-IN')}. Powered by BrainShop POS.`;
+
+  showToast('🚀 Dispatching test bill in background...', 'info');
+
+  try {
+    const res = await fetch(getApiUrl('/api/dispatch/digital_receipt'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mobile: mob,
+        message: testMsg,
+        smsText: testSms,
+        provider,
+        instanceId,
+        token,
+        customUrl,
+        channel: provider === 'fast2sms' ? 'sms' : 'whatsapp'
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showToast(`🎉 SUCCESS: ${data.message}! (Dispatched to +91 ${mob})`, 'success');
+    } else {
+      showToast(`⚠️ Gateway Notice: ${data.message}`, 'warning');
+    }
+  } catch (err) {
+    showToast(`❌ Network dispatch failed. Ensure POS Server is running.`, 'danger');
+  }
+}
+window.sendTestGatewayMessage = sendTestGatewayMessage;
 
 function renderStorageDiagnostics() {
   const originEl = document.getElementById('diag-origin');
@@ -6792,7 +6973,7 @@ function generateBrainShopSmsText(sale) {
 }
 window.generateBrainShopSmsText = generateBrainShopSmsText;
 
-function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) {
+async function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) {
   const sale = saleObj || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
   if (!sale) {
     showToast('No receipt data available to share.', 'warning');
@@ -6803,10 +6984,7 @@ function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) {
   if (mob.length > 10) mob = mob.slice(-10);
 
   if (!mob || mob === '9999999999' || mob.length !== 10) {
-    if (autoTrigger) {
-      // Don't interrupt flow with alert if auto-triggering on generic walk-in
-      return;
-    }
+    if (autoTrigger) return;
     const userEntered = prompt('Customer ka 10-digit WhatsApp mobile number enter karein:', mob === '9999999999' ? '' : mob);
     if (!userEntered) return;
     mob = userEntered.trim().replace(/\D/g, '').slice(-10);
@@ -6816,20 +6994,50 @@ function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) {
     }
   }
 
-  // Update input on receipt screen if visible
   const rcptMobileInput = document.getElementById('rcpt-target-mobile');
   if (rcptMobileInput) rcptMobileInput.value = mob;
 
   const messageText = generateBrainShopReceiptText(sale);
-  const encodedMsg = encodeURIComponent(messageText);
-  const waUrl = `https://wa.me/91${mob}?text=${encodedMsg}`;
+  const smsText = generateBrainShopSmsText(sale);
 
-  window.open(waUrl, '_blank');
-  showToast(`📲 BrainShop WhatsApp bill dispatched for +91 ${mob}!`, 'success');
+  // Background Cloud Dispatch - ZERO LOGIN REQUIRED (NO QR SCAN POPUP)
+  try {
+    const res = await fetch(getApiUrl('/api/dispatch/digital_receipt'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mobile: mob,
+        message: messageText,
+        smsText: smsText,
+        channel: 'whatsapp'
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      showToast(`📲 BrainShop Bill dispatched to +91 ${mob} in background! (${data.message})`, 'success');
+      return;
+    }
+
+    // If fallback is needed (e.g. gateway credentials not set yet)
+    if (autoTrigger) {
+      // Do NOT open QR code or popup on automatic sale completion
+      showToast(`ℹ️ Invoice ${sale.invoiceNo || ''} saved. Configure WhatsApp Gateway in Settings for 0-login dispatch.`, 'info');
+      return;
+    }
+
+    openDigitalReceiptModal(sale, mob, 'whatsapp', data.message);
+  } catch (err) {
+    if (autoTrigger) {
+      showToast(`ℹ️ Bill generated. Start POS server for background cloud dispatch.`, 'info');
+      return;
+    }
+    openDigitalReceiptModal(sale, mob, 'whatsapp', 'Server offline. Start server with Start_POS.bat for automated delivery.');
+  }
 }
 window.shareReceiptWhatsApp = shareReceiptWhatsApp;
 
-function shareReceiptSMS(targetMobile, saleObj) {
+async function shareReceiptSMS(targetMobile, saleObj) {
   const sale = saleObj || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
   if (!sale) {
     showToast('No receipt data available to share.', 'warning');
@@ -6852,10 +7060,33 @@ function shareReceiptSMS(targetMobile, saleObj) {
   const rcptMobileInput = document.getElementById('rcpt-target-mobile');
   if (rcptMobileInput) rcptMobileInput.value = mob;
 
-  const smsBody = encodeURIComponent(generateBrainShopSmsText(sale));
-  const smsUrl = `sms:+91${mob}?body=${smsBody}`;
-  window.location.href = smsUrl;
-  showToast(`💬 SMS draft generated for +91 ${mob}`, 'info');
+  const smsText = generateBrainShopSmsText(sale);
+
+  showToast(`💬 Dispatched direct SMS to +91 ${mob}...`, 'info');
+
+  try {
+    const res = await fetch(getApiUrl('/api/dispatch/digital_receipt'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mobile: mob,
+        message: smsText,
+        smsText: smsText,
+        channel: 'sms',
+        provider: (posState.settings && posState.settings.whatsappProvider === 'demo') ? 'demo' : 'fast2sms'
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      showToast(`💬 SMS dispatched to +91 ${mob} successfully! (${data.message})`, 'success');
+      return;
+    }
+
+    openDigitalReceiptModal(sale, mob, 'sms', data.message);
+  } catch (err) {
+    openDigitalReceiptModal(sale, mob, 'sms', 'Direct SMS requires server to be active. Run Start_POS.bat.');
+  }
 }
 window.shareReceiptSMS = shareReceiptSMS;
 
@@ -6885,6 +7116,83 @@ function fallbackCopyText(text) {
   ta.remove();
   showToast('📋 BrainShop Digital Receipt text copied to clipboard!', 'success');
 }
+window.fallbackCopyText = fallbackCopyText;
+
+function openDigitalReceiptModal(sale, mobile, channel = 'whatsapp', statusMsg = '') {
+  const s = sale || posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  const mob = mobile || (s && s.customerMobile) || '';
+  
+  const mobEl = document.getElementById('digital-receipt-mobile');
+  if (mobEl) mobEl.value = (mob || '').replace(/\D/g, '').slice(-10);
+
+  const chanEl = document.getElementById('digital-receipt-channel');
+  if (chanEl) chanEl.value = channel;
+
+  const statEl = document.getElementById('digital-receipt-status-text');
+  if (statEl) {
+    statEl.textContent = statusMsg || 'Zero-Login Cloud Gateway allows sending bills without linking WhatsApp on this PC.';
+  }
+
+  const previewEl = document.getElementById('digital-receipt-preview');
+  if (previewEl && s) {
+    previewEl.value = channel === 'sms' ? generateBrainShopSmsText(s) : generateBrainShopReceiptText(s);
+  }
+
+  openModal('modal-digital-receipt');
+}
+window.openDigitalReceiptModal = openDigitalReceiptModal;
+
+function updateDigitalReceiptPreviewChannel() {
+  const chan = document.getElementById('digital-receipt-channel')?.value || 'whatsapp';
+  const s = posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  const previewEl = document.getElementById('digital-receipt-preview');
+  if (previewEl && s) {
+    previewEl.value = chan === 'sms' ? generateBrainShopSmsText(s) : generateBrainShopReceiptText(s);
+  }
+}
+window.updateDigitalReceiptPreviewChannel = updateDigitalReceiptPreviewChannel;
+
+function dispatchDigitalReceiptNow() {
+  const mob = (document.getElementById('digital-receipt-mobile')?.value || '').trim().replace(/\D/g, '').slice(-10);
+  const chan = document.getElementById('digital-receipt-channel')?.value || 'whatsapp';
+  if (!mob || mob.length !== 10) {
+    showToast('❌ Please enter a valid 10-digit mobile number.', 'danger');
+    return;
+  }
+  closeModal('modal-digital-receipt');
+  if (chan === 'sms') {
+    shareReceiptSMS(mob);
+  } else {
+    shareReceiptWhatsApp(mob);
+  }
+}
+window.dispatchDigitalReceiptNow = dispatchDigitalReceiptNow;
+
+function navigateToSettingsGateway() {
+  closeModal('modal-digital-receipt');
+  navigateToScreen('settings');
+  const gwPanel = document.getElementById('set-wa-provider');
+  if (gwPanel) {
+    setTimeout(() => {
+      gwPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      gwPanel.focus();
+    }, 200);
+  }
+}
+window.navigateToSettingsGateway = navigateToSettingsGateway;
+
+function openWhatsAppManualLink() {
+  const mob = (document.getElementById('digital-receipt-mobile')?.value || '').trim().replace(/\D/g, '').slice(-10);
+  const sale = posState.lastCompletedSale || (posState.salesHistory && posState.salesHistory[0]);
+  if (!mob || mob.length !== 10) {
+    showToast('❌ Please enter a valid 10-digit mobile number.', 'danger');
+    return;
+  }
+  const text = encodeURIComponent(generateBrainShopReceiptText(sale));
+  window.open(`https://wa.me/91${mob}?text=${text}`, '_blank');
+  closeModal('modal-digital-receipt');
+}
+window.openWhatsAppManualLink = openWhatsAppManualLink;
 
 function previewBrainShopReceipt() {
   const subtotal = posState.cart.reduce((sum, i) => sum + (i.qty * i.price), 0);
