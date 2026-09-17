@@ -7000,6 +7000,19 @@ async function shareReceiptWhatsApp(targetMobile, saleObj, autoTrigger = false) 
   const messageText = generateBrainShopReceiptText(sale);
   const smsText = generateBrainShopSmsText(sale);
 
+  // 100% FREE FOREVER BROWSER DIRECT MODE:
+  const currentProvider = (posState.settings && posState.settings.whatsappProvider) || 'demo';
+  if (currentProvider === 'browser') {
+    if (autoTrigger) {
+      showToast(`ℹ️ Invoice ${sale.invoiceNo || ''} recorded. Click [📲 WhatsApp Bill] to send.`, 'info');
+      return;
+    }
+    const waUrl = `https://wa.me/91${mob}?text=${encodeURIComponent(messageText)}`;
+    window.open(waUrl, '_blank');
+    showToast(`📲 Opening WhatsApp for +91 ${mob}...`, 'success');
+    return;
+  }
+
   // Background Cloud Dispatch - ZERO LOGIN REQUIRED (NO QR SCAN POPUP)
   try {
     const res = await fetch(getApiUrl('/api/dispatch/digital_receipt'), {
