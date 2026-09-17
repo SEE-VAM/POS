@@ -1,0 +1,2398 @@
+/* =============================================================================
+   BRAINSHOP ENTERPRISE RETAIL APPLICATION - COMPREHENSIVE UI STYLESHEET
+   Faithfully reproduces the 23-screen visual layout from the reference image
+   Universal Theme 42 Styling with Corporate Retail Blue & High-Contrast Accents
+   ============================================================================= */
+
+:root {
+  --primary: #1e40af;         /* APEX Corporate Blue */
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --secondary: #0f172a;       /* Slate Dark 900 */
+  --sidebar-bg: #1e293b;      /* Slate Sidebar 800 */
+  --sidebar-text: #94a3b8;
+  --sidebar-active: #3b82f6;
+  --accent: #0284c7;          /* Sky Blue */
+  --success: #10b981;         /* Checkout Emerald */
+  --success-hover: #059669;
+  --warning: #f59e0b;         /* Amber */
+  --danger: #ef4444;          /* Crimson Red */
+  --bg-app: #f1f5f9;          /* Slate 100 canvas */
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;    /* Slate 200 */
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.4;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   1. GLOBAL HEADER & QUICK SCREEN SWITCHER BAR
+   ============================================================================= */
+.app-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 54px;
+  padding: 0 18px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 100;
+  position: relative;
+}
+
+.btn-sidebar-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+  user-select: none;
+}
+
+/* =============================================================================
+   BRAINSHOP BRAND LOGO & TYPOGRAPHY STYLES (EXACT GRADIENT SPECIFICATION)
+   ============================================================================= */
+.brainshop-brand {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.brainshop-brand .brand-brain {
+  color: #19053d;
+  background: linear-gradient(135deg, #19053d 0%, #2f054b 50%, #4a0552 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.brainshop-brand .brand-shop {
+  color: #ed1c6d;
+  background: linear-gradient(90deg, #c90474 0%, #dc0a83 25%, #ed1c6d 55%, #f73475 75%, #fc8861 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.topbar-brand-logo {
+  height: 28px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.topbar-brand-logo:hover {
+  transform: scale(1.04);
+}
+
+.topbar-store-info {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+.topbar-store-info strong {
+  color: var(--secondary);
+}
+
+.screen-switcher-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid #bfdbfe;
+}
+.screen-switcher-bar label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+.screen-select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: #ffffff;
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-quick-role-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+}
+.topbar-quick-role-switch label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.topbar-quick-role-switch select {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--secondary);
+}
+.user-badge .role-tag {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+.btn-topbar-copilot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+.btn-topbar-copilot:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.5);
+  filter: brightness(1.08);
+}
+.btn-topbar-copilot .copilot-dot {
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #10b981;
+  display: inline-block;
+}
+.btn-logout {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.btn-logout:hover {
+  background: #fee2e2;
+}
+
+/* =============================================================================
+   2. MAIN APPLICATION LAYOUT (SIDEBAR + CONTENT CANVAS)
+   ============================================================================= */
+.app-container {
+  display: flex;
+  height: calc(100vh - 54px);
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: 210px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid #334155;
+}
+
+.sidebar-mobile-header {
+  display: none;
+}
+.sidebar-backdrop {
+  display: none;
+}
+
+.sidebar-nav {
+  list-style: none;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover {
+  color: #ffffff;
+  background: #334155;
+}
+.nav-item.active {
+  color: #ffffff;
+  background: #1e3a8a;
+  border-left-color: var(--sidebar-active);
+  font-weight: 600;
+}
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-main {
+  flex: 1;
+  background: var(--bg-app);
+  overflow-y: auto;
+  padding: 16px 20px;
+  position: relative;
+}
+
+/* Screen visibility controller */
+.screen-view {
+  display: none;
+  animation: fadeIn 0.15s ease-in-out;
+}
+.screen-view.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================================================================
+   3. REUSABLE UI WIDGETS, BUTTONS & CARDS
+   ============================================================================= */
+.panel {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s ease;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: var(--success-hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-outline { background: #fff; color: var(--secondary); border: 1px solid var(--border-color); }
+.btn-outline:hover { background: #f8fafc; }
+.btn-sm { padding: 4px 8px; font-size: 0.775rem; }
+.btn-lg { padding: 12px 20px; font-size: 1rem; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 12px;
+}
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-info { background: #e0f2fe; color: #075985; }
+
+/* Interactive Tables */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+.data-table th {
+  background: #f8fafc;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--secondary);
+}
+.data-table tr:hover td {
+  background: #f8fafc;
+}
+
+/* =============================================================================
+   4. SCREEN 1: LOGIN (PROFESSIONAL LUXURY RETAIL STORE AMBIANCE)
+   ============================================================================= */
+body.not-authenticated .screen-switcher-bar,
+body.not-authenticated .topbar-user,
+body.not-authenticated .app-sidebar,
+body.not-authenticated .btn-sidebar-toggle,
+body.not-authenticated .sidebar-backdrop {
+  display: none !important;
+}
+
+body.not-authenticated .app-topbar {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+body.not-authenticated .topbar-logo {
+  color: #38bdf8;
+}
+
+body.not-authenticated .topbar-logo span {
+  color: #ffffff;
+}
+
+body.not-authenticated .topbar-store-info {
+  color: #94a3b8;
+}
+
+body.not-authenticated .app-store-name {
+  color: #e2e8f0;
+}
+
+body.not-authenticated .app-container {
+  display: block;
+}
+
+body.not-authenticated .app-main {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+.login-backdrop {
+  min-height: calc(100vh - 54px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: #0b1120;
+  background: 
+    linear-gradient(135deg, rgba(15, 23, 42, 0.58) 0%, rgba(30, 58, 138, 0.38) 50%, rgba(15, 23, 42, 0.70) 100%),
+    url('pos_login_bg.jpg') no-repeat center center / cover;
+  padding: 30px 20px;
+}
+
+.login-backdrop::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 40%, rgba(11, 17, 32, 0.6) 100%);
+  pointer-events: none;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 
+    0 25px 60px -12px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.8),
+    0 12px 24px -6px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.login-brand {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1e40af;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--secondary);
+  margin-bottom: 5px;
+}
+.form-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.15);
+}
+.login-quick-roles {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 0.75rem;
+}
+
+/* =============================================================================
+   5. SCREEN 2: DASHBOARD
+   ============================================================================= */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dashboard-kpi-grid {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+@media (max-width: 1200px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 768px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+@media (max-width: 480px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-card-clickable {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  user-select: none;
+}
+.kpi-card-clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+}
+.kpi-card-clickable:active {
+  transform: translateY(-1px);
+}
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--secondary);
+  margin: 6px 0;
+}
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.kpi-trend.up { color: var(--success); }
+.kpi-trend.down { color: var(--danger); }
+
+.dashboard-split {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+/* Simulated SVG Charts */
+.chart-container {
+  height: 240px;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 20px 0 0 0;
+}
+
+/* =============================================================================
+   6. SCREEN 3: POS / NEW SALE (CORE BILLING)
+   ============================================================================= */
+.pos-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  height: calc(100vh - 86px);
+}
+
+.pos-catalog-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  padding: 14px;
+}
+
+.pos-search-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.pos-customer-select {
+  width: 220px;
+  padding: 8px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.pos-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.category-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.cat-chip {
+  padding: 6px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.cat-chip:hover {
+  background: #e2e8f0;
+}
+.cat-chip.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.product-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+.product-thumb {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 6px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: var(--radius-sm);
+  font-size: 1.5rem;
+}
+.product-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 4px;
+}
+.product-stock-tag {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* POS Cart Sidebar */
+.pos-cart-panel {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.cart-header {
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.cart-items-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-color);
+}
+.cart-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--secondary);
+}
+.cart-item-calc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #f8fafc;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-btn:hover { background: #e2e8f0; }
+
+.cart-summary {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+.summary-row.total {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--secondary);
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  margin-top: 6px;
+}
+.cart-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-color);
+}
+
+/* =============================================================================
+   7. MODAL DIALOGS (PAYMENT, PRODUCT SEARCH, FORMS)
+   ============================================================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-overlay.active {
+  display: flex;
+}
+.modal-box {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  width: 90%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: modalPop 0.15s ease;
+}
+@keyframes modalPop {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.modal-header {
+  padding: 14px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.modal-body {
+  padding: 20px;
+}
+.modal-footer {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Payment Mode Buttons */
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.pay-mode-btn {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pay-mode-btn.active {
+  background: #dcfce7;
+  border-color: var(--success);
+  color: #166534;
+}
+
+/* Change highlight box */
+.change-box {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+/* =============================================================================
+   8. SCREEN 6: PRINTABLE RECEIPT (THERMAL 80MM & A4)
+   ============================================================================= */
+.receipt-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+.receipt-header {
+  text-align: center;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.receipt-header h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--secondary);
+}
+.receipt-header p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.receipt-barcode {
+  text-align: center;
+  margin-top: 16px;
+  font-family: monospace;
+  letter-spacing: 4px;
+  font-weight: 800;
+}
+
+/* A4 Full Tax Invoice format toggle */
+.receipt-wrapper.a4-format {
+  max-width: 720px;
+  padding: 30px 36px;
+  box-shadow: var(--shadow-lg);
+  font-family: inherit;
+}
+.receipt-wrapper.a4-format .receipt-header h2 {
+  font-size: 1.6rem;
+}
+.receipt-wrapper.a4-format table {
+  font-size: 0.9rem;
+}
+.receipt-wrapper.a4-format .receipt-barcode {
+  font-size: 1.2rem;
+}
+
+/* =============================================================================
+   9. TOAST NOTIFICATIONS & EXTENDED MODAL FORMS
+   ============================================================================= */
+#toast-container {
+  position: fixed;
+  top: 64px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 400px;
+  padding: 12px 18px;
+  background: #ffffff;
+  color: var(--secondary);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-left: 4px solid var(--primary);
+  animation: toastSlideIn 0.25s ease-out;
+  transition: all 0.2s ease;
+}
+.toast.toast-success { border-left-color: var(--success); }
+.toast.toast-danger { border-left-color: var(--danger); }
+.toast.toast-warning { border-left-color: var(--warning); }
+.toast.fade-out { opacity: 0; transform: translateX(20px); }
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.modal-lg {
+  max-width: 680px;
+}
+.modal-xl {
+  max-width: 840px;
+}
+
+/* =============================================================================
+   10. ENHANCED PAYMENT MODAL & UPI QR CODE STYLES
+   ============================================================================= */
+.pay-bill-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.pay-banner-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.pay-banner-value {
+  font-size: 1rem;
+  color: var(--secondary);
+  font-family: monospace;
+}
+.pay-banner-amount {
+  font-size: 1.4rem;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 650px) {
+  .payment-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.pay-mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--secondary);
+}
+.pay-mode-btn .mode-icon {
+  font-size: 1.25rem;
+}
+.pay-mode-btn:hover {
+  border-color: var(--primary);
+  background: #f8fafc;
+}
+.pay-mode-btn.active {
+  background: #ecfdf5;
+  border-color: var(--success);
+  color: #065f46;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.pay-mode-section {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+.pay-mode-section.active {
+  display: block;
+}
+
+/* Quick Cash Suggestions */
+.form-input-lg {
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+.quick-cash-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.quick-cash-pill {
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--secondary);
+  transition: all 0.15s ease;
+}
+.quick-cash-pill:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* UPI QR Section */
+.upi-card-container {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+@media (max-width: 600px) {
+  .upi-card-container {
+    grid-template-columns: 1fr;
+  }
+}
+.upi-qr-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.upi-qr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.upi-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #dc2626;
+  border-radius: 50%;
+  animation: pulseAnimation 1.5s infinite;
+}
+@keyframes pulseAnimation {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+.upi-qr-amount {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--success);
+}
+.upi-qr-wrapper {
+  margin: 6px 0 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.upi-qrcode-box {
+  width: 180px;
+  height: 180px;
+  padding: 8px;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+  overflow: hidden;
+}
+.upi-qrcode-box img, .upi-qrcode-box canvas, .upi-qrcode-box svg {
+  display: block !important;
+  margin: 0 auto;
+  max-width: 100% !important;
+  height: auto !important;
+}
+.upi-apps-icons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.upi-app-chip {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--secondary);
+}
+.upi-vpa-details {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-copy-vpa {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-copy-vpa:hover {
+  background: #e2e8f0;
+}
+
+/* UPI Verify Panel */
+.upi-verify-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.upi-status-pill {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.upi-status-pill.waiting {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+.upi-status-pill.success {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+.upi-quick-actions {
+  margin-top: 14px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-sm);
+}
+.btn-simulate-upi {
+  width: 100%;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  transition: all 0.15s ease;
+}
+.btn-simulate-upi:hover {
+  filter: brightness(1.05);
+}
+.upi-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+/* Credit Khata Section */
+.credit-khata-box {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.credit-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.credit-meta-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Split Pay Bar */
+.split-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
+/* =============================================================================
+   11. USER ROLE MANAGEMENT & 14-MODULE PERMISSION MATRIX STYLES
+   ============================================================================= */
+.user-role-select-inline {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  cursor: pointer;
+}
+.user-role-select-inline:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.8;
+  border-color: #e2e8f0;
+}
+.perm-checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+  color: var(--secondary);
+}
+.perm-checkbox-card:hover {
+  background: #f1f5f9;
+  border-color: var(--primary);
+}
+.perm-checkbox-card.checked {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+.perm-checkbox-card input[type="checkbox"] {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+.perm-checkbox-card input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+.nav-item.locked-nav {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.nav-item.locked-nav span:first-child::after {
+  content: ' 🔒';
+  font-size: 0.65rem;
+}
+.role-badge-admin {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+.role-badge-manager {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+.role-badge-cashier {
+  background: #ccfbf1;
+  color: #115e59;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+/* Authentication & Password Management Enhancements */
+.login-error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.shake-card {
+  animation: shakeCard 0.4s ease-in-out;
+}
+
+@keyframes shakeCard {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+.btn-toggle-password:hover {
+  opacity: 0.7;
+}
+
+.quick-login-chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: #334155;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+.quick-login-chip:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.user-password-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.user-password-pill:hover {
+  background: #e2e8f0;
+}
+
+/* =============================================================================
+   12. MOBILE & TABLET RESPONSIVE DESIGN (DRAWER NAVIGATION & ADAPTIVE LAYOUTS)
+   ============================================================================= */
+body.no-anim *,
+body.no-anim .app-sidebar,
+body.no-anim .sidebar-backdrop {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (max-width: 900px) {
+  /* Canvas & Viewport Flexibility */
+  html, body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .app-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: calc(100vh - 54px) !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+  .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 10px !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  /* Responsive Topbar */
+  .app-topbar {
+    padding: 0 12px !important;
+  }
+  .btn-sidebar-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .screen-switcher-bar {
+    display: none !important;
+  }
+  .topbar-store-info {
+    display: none !important;
+  }
+  .topbar-quick-role-switch {
+    display: none !important;
+  }
+  .topbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .topbar-logo {
+    font-size: 1.15rem !important;
+  }
+  .topbar-user {
+    gap: 6px !important;
+  }
+
+  /* Unauthenticated Mobile Login Alignment */
+  body.not-authenticated .app-main {
+    padding: 0 !important;
+  }
+  body.not-authenticated .login-backdrop {
+    padding: 24px 14px !important;
+  }
+  body.not-authenticated .login-card {
+    width: 100% !important;
+    max-width: 440px !important;
+    padding: 28px 20px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Off-Canvas Navigation Drawer */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 275px !important;
+    max-width: 85vw !important;
+    z-index: 1050 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.4) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .app-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-mobile-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 14px 16px !important;
+    background: #0f172a !important;
+    border-bottom: 1px solid #334155 !important;
+  }
+  .sidebar-mobile-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+  }
+  .btn-close-sidebar {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    font-size: 1.6rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 2px 8px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+  .btn-close-sidebar:hover {
+    color: #ffffff !important;
+    background: #334155 !important;
+  }
+  .sidebar-nav {
+    padding: 8px 0 !important;
+  }
+  .nav-item {
+    padding: 12px 18px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Drawer Backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+    z-index: 1040 !important;
+    opacity: 0 !important;
+    transition: opacity 0.25s ease !important;
+  }
+  .sidebar-backdrop.active {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Dashboard Screen Adaptations */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .dashboard-split {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 14px !important;
+  }
+  .dashboard-split > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .chart-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-width: 100% !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Screen 3: POS Billing Screen Adaptations */
+  .pos-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    gap: 14px !important;
+  }
+  .pos-catalog-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 480px !important;
+    overflow: visible !important;
+  }
+  .pos-cart-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 380px !important;
+    overflow: visible !important;
+  }
+  .product-grid {
+    max-height: 420px !important;
+  }
+  .cart-items-container {
+    max-height: 280px !important;
+  }
+
+  /* Panels & Touch-Scroll Tables */
+  .panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 14px !important;
+  }
+  .panel-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .panel-actions {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .table-responsive {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+  .data-table {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  .table-responsive .data-table {
+    min-width: 520px !important;
+  }
+
+  /* Modals & Dialogs */
+  .modal-box {
+    width: 95% !important;
+    max-width: 95% !important;
+    max-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 10px !important;
+  }
+  .modal-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: calc(90vh - 120px) !important;
+    padding: 14px !important;
+  }
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-topbar {
+    height: 50px !important;
+    padding: 0 8px !important;
+  }
+  .topbar-logo svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .topbar-logo span {
+    font-size: 1.05rem !important;
+  }
+  .topbar-quick-role-switch {
+    display: none !important;
+  }
+  .topbar-user {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .user-badge {
+    padding: 3px 8px !important;
+    font-size: 0.75rem !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+  .user-badge .role-tag {
+    padding: 1px 5px !important;
+    font-size: 0.65rem !important;
+  }
+  .btn-logout {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Dashboard Phone Grid */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .kpi-card {
+    padding: 10px !important;
+  }
+  .kpi-header {
+    font-size: 0.72rem !important;
+  }
+  .kpi-value {
+    font-size: 1.18rem !important;
+    margin: 4px 0 !important;
+    word-break: break-all !important;
+  }
+  .kpi-trend {
+    font-size: 0.68rem !important;
+  }
+
+  /* POS Billing Phone Adaptation */
+  .pos-search-header {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .pos-customer-select {
+    flex: 1 1 calc(100% - 65px) !important;
+    width: auto !important;
+  }
+  .pos-search-input {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    order: 3 !important;
+  }
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .product-card {
+    padding: 8px !important;
+  }
+  .product-thumb {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.25rem !important;
+    margin-bottom: 4px !important;
+  }
+  .product-title {
+    font-size: 0.8rem !important;
+  }
+  .product-price {
+    font-size: 0.88rem !important;
+  }
+  .cart-action-buttons {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+  .cart-action-buttons .btn-lg {
+    grid-column: span 2 !important;
+  }
+  .payment-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .pay-mode-btn {
+    padding: 8px 4px !important;
+    font-size: 0.75rem !important;
+  }
+  .pay-mode-btn .mode-icon {
+    font-size: 1.1rem !important;
+  }
+
+  /* Login Screen Phone Adaptation */
+  .login-card {
+    padding: 24px 18px !important;
+    border-radius: 16px !important;
+    max-width: 95% !important;
+  }
+  .login-brand {
+    font-size: 1.8rem !important;
+  }
+  .login-subtitle {
+    font-size: 0.8rem !important;
+    margin-bottom: 16px !important;
+  }
+  .login-quick-roles {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  /* Toast & Notification */
+  #toast-container {
+    top: 56px !important;
+    left: 10px !important;
+    right: 10px !important;
+  }
+  .toast {
+    min-width: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .receipt-wrapper {
+    padding: 14px !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}
+
+
+
+
+
+/* =============================================================================
+   POS CUSTOMER QUICKBAR & EMPTY CART ENHANCEMENTS
+   ============================================================================= */
+.pos-customer-quickbar {
+  background: #f8fafc;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+.pos-customer-quickbar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.pos-customer-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.empty-cart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 15px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* =============================================================================
+   SCREEN 18: MASTER REPORTS CENTER STYLES
+   ============================================================================= */
+.report-export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.report-module-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 2px 12px 2px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-overflow-scrolling: touch;
+}
+.report-tab {
+  background: #f1f5f9;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.report-tab:hover {
+  background: #e2e8f0;
+}
+.report-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.report-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+.report-presets-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn-preset {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-color);
+}
+.btn-preset:hover {
+  background: #f1f5f9;
+}
+.btn-preset.active {
+  background: var(--secondary);
+  color: #ffffff;
+  border-color: var(--secondary);
+}
+.report-date-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.date-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.date-field input {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  width: 125px;
+}
+.report-branch-field select,
+.report-secondary-field select {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  max-width: 165px;
+}
+.report-search-field {
+  flex: 1;
+  min-width: 150px;
+}
+.report-search-field input {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+@page {
+  size: auto;
+  margin: 6mm;
+}
+
+@media print {
+  /* 1. Global Reset: Remove all dark mode/colored canvas and allow natural document flow */
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 2. Hide all non-printable application navigation, chrome & overlays */
+  .app-topbar,
+  .app-sidebar,
+  .sidebar-backdrop,
+  .screen-switcher-bar,
+  .btn-sidebar-toggle,
+  .modal-overlay,
+  #toast-container,
+  .no-print,
+  .btn,
+  button,
+  .report-filters-bar,
+  .report-module-tabs,
+  .report-export-buttons,
+  .alert-banner {
+    display: none !important;
+  }
+
+  /* 3. Reset Layout Shell from Flex/Fixed to Plain Block */
+  .app-container {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .app-main {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    background: #ffffff !important;
+    width: 100% !important;
+    border: none !important;
+  }
+
+  /* 4. Display ONLY the active screen view, hide inactive screens */
+  .screen-view {
+    display: none !important;
+  }
+  .screen-view.active {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* =========================================================================
+     A. RECEIPT / INVOICE PRINT ENGINE (SCREEN 6)
+     ========================================================================= */
+  #screen-receipt.active {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Default: Standard 80mm POS Thermal Slip (High-contrast, crisp receipt) */
+  .receipt-wrapper {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 4mm 6mm !important;
+    border: 1px dashed #475569 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    font-family: 'Courier New', Courier, monospace, system-ui !important;
+  }
+
+  /* A4 Full Tax Invoice Layout Mode */
+  .receipt-wrapper.a4-format {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    padding: 10mm 14mm !important;
+    border: 1px solid #1e293b !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  .receipt-wrapper * {
+    visibility: visible !important;
+    color: #000000 !important;
+  }
+
+  .receipt-header {
+    text-align: center !important;
+    border-bottom: 1px dashed #000000 !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .receipt-header h2 {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 3px 0 !important;
+    color: #000000 !important;
+  }
+
+  .receipt-header p {
+    font-size: 7.5pt !important;
+    color: #1e293b !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Clean Itemized Table for Receipt (NO ugly spreadsheet black borders) */
+  .receipt-wrapper table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 6px 0 10px 0 !important;
+    font-size: 8pt !important;
+  }
+
+  .receipt-wrapper table th {
+    border: none !important;
+    border-top: 1px dashed #000000 !important;
+    border-bottom: 1px dashed #000000 !important;
+    padding: 4px 2px !important;
+    font-weight: 700 !important;
+    font-size: 8pt !important;
+    text-align: left !important;
+  }
+
+  .receipt-wrapper table td {
+    border: none !important;
+    padding: 3px 2px !important;
+    font-size: 8pt !important;
+  }
+
+  .receipt-wrapper.a4-format table th,
+  .receipt-wrapper.a4-format table td {
+    padding: 6px 4px !important;
+    font-size: 9pt !important;
+  }
+
+  .receipt-barcode {
+    display: block !important;
+    visibility: visible !important;
+    font-size: 14pt !important;
+    letter-spacing: 5px !important;
+    margin-top: 10px !important;
+    text-align: center !important;
+    color: #000000 !important;
+  }
+
+  /* =========================================================================
+     B. MASTER REPORTS & ANALYTICS PRINT ENGINE (SCREEN 18)
+     ========================================================================= */
+  #screen-sales-reports.active .panel {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #screen-sales-reports.active .panel-header {
+    border-bottom: 2px solid #000000 !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  #screen-sales-reports.active .panel-title {
+    font-size: 13pt !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+  }
+
+  #screen-sales-reports.active .kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+  }
+
+  #screen-sales-reports.active .kpi-card {
+    border: 1px solid #94a3b8 !important;
+    padding: 6px 8px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  #screen-sales-reports.active .kpi-header {
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+  }
+
+  #screen-sales-reports.active .kpi-value {
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+  }
+
+  #screen-sales-reports.active .table-responsive {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+  }
+
+  #report-master-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+  }
+
+  #report-master-table th,
+  #report-master-table td {
+    border: 1px solid #94a3b8 !important;
+    padding: 4px 6px !important;
+    color: #000000 !important;
+  }
+
+  #report-master-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+}
+
+/* =============================================================================
+   HELD & DRAFT ORDERS MANAGER STYLES
+   ============================================================================= */
+.held-order-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.held-order-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+.held-tab-active {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+}
+.held-tab-inactive {
+  background: #f1f5f9 !important;
+  color: var(--text-muted) !important;
+}
+
