@@ -1,9 +1,9 @@
 @echo off
-title MyPOS Retail Commercial System
+title Brainshop Retail Commercial System
 color 0a
 
 echo =====================================================================
-echo                     MYPOS RETAIL SYSTEM LAUNCHER
+echo                     BRAINSHOP RETAIL SYSTEM LAUNCHER
 echo =====================================================================
 echo [*] Checking local environment...
 echo.
@@ -77,7 +77,7 @@ for /d %%D in ("C:\Program Files\Python3*") do (
 :: FALLBACK: If Python is not installed, open directly in Browser!
 :: =========================================================================
 echo [!] Notice: Python server engine not detected.
-echo [*] Launching MyPOS in Standalone Offline Browser Mode...
+echo [*] Launching Brainshop in Standalone Offline Browser Mode...
 echo [*] All billing screens, inventory, receipts, and reports are fully available!
 echo.
 start "" "%~dp0index.html"
@@ -93,7 +93,7 @@ echo [*] Starting SQLite Database & Local Server Engine...
 echo [*] System will automatically open in your default browser...
 echo.
 echo =====================================================================
-echo  MyPOS System is running! Keep this window open while billing.
+echo  Brainshop System is running! Keep this window open while billing.
 echo =====================================================================
 echo.
 

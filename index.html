@@ -174,12 +174,12 @@
             <form onsubmit="handleLogin(event)">
               <div class="form-group">
                 <label class="form-label">Username *</label>
-                <input type="text" id="login-user" class="form-input" placeholder="e.g. admin or cashier1" required autocomplete="username" value="admin" />
+                <input type="text" id="login-user" class="form-input" placeholder="Enter username (e.g. admin)" required autocomplete="username" value="" />
               </div>
               <div class="form-group">
                 <label class="form-label">Password *</label>
                 <div style="position:relative;">
-                  <input type="password" id="login-pass" class="form-input" placeholder="Enter account password" required autocomplete="current-password" value="password123" style="padding-right:38px;" />
+                  <input type="password" id="login-pass" class="form-input" placeholder="Enter password" required autocomplete="current-password" value="" style="padding-right:38px;" />
                   <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('login-pass', this)" title="Show/Hide Password">👁️</button>
                 </div>
               </div>
@@ -195,15 +195,6 @@
                 Sign In to System
               </button>
             </form>
-
-            <div class="login-quick-roles" style="margin-top:20px; border-top:1px dashed var(--border-color); padding-top:14px;">
-              <span style="font-weight:700; font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Default System Accounts (Password: <code>password123</code>):</span>
-              <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
-                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('admin', 'password123')">admin (ADMIN)</button>
-                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('manager', 'password123')">manager (MANAGER)</button>
-                <button type="button" class="quick-login-chip" onclick="fillLoginCreds('cashier1', 'password123')">cashier1 (CASHIER)</button>
-              </div>
-            </div>
           </div>
         </div>
       </section>

@@ -9148,8 +9148,9 @@ async function submitLicenseKey() {
     if (res.ok && result.status === 'success') {
       showToast('🎉 ' + result.message, 'success');
       closeModal('modal-license-activation');
-      await loadStateFromSqlite();
-      renderDashboard();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
     } else {
       showToast(result.message || 'Activation failed. Invalid license key.', 'danger');
     }
