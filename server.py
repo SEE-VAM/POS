@@ -208,6 +208,7 @@ def migrate_database_schema(conn):
         INSERT INTO company_settings (id, company_code, store_name, legal_name, gstin, address, phone, invoice_prefix, currency, allow_negative_stock)
         VALUES (1, 'COMP001', 'My Retail Store', '', '', '', '', 'INV', '₹', 0)
         """)
+    c.execute("UPDATE company_settings SET store_name = 'My Retail Store', legal_name = '', gstin = '', address = '', phone = '' WHERE store_name = 'ABC Retail Store'")
 
     # 2. branches
     try:
@@ -258,6 +259,7 @@ def migrate_database_schema(conn):
         """, [
             (1, 'B001', 'Main Branch', '', '', 'Active')
         ])
+    c.execute("DELETE FROM branches WHERE name LIKE '%Noida%' OR name LIKE '%Gurgaon%'")
 
     # Refresh branch map
     c.execute("SELECT code, name FROM branches")
@@ -301,6 +303,27 @@ def migrate_database_schema(conn):
             print("[Migration] Upgraded categories with company_code FK.")
     except Exception as e:
         print(f"[Migration Warning categories] {e}")
+
+    c.execute("SELECT COUNT(*) FROM categories")
+    if c.fetchone()[0] == 0:
+        default_cats = [
+            ('Bakery', 'Bakery Products & Items'),
+            ('Beverages', 'Beverages Products & Items'),
+            ('Chocolates & Sweets', 'Chocolates & Sweets Products & Items'),
+            ('Cooking Oils', 'Cooking Oils Products & Items'),
+            ('Dairy', 'Dairy Products & Items'),
+            ('Food', 'Food Products & Items'),
+            ('Grains & Staples', 'Grains & Staples Products & Items'),
+            ('Household & Cleaning', 'Household & Cleaning Products & Items'),
+            ('Personal Care', 'Personal Care Products & Items'),
+            ('Snacks', 'Snacks Products & Items'),
+            ('Spices & Staples', 'Spices & Staples Products & Items')
+        ]
+        for cname, cdesc in default_cats:
+            try:
+                c.execute("INSERT INTO categories (company_code, name, description, status) VALUES ('COMP001', ?, ?, 'Active')", (cname, cdesc))
+            except Exception:
+                pass
 
     # 4. system_users
     try:
@@ -466,6 +489,14 @@ def migrate_database_schema(conn):
             print("[Migration] Upgraded customers with company_code & branch_code FKs.")
     except Exception as e:
         print(f"[Migration Warning customers] {e}")
+
+    c.execute("DELETE FROM customers WHERE name IN ('Rahul Sharma', 'Amit Verma', 'Priya Patel')")
+    c.execute("SELECT COUNT(*) FROM customers")
+    if c.fetchone()[0] == 0:
+        c.execute("""
+        INSERT INTO customers (id, company_code, branch_code, name, mobile, email, gstin, balance, credit_limit, status)
+        VALUES (1, 'COMP001', 'B001', 'Walk-in Customer', '9999999999', '', 'Unregistered', 0.0, 0.0, 'Active')
+        """)
 
     # 7. suppliers
     try:
@@ -825,12 +856,15 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
     def _send_json(self, data, status=200):
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+        try:
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            self.end_headers()
+            self.wfile.write(json.dumps(data).encode('utf-8'))
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def do_OPTIONS(self):
         self.send_response(200)

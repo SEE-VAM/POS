@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrainShop - Commercial License Generator</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; width: 100%; max-width: 560px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid #334155; padding-bottom: 16px; }
+    .header h2 { margin: 0; font-size: 1.4rem; color: #38bdf8; }
+    .badge { background: #0284c7; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 9999px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #94a3b8; }
+    input, select { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.95rem; outline: none; transition: 0.2s; }
+    input:focus, select:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
+    .btn-gen { width: 100%; padding: 14px; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; border-radius: 8px; color: #fff; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+    .btn-gen:hover { background: linear-gradient(135deg, #0369a1, #1d4ed8); }
+    .result-box { display: none; margin-top: 24px; background: #090d16; border: 2px solid #22c55e; border-radius: 12px; padding: 20px; }
+    .key-display { font-family: monospace; font-size: 1.3rem; font-weight: 800; color: #4ade80; text-align: center; letter-spacing: 1px; padding: 12px; background: #14221a; border-radius: 8px; word-break: break-all; margin: 12px 0; border: 1px dashed #22c55e; }
+    .btn-copy { width: 100%; padding: 10px; background: #22c55e; color: #052e16; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.95rem; }
+    .btn-copy:hover { background: #16a34a; color: #fff; }
+    .toast { display: none; margin-top: 10px; text-align: center; font-size: 0.85rem; color: #4ade80; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span style="font-size:1.8rem;">🔐</span>
+      <div>
+        <h2>BrainShop Key Generator</h2>
+        <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
+          <span class="badge">DEVELOPER & VENDOR TOOL</span>
+          <span style="font-size:0.75rem; color:#64748b;">Instant Offline Cryptographic Generator</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Client Machine ID *:</label>
+      <input type="text" id="machine-id" placeholder="e.g. BRAINSHOP-AA57-8347-5592" value="BRAINSHOP-AA57-8347-5592" style="font-family:monospace; text-transform:uppercase; font-weight:700;" />
+      <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:4px;">Machine ID from the client's screen.</small>
+    </div>
+
+    <div class="form-group">
+      <label>Subscription Plan *:</label>
+      <select id="plan-select">
+        <option value="1YEAR|365">1-Year Annual Plan - Rs 3,999 [Best Seller]</option>
+        <option value="6MONTH|180">6-Month Plan - Rs 2,499</option>
+        <option value="3MONTH|90">3-Month Plan - Rs 1,499</option>
+        <option value="TRIAL15|15">15-Day Free Trial - Rs 0 [Demo]</option>
+      </select>
+    </div>
+
+    <button type="button" class="btn-gen" id="btn-generate">⚡ Generate License Key</button>
+
+    <div id="result" class="result-box">
+      <div style="font-size:0.85rem; color:#94a3b8; text-align:center;">Client Activation License Key:</div>
+      <div id="key-output" class="key-display"></div>
+      <button type="button" class="btn-copy" id="btn-copy">📋 Copy License Key</button>
+      <div id="toast" class="toast">✓ Copied to clipboard! Press Ctrl + V to paste in BrainShop.</div>
+    </div>
+  </div>
+
+  <script>
+    const SECRET_SALT = new TextEncoder().encode('MYPOS_SECURE_RETAIL_ENTERPRISE_KEYGEN_SALT_2026');
+
+    function cleanMid(raw) {
+      if (!raw) return '';
+      const m = raw.match(/BRAINSHOP-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/i);
+      return m ? m[0].toUpperCase() : raw.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase();
+    }
+
+    async function generateLicense() {
+      const midInput = document.getElementById('machine-id').value.trim();
+      const mid = cleanMid(midInput);
+      if (!mid) {
+        alert('Please enter a valid Client Machine ID (e.g. BRAINSHOP-AA57-8347-5592)');
+        return;
+      }
+
+      const planVal = document.getElementById('plan-select').value.split('|');
+      const planCode = planVal[0];
+      const planDays = parseInt(planVal[1], 10);
+
+      const expDate = new Date();
+      expDate.setDate(expDate.getDate() + planDays);
+      const y = expDate.getFullYear();
+      const m = String(expDate.getMonth() + 1).padStart(2, '0');
+      const d = String(expDate.getDate()).padStart(2, '0');
+      const dateStr = `${y}${m}${d}`;
+
+      const enc = new TextEncoder();
+      const payload = enc.encode(`${mid}:${dateStr}:${planCode}`);
+
+      const keyObj = await crypto.subtle.importKey(
+        'raw', SECRET_SALT, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+      const sigBuf = await crypto.subtle.sign('HMAC', keyObj, payload);
+      const sigHex = Array.from(new Uint8Array(sigBuf))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase()
+        .slice(0, 8);
+
+      const finalKey = `LIC-${dateStr}-${sigHex}-${planCode}`;
+      document.getElementById('key-output').innerText = finalKey;
+      document.getElementById('result').style.display = 'block';
+
+      try {
+        await navigator.clipboard.writeText(finalKey);
+        const t = document.getElementById('toast');
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 4000);
+      } catch (e) {}
+    }
+
+    document.getElementById('btn-generate').addEventListener('click', generateLicense);
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      const key = document.getElementById('key-output').innerText;
+      navigator.clipboard.writeText(key).then(() => {
+        const t = document.getElementById('toast');
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+      });
+    });
+  </script>
+</body>
+</html>

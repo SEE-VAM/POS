@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title Brainshop Retail Commercial System
 color 0a
 
@@ -45,7 +46,7 @@ for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do (
     if exist "%%D\python.exe" (
         "%%D\python.exe" -c "import sys; sys.exit(0)" >nul 2>&1
         if %errorlevel% equ 0 (
-            set "PYTHON_CMD="%%D\python.exe""
+            set "PYTHON_CMD=%%D\python.exe"
             goto :launch_server
         )
     )
@@ -56,7 +57,7 @@ for /d %%D in ("C:\Python3*") do (
     if exist "%%D\python.exe" (
         "%%D\python.exe" -c "import sys; sys.exit(0)" >nul 2>&1
         if %errorlevel% equ 0 (
-            set "PYTHON_CMD="%%D\python.exe""
+            set "PYTHON_CMD=%%D\python.exe"
             goto :launch_server
         )
     )
@@ -67,7 +68,7 @@ for /d %%D in ("C:\Program Files\Python3*") do (
     if exist "%%D\python.exe" (
         "%%D\python.exe" -c "import sys; sys.exit(0)" >nul 2>&1
         if %errorlevel% equ 0 (
-            set "PYTHON_CMD="%%D\python.exe""
+            set "PYTHON_CMD=%%D\python.exe"
             goto :launch_server
         )
     )
@@ -89,6 +90,14 @@ exit /b
 :: =========================================================================
 :launch_server
 echo [OK] Python Environment Active: %PYTHON_CMD%
+echo [*] Checking port 8080 availability...
+
+:: Free Port 8080 if held by an old background zombie server
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8080" ^| findstr "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>&1
+)
+timeout /t 1 >nul
+
 echo [*] Starting SQLite Database & Local Server Engine...
 echo [*] System will automatically open in your default browser...
 echo.
@@ -97,7 +106,15 @@ echo  Brainshop System is running! Keep this window open while billing.
 echo =====================================================================
 echo.
 
-%PYTHON_CMD% "%~dp0server.py"
+if "%PYTHON_CMD%"=="python" (
+    python "%~dp0server.py"
+) else if "%PYTHON_CMD%"=="py" (
+    py "%~dp0server.py"
+) else if "%PYTHON_CMD%"=="python3" (
+    python3 "%~dp0server.py"
+) else (
+    "%PYTHON_CMD%" "%~dp0server.py"
+)
 
 :: If server.py exits, ensure index.html still opens
 if %errorlevel% neq 0 (

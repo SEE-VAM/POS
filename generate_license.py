@@ -14,6 +14,8 @@ import datetime
 import sys
 import os
 import json
+import re
+import subprocess
 
 if sys.platform.startswith('win'):
     try:
@@ -32,8 +34,26 @@ PLANS = {
     '4': {'code': 'TRIAL15', 'name': '15-Day Free Trial', 'price': 'Rs 0 (FREE)', 'days': 15, 'note': '15 Din Bilkul Free'}
 }
 
+def clean_machine_id(raw_id):
+    """Extracts clean BRAINSHOP-XXXX-XXXX-XXXX even if user pasted extra text."""
+    if not raw_id:
+        return ""
+    raw = str(raw_id).strip()
+    match = re.search(r'BRAINSHOP-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}', raw, re.IGNORECASE)
+    if match:
+        return match.group(0).upper()
+    return raw.replace('"', '').replace("'", '').replace(" ", "").upper()
+
+def copy_to_clipboard(text):
+    """Copies text directly to Windows clipboard via clip.exe."""
+    try:
+        subprocess.run(['clip'], input=text.encode('utf-8'), shell=True, check=False)
+        return True
+    except Exception:
+        return False
+
 def generate_key(machine_id, plan_key='1'):
-    machine_id = machine_id.strip().upper()
+    machine_id = clean_machine_id(machine_id)
     plan = PLANS.get(str(plan_key), PLANS['1'])
     
     expiry_date = datetime.date.today() + datetime.timedelta(days=plan['days'])
@@ -51,17 +71,18 @@ def main():
     print("=" * 68)
 
     if len(sys.argv) >= 2:
-        m_id = sys.argv[1].strip()
+        m_id = clean_machine_id(sys.argv[1])
         p_choice = sys.argv[2] if len(sys.argv) >= 3 else '1'
-        # Map textual code to plan if needed
         for k, v in PLANS.items():
             if v['code'] == p_choice.upper() or k == p_choice:
                 p_choice = k
                 break
     else:
-        m_id = input("\nEnter Client Machine ID (e.g. BRAINSHOP-7B29-4A1C-99E3): ").strip()
+        raw_input = input("\nEnter Client Machine ID (e.g. BRAINSHOP-AA57-8347-5592): ").strip()
+        m_id = clean_machine_id(raw_input)
         if not m_id:
-            print("[!] Error: Machine ID is required!")
+            print("\n[!] Error: Machine ID is required!")
+            input("\nPress Enter to exit...")
             return
 
         print("\nSelect Subscription Plan:")
@@ -69,7 +90,7 @@ def main():
         print("  2) 6-Month Plan        - Rs 2,499 (180 Days - Rs 415/month)")
         print("  3) 3-Month Plan        - Rs 1,499 (90 Days - Rs 500/month)")
         print("  4) 15-Day Free Trial   - Rs 0 [FREE] (15 Days Full Access Demo)")
-        p_choice = input("Enter choice (1/2/3/4) [default: 1]: ").strip() or '1'
+        p_choice = input("Enter choice (1/2/3/4) [Press Enter for Plan 1]: ").strip() or '1'
 
     if p_choice not in PLANS:
         p_choice = '1'
@@ -97,14 +118,21 @@ def main():
     except Exception:
         pass
 
+    # Copy key to clipboard automatically
+    copied = copy_to_clipboard(key)
+
     print("\n" + "=" * 68)
     print(f"[*] CLIENT MACHINE ID : {m_id}")
     print(f"[*] SELECTED PLAN     : {plan_info['name']}")
     print(f"[*] PLAN PRICE        : {plan_info['price']} ({plan_info['note']})")
     print(f"[*] VALID UNTIL       : {exp_dt.strftime('%d-%b-%Y')}")
-    print(f"[*] ACTIVATION KEY    : {key}")
+    print("-" * 68)
+    print(f"  >>> ACTIVATION KEY :  {key}  <<<")
     print("=" * 68)
-    print(f"[OK] License generated and saved to registry.")
+    if copied:
+        print("[OK] KEY AUTO-COPIED TO CLIPBOARD! Press Ctrl + V to paste in BrainShop.")
+    else:
+        print("[OK] License generated and saved to registry.")
 
     print("\n[+] Ready-to-Send WhatsApp Message for Client:\n")
     print("-" * 58)
@@ -117,7 +145,10 @@ def main():
     print("2. Activation popup me ye License Key paste karein.")
     print("3. 'Activate & Unlock Full System' button dabayein.")
     print("Aapka store turant unlock ho jayega. Dhanyawad!")
-    print("-" * 58 + "\n")
+    print("-" * 58)
+
+    print("\n" + "=" * 68)
+    input("  Press Enter to close this window...")
 
 if __name__ == '__main__':
     main()

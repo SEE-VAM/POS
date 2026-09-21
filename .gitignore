@@ -16,7 +16,8 @@ desktop.ini
 # Local Client Database & License (NEVER commit client billing data)
 pos_database.db
 pos_database.db-journal
-pos_license.key
+pos_license*.key
+scratch/
 *.db
 __pycache__/
 *.pyc

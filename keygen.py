@@ -4,6 +4,8 @@ import json
 import hashlib
 import hmac
 import datetime
+import re
+import subprocess
 
 if sys.platform.startswith('win'):
     try:
@@ -20,6 +22,22 @@ PLANS = {
     '3': {'code': '3MONTH', 'name': '3-Month Plan', 'price': 'Rs 1,499', 'days': 90, 'note': '~Rs 500/mo'},
     '4': {'code': 'TRIAL15', 'name': '15-Day Free Trial', 'price': 'Rs 0 (FREE)', 'days': 15, 'note': '15 Din Bilkul Free'}
 }
+
+def clean_machine_id(raw_id):
+    if not raw_id:
+        return ""
+    raw = str(raw_id).strip()
+    match = re.search(r'BRAINSHOP-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}', raw, re.IGNORECASE)
+    if match:
+        return match.group(0).upper()
+    return raw.replace('"', '').replace("'", '').replace(" ", "").upper()
+
+def copy_to_clipboard(text):
+    try:
+        subprocess.run(['clip'], input=text.encode('utf-8'), shell=True, check=False)
+        return True
+    except Exception:
+        return False
 
 def load_registry():
     if os.path.exists(REGISTRY_FILE):
@@ -104,8 +122,11 @@ if __name__ == '__main__':
     if p_choice not in PLANS:
         p_choice = '1'
 
+    m_id = clean_machine_id(m_id)
     key, plan_info, exp_dt = generate_key(m_id, p_choice)
     save_to_registry(m_id, shop_name, owner_info, plan_info, key, exp_dt)
+
+    copied = copy_to_clipboard(key)
 
     print("\n" + "=" * 68)
     print(f"[*] DUKAAN / SHOP NAME : {shop_name}")
@@ -114,9 +135,13 @@ if __name__ == '__main__':
     print(f"[*] SELECTED PLAN      : {plan_info['name']}")
     print(f"[*] PLAN PRICE         : {plan_info['price']} ({plan_info['note']})")
     print(f"[*] VALID UNTIL        : {exp_dt.strftime('%d-%b-%Y')}")
-    print(f"[*] ACTIVATION KEY     : {key}")
+    print("-" * 68)
+    print(f"  >>> ACTIVATION KEY :  {key}  <<<")
     print("=" * 68)
-    print(f"[OK] Client '{shop_name}' saved to your local clients register.")
+    if copied:
+        print(f"[OK] KEY AUTO-COPIED TO CLIPBOARD! Press Ctrl + V to paste in BrainShop.")
+    else:
+        print(f"[OK] Client '{shop_name}' saved to your local clients register.")
 
     print("\n[+] Ready-to-Send WhatsApp Message for Client:\n")
     print("-" * 58)
@@ -129,4 +154,10 @@ if __name__ == '__main__':
     print("2. Activation popup me ye License Key paste karein.")
     print("3. 'Activate & Unlock Full System' button dabayein.")
     print("Aapka store turant unlock ho jayega. Dhanyawad!")
-    print("-" * 58 + "\n")
+    print("-" * 58)
+
+    print("\n" + "=" * 68)
+    input("  Press Enter to close this window...")
+
+if __name__ == '__main__':
+    main()

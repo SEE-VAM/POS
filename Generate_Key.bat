@@ -9,7 +9,7 @@ echo                    (FOR YOUR USE ONLY)
 echo =====================================================================
 echo.
 
-python "%~dp0keygen.py"
+python "%~dp0generate_license.py"
 
 echo.
 echo =====================================================================

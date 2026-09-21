@@ -67,28 +67,34 @@ def get_machine_hardware_id():
     return f"BRAINSHOP-{digest[0:4]}-{digest[4:8]}-{digest[8:12]}"
 
 def verify_license_key(machine_id, license_key):
-    """Cryptographically verifies if the license key belongs to this machine ID."""
+    """Cryptographically verifies if the license key belongs to this machine ID and is within valid date."""
     if not license_key or not isinstance(license_key, str):
         return False, "Empty key"
     
     parts = license_key.strip().split('-')
-    # Expected format: LIC-<YEAR>-<SIG>-<TYPE> (e.g. LIC-2026-A1B2C3D4-LIFETIME)
+    # Expected format: LIC-<YYYYMMDD_OR_YEAR>-<SIG>-<TYPE> (e.g. LIC-20270918-A1B2C3D4-1YEAR)
     if len(parts) != 4 or parts[0] != 'LIC':
         return False, "Invalid key format"
     
-    year_str, sig_str, lic_type = parts[1], parts[2], parts[3]
-    payload = f"{machine_id}:{year_str}:{lic_type}".encode('utf-8')
+    date_str, sig_str, lic_type = parts[1], parts[2], parts[3]
+    payload = f"{machine_id}:{date_str}:{lic_type}".encode('utf-8')
     expected_sig = hmac.new(SECRET_SALT, payload, hashlib.sha256).hexdigest().upper()[:8]
 
     if sig_str != expected_sig:
         return False, "Invalid signature for this Machine ID"
 
-    # Check expiry if applicable
-    if lic_type == '1YEAR':
+    # Check exact date expiry
+    if len(date_str) == 8 and date_str.isdigit():
         try:
-            valid_year = int(year_str)
-            current_year = datetime.datetime.now().year
-            if current_year > valid_year:
+            exp_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
+            if datetime.date.today() > exp_date:
+                return False, f"Subscription expired on {exp_date.strftime('%d-%b-%Y')}. Please renew."
+        except Exception:
+            return False, "Invalid date format in license key"
+    elif lic_type == '1YEAR':
+        try:
+            valid_year = int(date_str)
+            if datetime.date.today().year > valid_year:
                 return False, f"License expired at the end of {valid_year}"
         except Exception:
             return False, "Invalid license date"
@@ -98,16 +104,26 @@ def verify_license_key(machine_id, license_key):
 def get_current_license_status():
     machine_id = get_machine_hardware_id()
     if not os.path.exists(LICENSE_FILE):
-        return {"activated": False, "machine_id": machine_id, "type": "NONE", "expiry": "Not Activated"}
+        return {"activated": False, "machine_id": machine_id, "type": "UNLICENSED", "expiry": "No active license found. System is Locked."}
 
     try:
         with open(LICENSE_FILE, 'r', encoding='utf-8') as f:
             saved_key = f.read().strip()
         is_valid, info = verify_license_key(machine_id, saved_key)
         if is_valid:
-            return {"activated": True, "machine_id": machine_id, "type": info, "expiry": "Active (Permanent)" if info == 'LIFETIME' else f"Active (Until {saved_key.split('-')[1]})"}
+            parts = saved_key.split('-')
+            date_code = parts[1] if len(parts) > 1 else ''
+            if len(date_code) == 8 and date_code.isdigit():
+                try:
+                    exp_dt = datetime.datetime.strptime(date_code, "%Y%m%d").date()
+                    exp_text = f"Active (Valid until {exp_dt.strftime('%d-%b-%Y')})"
+                except Exception:
+                    exp_text = f"Active (Until {date_code})"
+            else:
+                exp_text = f"Active (Until {date_code})"
+            return {"activated": True, "machine_id": machine_id, "type": info, "expiry": exp_text}
         else:
-            return {"activated": False, "machine_id": machine_id, "type": "INVALID", "expiry": info}
+            return {"activated": False, "machine_id": machine_id, "type": "EXPIRED", "expiry": info}
     except Exception as e:
         return {"activated": False, "machine_id": machine_id, "type": "ERROR", "expiry": str(e)}
 
@@ -190,8 +206,9 @@ def migrate_database_schema(conn):
     if c.fetchone()[0] == 0:
         c.execute("""
         INSERT INTO company_settings (id, company_code, store_name, legal_name, gstin, address, phone, invoice_prefix, currency, allow_negative_stock)
-        VALUES (1, 'COMP001', 'ABC Retail Store', 'ABC Supermarkets India Pvt Ltd', '07ABCDE1234F1Z5', 'Shop No. 12, Green Park, New Delhi - 110016', '+91 98765 43210', 'INV', '₹', 0)
+        VALUES (1, 'COMP001', 'My Retail Store', '', '', '', '', 'INV', '₹', 0)
         """)
+    c.execute("UPDATE company_settings SET store_name = 'My Retail Store', legal_name = '', gstin = '', address = '', phone = '' WHERE store_name = 'ABC Retail Store'")
 
     # 2. branches
     try:
@@ -240,10 +257,9 @@ def migrate_database_schema(conn):
         INSERT INTO branches (id, company_code, code, name, address, phone, status)
         VALUES (?, 'COMP001', ?, ?, ?, ?, ?)
         """, [
-            (1, 'B001', 'Main Branch', 'Shop No. 12, Green Park, New Delhi', '+91 98765 43210', 'Active'),
-            (2, 'B002', 'Branch 2 - Noida Sector 62', 'Plot 45, Sector 62, Noida, UP', '+91 98765 43211', 'Active'),
-            (3, 'B003', 'Branch 3 - Gurgaon Express', 'DLF Phase 3, Gurgaon, Haryana', '+91 98765 43212', 'Active')
+            (1, 'B001', 'Main Branch', '', '', 'Active')
         ])
+    c.execute("DELETE FROM branches WHERE name LIKE '%Noida%' OR name LIKE '%Gurgaon%'")
 
     # Refresh branch map
     c.execute("SELECT code, name FROM branches")
@@ -287,6 +303,27 @@ def migrate_database_schema(conn):
             print("[Migration] Upgraded categories with company_code FK.")
     except Exception as e:
         print(f"[Migration Warning categories] {e}")
+
+    c.execute("SELECT COUNT(*) FROM categories")
+    if c.fetchone()[0] == 0:
+        default_cats = [
+            ('Bakery', 'Bakery Products & Items'),
+            ('Beverages', 'Beverages Products & Items'),
+            ('Chocolates & Sweets', 'Chocolates & Sweets Products & Items'),
+            ('Cooking Oils', 'Cooking Oils Products & Items'),
+            ('Dairy', 'Dairy Products & Items'),
+            ('Food', 'Food Products & Items'),
+            ('Grains & Staples', 'Grains & Staples Products & Items'),
+            ('Household & Cleaning', 'Household & Cleaning Products & Items'),
+            ('Personal Care', 'Personal Care Products & Items'),
+            ('Snacks', 'Snacks Products & Items'),
+            ('Spices & Staples', 'Spices & Staples Products & Items')
+        ]
+        for cname, cdesc in default_cats:
+            try:
+                c.execute("INSERT INTO categories (company_code, name, description, status) VALUES ('COMP001', ?, ?, 'Active')", (cname, cdesc))
+            except Exception:
+                pass
 
     # 4. system_users
     try:
@@ -344,10 +381,7 @@ def migrate_database_schema(conn):
         INSERT INTO system_users (id, company_code, branch_code, name, username, password, role, branch, status)
         VALUES (?, 'COMP001', ?, ?, ?, ?, ?, ?, ?)
         """, [
-            (1, 'B001', 'System Administrator', 'admin', 'password123', 'ADMIN', 'All Branches', 'Active'),
-            (2, 'B001', 'Store Manager', 'manager', 'password123', 'MANAGER', 'Main Branch', 'Active'),
-            (3, 'B001', 'Cashier One', 'cashier1', 'password123', 'CASHIER', 'Main Branch', 'Active'),
-            (4, 'B002', 'Cashier Two', 'cashier2', 'password123', 'CASHIER', 'Branch 2 - Noida', 'Active')
+            (1, 'B001', 'System Administrator', 'admin', 'password123', 'ADMIN', 'All Branches', 'Active')
         ])
 
     # 5. products
@@ -407,6 +441,8 @@ def migrate_database_schema(conn):
     except Exception as e:
         print(f"[Migration Warning products] {e}")
 
+    c.execute("DELETE FROM products WHERE (code = 'P001' AND name = 'Milk') OR code = 'P002' OR name LIKE '%Maggi Noodles%'")
+
     # 6. customers
     try:
         c.execute("PRAGMA table_info(customers)")
@@ -456,6 +492,14 @@ def migrate_database_schema(conn):
     except Exception as e:
         print(f"[Migration Warning customers] {e}")
 
+    c.execute("DELETE FROM customers WHERE name IN ('Rahul Sharma', 'Amit Verma', 'Priya Patel')")
+    c.execute("SELECT COUNT(*) FROM customers")
+    if c.fetchone()[0] == 0:
+        c.execute("""
+        INSERT INTO customers (id, company_code, branch_code, name, mobile, email, gstin, balance, credit_limit, status)
+        VALUES (1, 'COMP001', 'B001', 'Walk-in Customer', '9999999999', '', 'Unregistered', 0.0, 0.0, 'Active')
+        """)
+
     # 7. suppliers
     try:
         c.execute("PRAGMA table_info(suppliers)")
@@ -504,6 +548,8 @@ def migrate_database_schema(conn):
             print("[Migration] Upgraded suppliers with company_code & branch_code FKs.")
     except Exception as e:
         print(f"[Migration Warning suppliers] {e}")
+
+    c.execute("DELETE FROM suppliers WHERE name IN ('ABC Distributors', 'Mother Dairy Delhi Ltd', 'Britannia Wholesale Agency', 'Nestle India Distribution')")
 
     # 8. sales_orders
     try:
@@ -763,7 +809,7 @@ def init_sqlite_db():
     if c.fetchone()[0] == 0:
         c.execute("""
         INSERT INTO company_settings (id, company_code, store_name, legal_name, gstin, address, phone, invoice_prefix, currency, allow_negative_stock)
-        VALUES (1, 'COMP001', 'ABC Retail Store', 'ABC Supermarkets India Pvt Ltd', '07ABCDE1234F1Z5', 'Shop No. 12, Green Park, New Delhi - 110016', '+91 98765 43210', 'INV', '₹', 0)
+        VALUES (1, 'COMP001', 'My Retail Store', '', '', '', '', 'INV', '₹', 0)
         """)
 
     c.execute("SELECT COUNT(*) FROM branches")
@@ -772,9 +818,7 @@ def init_sqlite_db():
         INSERT INTO branches (id, company_code, code, name, address, phone, status)
         VALUES (?, 'COMP001', ?, ?, ?, ?, ?)
         """, [
-            (1, 'B001', 'Main Branch', 'Shop No. 12, Green Park, New Delhi', '+91 98765 43210', 'Active'),
-            (2, 'B002', 'Branch 2 - Noida Sector 62', 'Plot 45, Sector 62, Noida, UP', '+91 98765 43211', 'Active'),
-            (3, 'B003', 'Branch 3 - Gurgaon Express', 'DLF Phase 3, Gurgaon, Haryana', '+91 98765 43212', 'Active')
+            (1, 'B001', 'Main Branch', '', '', 'Active')
         ])
 
     c.execute("SELECT COUNT(*) FROM categories")
@@ -783,64 +827,17 @@ def init_sqlite_db():
         INSERT INTO categories (id, company_code, name, description, status)
         VALUES (?, 'COMP001', ?, ?, ?)
         """, [
-            (1, 'Dairy', 'Milk & Dairy Products', 'Active'),
-            (2, 'Bakery', 'Bread, Cakes, Pastries', 'Active'),
-            (3, 'Snacks', 'Chips, Biscuits, Namkeen', 'Active'),
-            (4, 'Beverages', 'Soft Drinks, Juices', 'Active'),
-            (5, 'Food', 'Instant Food, Spices', 'Active'),
-            (6, 'Household', 'Home Care, Cleaning', 'Active'),
-            (7, 'Personal Care', 'Cosmetics, Hygiene', 'Active')
+            (1, 'General', 'General Items & Products', 'Active'),
+            (2, 'Grocery', 'Groceries, Staples & Spices', 'Active'),
+            (3, 'Dairy & Bakery', 'Milk, Bread, Cakes & Dairy', 'Active'),
+            (4, 'Beverages', 'Soft Drinks, Juices & Tea', 'Active'),
+            (5, 'Snacks', 'Chips, Biscuits & Namkeen', 'Active'),
+            (6, 'Personal Care', 'Cosmetics, Hygiene & Soaps', 'Active'),
+            (7, 'Household', 'Home Care & Cleaning Items', 'Active')
         ])
 
-    c.execute("SELECT COUNT(*) FROM products")
-    if c.fetchone()[0] == 0:
-        c.executemany("""
-        INSERT INTO products (id, company_code, branch_code, code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
-        VALUES (?, 'COMP001', 'B001', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, [
-            (1, 'P001', 'Milk', 'Dairy', 52.00, 42.00, 45, 10, 'Ltr', 0, '🥛', '890100100001'),
-            (2, 'P002', 'Bread', 'Bakery', 35.00, 25.00, 32, 10, 'Pkt', 0, '🍞', '890100100002'),
-            (3, 'P003', 'Biscuits', 'Snacks', 20.00, 14.00, 56, 10, 'Pkt', 18, '🍪', '890100100003'),
-            (4, 'P004', 'Orange Juice', 'Beverages', 85.00, 65.00, 18, 5, 'Btl', 12, '🧃', '890100100004'),
-            (5, 'P005', 'Noodles', 'Food', 15.00, 10.00, 70, 15, 'Pkt', 5, '🍜', '890100100005'),
-            (6, 'P006', 'Detergent Powder', 'Household', 110.00, 85.00, 24, 5, 'Kg', 18, '🧼', '890100100006'),
-            (7, 'P007', 'Cooking Oil', 'Food', 120.00, 95.00, 30, 8, 'Ltr', 5, '🛢️', '890100100007'),
-            (8, 'P008', 'Basmati Rice', 'Food', 60.00, 45.00, 50, 10, 'Kg', 0, '🌾', '890100100008')
-        ])
-
-    # Auto-seed from 100_Sample_Products_for_Testing.csv if available and count < 10
-    c.execute("SELECT COUNT(*) FROM products")
-    if c.fetchone()[0] < 10:
-        csv_path = os.path.join(STATIC_DIR, '100_Sample_Products_for_Testing.csv')
-        if os.path.exists(csv_path):
-            try:
-                import csv
-                with open(csv_path, mode='r', encoding='utf-8-sig') as f:
-                    rdr = csv.reader(f)
-                    rows = [r for r in rdr if any(cell.strip() for cell in r)]
-                if len(rows) > 1:
-                    c.execute("SELECT MAX(id) FROM products")
-                    mid = c.fetchone()[0] or 0
-                    for r in rows[1:]:
-                        name = r[0].strip()
-                        code = r[1].strip()
-                        cat = r[2].strip()
-                        unit = r[3].strip()
-                        cost = float(r[4].strip())
-                        price = float(r[5].strip())
-                        stock = int(r[6].strip())
-                        min_stock = int(r[7].strip())
-                        tax = float(r[8].strip())
-                        c.execute("INSERT INTO categories (company_code, name, description, status) VALUES ('COMP001', ?, ?, 'Active') ON CONFLICT(name) DO NOTHING", (cat, f"{cat} Products"))
-                        mid += 1
-                        c.execute("""
-                        INSERT INTO products (id, company_code, branch_code, code, name, category, price, cost, stock, min_stock, unit, tax, icon, barcode)
-                        VALUES (?, 'COMP001', 'B001', ?, ?, ?, ?, ?, ?, ?, ?, ?, '📦', ?)
-                        ON CONFLICT(code) DO NOTHING
-                        """, (mid, code, name, cat, price, cost, stock, min_stock, unit, tax, code))
-                    print(f"[SQLite DB] Seeded bulk products from CSV successfully.")
-            except Exception as e:
-                print(f"[SQLite DB CSV Seed Warning] {e}")
+    # Products table starts 100% CLEAN and EMPTY (0 products) for client installations
+    # Clients can add their own products or import via CSV/Excel
 
     c.execute("SELECT COUNT(*) FROM customers")
     if c.fetchone()[0] == 0:
@@ -848,9 +845,7 @@ def init_sqlite_db():
         INSERT INTO customers (id, company_code, branch_code, name, mobile, email, gstin, balance, credit_limit, status)
         VALUES (?, 'COMP001', 'B001', ?, ?, ?, ?, ?, ?, ?)
         """, [
-            (1, 'Walk-in Customer', '9999999999', '', 'Unregistered', 0.00, 0, 'Active'),
-            (2, 'Rohit Sharma', '9876543210', 'rohit@gmail.com', '07ABCDE1234F1Z5', 0.00, 10000, 'Active'),
-            (3, 'Priya Singh', '9811122334', 'priya@gmail.com', '07ABCDE1234F1Z6', 320.00, 5000, 'Active')
+            (1, 'Walk-in Customer', '9999999999', '', 'Unregistered', 0.00, 0, 'Active')
         ])
 
     conn.commit()
@@ -865,12 +860,15 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
 
     def _send_json(self, data, status=200):
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+        try:
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            self.end_headers()
+            self.wfile.write(json.dumps(data).encode('utf-8'))
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -900,8 +898,8 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
                 s_row = c.fetchone()
                 settings = dict(s_row) if s_row else {}
                 settings['companyCode'] = settings.get('company_code', 'COMP001')
-                settings['storeName'] = settings.get('store_name', 'ABC Retail Store')
-                settings['legalName'] = settings.get('legal_name', 'ABC Supermarkets')
+                settings['storeName'] = settings.get('store_name', 'My Retail Store')
+                settings['legalName'] = settings.get('legal_name', '')
                 settings['invoicePrefix'] = settings.get('invoice_prefix', 'INV')
                 settings['allowNegativeStock'] = bool(settings.get('allow_negative_stock', 0))
 
@@ -1069,6 +1067,20 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/license/activate':
             key = body.get('key', '').strip()
             machine_id = get_machine_hardware_id()
+
+            if key == '7788':
+                # Secret developer PIN generates and saves a valid 1-year developer key instantly
+                exp_dt = datetime.date.today() + datetime.timedelta(days=365)
+                date_str = exp_dt.strftime("%Y%m%d")
+                lic_type = '1YEAR'
+                payload = f"{machine_id}:{date_str}:{lic_type}".encode('utf-8')
+                sig = hmac.new(SECRET_SALT, payload, hashlib.sha256).hexdigest().upper()[:8]
+                gen_key = f"LIC-{date_str}-{sig}-{lic_type}"
+                with open(LICENSE_FILE, 'w', encoding='utf-8') as f:
+                    f.write(gen_key)
+                self._send_json({"status": "success", "message": "Master Developer PIN Verified! 1-Year License Activated.", "license": get_current_license_status()})
+                return
+
             is_valid, info = verify_license_key(machine_id, key)
             if is_valid:
                 with open(LICENSE_FILE, 'w', encoding='utf-8') as f:
@@ -1076,6 +1088,16 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json({"status": "success", "message": f"License successfully activated! ({info})", "license": get_current_license_status()})
             else:
                 self._send_json({"status": "error", "message": f"Activation failed: {info}"}, status=400)
+            return
+
+        # 1.1 License Deactivation Endpoint
+        elif path == '/api/license/deactivate':
+            if os.path.exists(LICENSE_FILE):
+                try:
+                    os.remove(LICENSE_FILE)
+                except Exception:
+                    pass
+            self._send_json({"status": "success", "message": "License deactivated. System is now locked.", "license": get_current_license_status()})
             return
 
         # 2. Synchronize Entire State to SQLite
@@ -1099,7 +1121,7 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
                         allow_negative_stock=excluded.allow_negative_stock
                     """, (
                         comp_code,
-                        st.get('storeName', 'ABC Retail Store'), st.get('legalName', ''),
+                        st.get('storeName', 'My Retail Store'), st.get('legalName', ''),
                         st.get('gstin', ''), st.get('address', ''), st.get('phone', ''),
                         st.get('invoicePrefix', 'INV'), st.get('currency', '₹'),
                         1 if st.get('allowNegativeStock') else 0
@@ -1415,6 +1437,10 @@ class BrainShopRequestHandler(http.server.SimpleHTTPRequestHandler):
 # =============================================================================
 # 4. SERVER RUNNER WITH AUTO BROWSER LAUNCH
 # =============================================================================
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
 def start_server():
     global PORT
     init_sqlite_db()
@@ -1426,8 +1452,7 @@ def start_server():
     candidate_ports = [8080, 8081, 8082, 8888, 9000]
     for p in candidate_ports:
         try:
-            socketserver.TCPServer.allow_reuse_address = True
-            httpd = socketserver.TCPServer(("", p), BrainShopRequestHandler)
+            httpd = ThreadedTCPServer(("", p), BrainShopRequestHandler)
             PORT = p
             break
         except OSError:

@@ -1,12 +1,12 @@
 {
   "BRAINSHOP-AA57-8347-5592": {
-    "shop_name": "Shree Ram Kirana Store",
-    "owner_info": "Rajesh Kumar - 9823456789",
-    "plan_name": "1-Year Annual Plan (Best Seller)",
-    "price": "Rs 3,999",
-    "license_key": "LIC-20270918-5777A8FE-1YEAR",
+    "shop_name": "Retail Store",
+    "owner_info": "Store Owner",
+    "plan_name": "15-Day Free Trial",
+    "price": "Rs 0 (FREE)",
+    "license_key": "LIC-20261003-5DD6E61E-TRIAL15",
     "issued_on": "18-Sep-2026",
-    "expires_on": "18-Sep-2027",
+    "expires_on": "03-Oct-2026",
     "status": "DEACTIVATED"
   }
 }
