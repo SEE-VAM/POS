@@ -22,3 +22,6 @@ scratch/
 __pycache__/
 *.pyc
 *.key
+
+quickvero/
+quickvero
