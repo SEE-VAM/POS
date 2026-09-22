@@ -441,8 +441,6 @@ def migrate_database_schema(conn):
     except Exception as e:
         print(f"[Migration Warning products] {e}")
 
-    c.execute("DELETE FROM products WHERE (code = 'P001' AND name = 'Milk') OR code = 'P002' OR name LIKE '%Maggi Noodles%'")
-
     # 6. customers
     try:
         c.execute("PRAGMA table_info(customers)")
@@ -548,8 +546,6 @@ def migrate_database_schema(conn):
             print("[Migration] Upgraded suppliers with company_code & branch_code FKs.")
     except Exception as e:
         print(f"[Migration Warning suppliers] {e}")
-
-    c.execute("DELETE FROM suppliers WHERE name IN ('ABC Distributors', 'Mother Dairy Delhi Ltd', 'Britannia Wholesale Agency', 'Nestle India Distribution')")
 
     # 8. sales_orders
     try:

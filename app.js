@@ -3111,6 +3111,7 @@ function renderProductMaster() {
         <td><span style="font-weight:700">${p.stock}</span> ${p.unit}</td>
         <td><span class="badge ${p.stock <= p.minStock ? 'badge-warning' : 'badge-success'}">${p.stock <= 0 ? 'Out of Stock' : p.stock <= p.minStock ? 'Low Stock' : 'Active'}</span></td>
         <td>
+          <button class="btn btn-outline btn-sm" onclick="openBarcodePrintModal(${p.id})" title="Print Barcode Labels" style="margin-right:4px;">🏷️ Print</button>
           <button class="btn btn-outline btn-sm" onclick="openProductAuditModal(${p.id})" title="View price & stock change timeline" style="margin-right:4px;">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openEditProductModal(${p.id})" title="Edit product details">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" title="Delete product">🗑️</button>
@@ -5876,6 +5877,120 @@ function renderPosProducts() {
     container.appendChild(card);
   });
 }
+
+
+// =============================================================================
+// HARDWARE BARCODE SCANNER ENGINE & AUDIO BEEP FEEDBACK
+// =============================================================================
+function playBarcodeBeep(isSuccess = true) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (isSuccess) {
+      // Classic supermarket laser scanner beep: 1760Hz (A6 note)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1760, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } else {
+      // Low warning buzz: 280Hz
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.22);
+    }
+  } catch (err) {
+    // AudioContext blocked or not supported - silent fallback
+  }
+}
+
+function handlePosBarcodeScan(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+
+  const inputEl = document.getElementById('pos-search-input');
+  if (!inputEl) return;
+  const rawVal = (inputEl.value || '').trim();
+  if (!rawVal) return;
+
+  const query = rawVal.toLowerCase();
+
+  // 1. Prioritize exact match on barcode or SKU code
+  let match = posState.products.find(p => 
+    (p.barcode && String(p.barcode).trim().toLowerCase() === query) ||
+    (p.code && String(p.code).trim().toLowerCase() === query)
+  );
+
+  // 2. If no exact barcode, check single matching filtered item
+  if (!match) {
+    const candidates = posState.products.filter(p => {
+      const matchCat = (activeCategoryFilter === 'ALL' || p.category.toLowerCase() === activeCategoryFilter.toLowerCase());
+      const matchQuery = p.name.toLowerCase().includes(query) || 
+                         p.code.toLowerCase().includes(query) || 
+                         (p.barcode && String(p.barcode).includes(query));
+      return matchCat && matchQuery;
+    });
+    if (candidates.length === 1) {
+      match = candidates[0];
+    }
+  }
+
+  if (match) {
+    addToCart(match.id);
+    playBarcodeBeep(true);
+    inputEl.value = '';
+    renderPosProducts();
+    inputEl.focus();
+  } else {
+    playBarcodeBeep(false);
+    showToast(`⚠️ No product found for barcode: "${rawVal}"`, 'danger');
+  }
+}
+
+// Global Hardware Barcode Gun Buffer (Catches scans even if input is not focused)
+let _globalBcBuffer = '';
+let _lastBcCharTime = 0;
+
+window.addEventListener('keydown', (e) => {
+  if (posState.activeScreen !== 'pos') return;
+
+  // Don't intercept if user is typing in another modal or form input
+  const activeEl = document.activeElement;
+  const tag = activeEl ? activeEl.tagName.toLowerCase() : '';
+  const id = activeEl ? activeEl.id : '';
+  if (tag === 'input' && id !== 'pos-search-input') return;
+  if (tag === 'textarea' || tag === 'select') return;
+
+  const now = Date.now();
+
+  if (e.key === 'Enter') {
+    if (_globalBcBuffer.length >= 2) {
+      const scannedCode = _globalBcBuffer.trim();
+      _globalBcBuffer = '';
+      const inputEl = document.getElementById('pos-search-input');
+      if (inputEl) inputEl.value = scannedCode;
+      handlePosBarcodeScan({ key: 'Enter', preventDefault: () => {} });
+    }
+    _globalBcBuffer = '';
+  } else if (e.key.length === 1) {
+    // Hardware scanners send characters < 60ms apart
+    if (now - _lastBcCharTime > 120) {
+      _globalBcBuffer = '';
+    }
+    _globalBcBuffer += e.key;
+    _lastBcCharTime = now;
+  }
+});
 
 function addToCart(productId) {
   const prod = posState.products.find(p => p.id === productId);
@@ -12284,3 +12399,284 @@ function aiFixEntity(actionType, entityId, btnElement) {
 }
 
 
+
+
+// =============================================================================
+// PURE SVG CODE 128 BARCODE GENERATOR & LABEL PRINTING ENGINE
+// =============================================================================
+const CODE128_PATTERNS = [
+  "212222","222122","222221","121223","121322","131222","122213","122312","132212","221213",
+  "221312","231212","112232","122132","122231","113222","123122","123221","223211","221132",
+  "221231","213212","223112","312131","311222","321122","321221","312212","322112","322211",
+  "212123","212321","232121","111323","131123","131321","112313","132113","132311","211313",
+  "231113","231311","112133","112331","132131","113123","113321","133121","313121","211331",
+  "231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
+  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214",
+  "112412","122114","122411","142112","142211","241211","221114","413111","241112","134111",
+  "111242","121142","121241","114212","124112","124211","411212","421112","421211","212141",
+  "214121","412121","111143","111341","131141","114113","114311","411113","411311","113141",
+  "114131","311141","411131","211412","211214","211232","2331112"
+];
+
+function generateCode128Svg(text, height = 36) {
+  if (!text) text = "890100100001";
+  const clean = String(text).trim();
+  const codes = [104]; // Start B
+  let checksum = 104;
+
+  for (let i = 0; i < clean.length; i++) {
+    const code = clean.charCodeAt(i) - 32;
+    const safeCode = (code >= 0 && code <= 95) ? code : 0;
+    codes.push(safeCode);
+    checksum += safeCode * (i + 1);
+  }
+  codes.push(checksum % 103);
+  codes.push(106); // Stop
+
+  let x = 8;
+  const rects = [];
+  codes.forEach(c => {
+    const pattern = CODE128_PATTERNS[c] || "212222";
+    let isBar = true;
+    for (let j = 0; j < pattern.length; j++) {
+      const width = parseInt(pattern[j], 10);
+      if (isBar) {
+        rects.push(`<rect x="${x}" y="0" width="${width}" height="${height}" fill="#000" />`);
+      }
+      x += width;
+      isBar = !isBar;
+    }
+  });
+
+  const totalWidth = x + 8;
+  return `<svg viewBox="0 0 ${totalWidth} ${height}" width="100%" height="${height}px" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin:0 auto;">${rects.join('')}</svg>`;
+}
+
+let _currentBarcodePrintProdId = null;
+
+function openBarcodePrintModal(productId = null) {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  if (!selectEl) return;
+
+  selectEl.innerHTML = '';
+  posState.products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} - ₹${p.price.toFixed(2)} (${p.code} / ${p.barcode || 'No Barcode'})`;
+    selectEl.appendChild(opt);
+  });
+
+  if (productId) {
+    selectEl.value = productId;
+    _currentBarcodePrintProdId = productId;
+  } else if (posState.products.length > 0) {
+    selectEl.value = posState.products[0].id;
+    _currentBarcodePrintProdId = posState.products[0].id;
+  }
+
+  updateBarcodePreview();
+  openModal('modal-barcode-print');
+}
+
+function onBarcodeProductSelectChange() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  if (selectEl) {
+    _currentBarcodePrintProdId = parseInt(selectEl.value, 10);
+  }
+  updateBarcodePreview();
+}
+
+function setBarcodeQty(qty) {
+  const input = document.getElementById('bc-print-qty');
+  if (input) {
+    input.value = qty;
+  }
+  updateBarcodePreview();
+}
+
+function updateBarcodePreview() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  const previewBox = document.getElementById('bc-live-preview-box');
+  if (!selectEl || !previewBox) return;
+
+  const prodId = parseInt(selectEl.value, 10);
+  const prod = posState.products.find(p => p.id === prodId) || posState.products[0];
+  if (!prod) {
+    previewBox.innerHTML = '<span style="color:#64748b;">No product selected</span>';
+    return;
+  }
+
+  const showStore = document.getElementById('bc-opt-store')?.checked ?? true;
+  const showName = document.getElementById('bc-opt-name')?.checked ?? true;
+  const showPrice = document.getElementById('bc-opt-price')?.checked ?? true;
+  const showDigits = document.getElementById('bc-opt-digits')?.checked ?? true;
+
+  const storeName = (posState.settings && posState.settings.storeName) ? posState.settings.storeName : 'BrainShop Retail';
+  const barcodeValue = prod.barcode || prod.code || '890100100001';
+  const svgBarcode = generateCode128Svg(barcodeValue, 32);
+
+  previewBox.innerHTML = `
+    ${showStore ? `<div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#0f172a; margin-bottom:2px; letter-spacing:0.5px;">★ ${escapeHtml(storeName)} ★</div>` : ''}
+    ${showName ? `<div style="font-size:0.8rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px;">${escapeHtml(prod.name)}</div>` : ''}
+    <div style="margin:2px 0;">${svgBarcode}</div>
+    ${showDigits ? `<div style="font-size:0.72rem; font-family:monospace; font-weight:800; color:#334155; letter-spacing:1px; margin-top:1px;">${escapeHtml(barcodeValue)}</div>` : ''}
+    ${showPrice ? `<div style="font-size:0.92rem; font-weight:900; color:#0f172a; margin-top:2px;">M.R.P. : ₹ ${prod.price.toFixed(2)}</div>` : ''}
+  `;
+}
+
+function printBarcodeLabels() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  const qtyInput = document.getElementById('bc-print-qty');
+  const layoutSelect = document.getElementById('bc-print-layout');
+  if (!selectEl) return;
+
+  const prodId = parseInt(selectEl.value, 10);
+  const prod = posState.products.find(p => p.id === prodId);
+  if (!prod) {
+    showToast('Please select a valid product.', 'warning');
+    return;
+  }
+
+  const qty = parseInt(qtyInput ? qtyInput.value : '10', 10) || 10;
+  const layout = layoutSelect ? layoutSelect.value : '50x25';
+  const showStore = document.getElementById('bc-opt-store')?.checked ?? true;
+  const showName = document.getElementById('bc-opt-name')?.checked ?? true;
+  const showPrice = document.getElementById('bc-opt-price')?.checked ?? true;
+  const showDigits = document.getElementById('bc-opt-digits')?.checked ?? true;
+
+  const storeName = (posState.settings && posState.settings.storeName) ? posState.settings.storeName : 'BrainShop Retail';
+  const barcodeValue = prod.barcode || prod.code || '890100100001';
+  const svgBarcode = generateCode128Svg(barcodeValue, 32);
+
+  const singleStickerHtml = `
+    <div class="barcode-sticker">
+      ${showStore ? `<div class="st-store">★ ${escapeHtml(storeName)} ★</div>` : ''}
+      ${showName ? `<div class="st-name">${escapeHtml(prod.name)}</div>` : ''}
+      <div class="st-barcode">${svgBarcode}</div>
+      ${showDigits ? `<div class="st-digits">${escapeHtml(barcodeValue)}</div>` : ''}
+      ${showPrice ? `<div class="st-price">M.R.P. : ₹ ${prod.price.toFixed(2)}</div>` : ''}
+    </div>
+  `;
+
+  let stickersHtml = '';
+  for (let i = 0; i < qty; i++) {
+    stickersHtml += singleStickerHtml;
+  }
+
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) {
+    showToast('Pop-up blocked! Please allow popups to print barcode labels.', 'danger');
+    return;
+  }
+
+  const isRoll = (layout === '50x25' || layout === '38x25');
+  const rollWidth = (layout === '38x25') ? '38mm' : '50mm';
+  const rollHeight = '25mm';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Print Barcode Labels - ${escapeHtml(prod.name)}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; color: #000; }
+        
+        ${isRoll ? `
+          @page {
+            size: ${rollWidth} ${rollHeight};
+            margin: 0;
+          }
+          .container {
+            width: ${rollWidth};
+          }
+          .barcode-sticker {
+            width: ${rollWidth};
+            height: ${rollHeight};
+            padding: 1.5mm 1mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+          }
+        ` : `
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+          .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2mm 3mm;
+            width: 100%;
+          }
+          .barcode-sticker {
+            height: 33mm;
+            border: 1px dashed #bbb;
+            padding: 2mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+          }
+        `}
+
+        .st-store {
+          font-size: 7.5pt;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          margin-bottom: 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 95%;
+        }
+        .st-name {
+          font-size: 8pt;
+          font-weight: 700;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 95%;
+          margin-bottom: 2px;
+        }
+        .st-barcode {
+          width: 90%;
+          margin: 1px 0;
+        }
+        .st-digits {
+          font-size: 7pt;
+          font-family: monospace;
+          font-weight: 800;
+          letter-spacing: 1px;
+          margin-top: 1px;
+        }
+        .st-price {
+          font-size: 8.5pt;
+          font-weight: 900;
+          margin-top: 1px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        ${stickersHtml}
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(function() { window.close(); }, 800);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}

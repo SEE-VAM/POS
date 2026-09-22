@@ -3,44 +3,6 @@
    Full Forms, Modals, State Management, Real-Time Calculations & Exports
    ============================================================================= */
 
-// --- 0. AUTO-PURGE OBSOLETE DEMO DATA CACHE (GUARANTEES 100% CLEAN CLIENT EXPERIENCE) ---
-(function purgeObsoleteDemoCache() {
-  try {
-    const rawSettings = localStorage.getItem('pos_settings');
-    if (rawSettings && (rawSettings.includes('ABC Retail Store') || rawSettings.includes('ABC Supermarkets India Pvt Ltd') || rawSettings.includes('07ABCDE1234F1Z5'))) {
-      localStorage.removeItem('pos_settings');
-    }
-    const rawBranches = localStorage.getItem('pos_branches_list');
-    if (rawBranches && (rawBranches.includes('Noida') || rawBranches.includes('Gurgaon'))) {
-      localStorage.removeItem('pos_branches_list');
-    }
-    const rawProducts = localStorage.getItem('pos_products_list');
-    if (rawProducts && (rawProducts.includes('P001') || rawProducts.includes('Milk') || rawProducts.includes('Bread') || rawProducts.includes('Maggi Noodles'))) {
-      localStorage.removeItem('pos_products_list');
-      localStorage.removeItem('pos_catalog_ver');
-    }
-    const rawCustomers = localStorage.getItem('pos_customers_list');
-    if (rawCustomers && (rawCustomers.includes('Rahul Sharma') || rawCustomers.includes('Priya Patel') || rawCustomers.includes('Amit Verma'))) {
-      localStorage.removeItem('pos_customers_list');
-    }
-    const rawSuppliers = localStorage.getItem('pos_suppliers_list');
-    if (rawSuppliers && (rawSuppliers.includes('ABC Distributors') || rawSuppliers.includes('Mother Dairy') || rawSuppliers.includes('Britannia Wholesale'))) {
-      localStorage.removeItem('pos_suppliers_list');
-    }
-    const rawSales = localStorage.getItem('pos_sales_history');
-    if (rawSales && (rawSales.includes('Rahul Sharma') || rawSales.includes('Priya Patel') || rawSales.includes('Milk') || rawSales.includes('INV-08092025'))) {
-      localStorage.removeItem('pos_sales_history');
-      localStorage.setItem('pos_next_invoice_seq', '1');
-    }
-    const rawPurchases = localStorage.getItem('pos_purchases_list');
-    if (rawPurchases && (rawPurchases.includes('Mother Dairy') || rawPurchases.includes('Britannia Wholesale') || rawPurchases.includes('ABC Distributors'))) {
-      localStorage.removeItem('pos_purchases_list');
-    }
-  } catch (e) {
-    console.warn('[Cache Purge Error]', e);
-  }
-})();
-
 // --- 1. CORE APPLICATION STATE ---
 const posState = {
   isAuthenticated: false,
@@ -105,25 +67,1651 @@ const posState = {
     return saved;
   })(),
 
-  // Master Product Catalog (Clean 0 items default for new installations)
+  // Master Product Catalog (108 Commercial Items with Automatic Sync & Upgrade)
   products: (() => {
-    const ver = localStorage.getItem('pos_catalog_ver');
-    if (ver === 'v2026_108_items') {
-      localStorage.removeItem('pos_products_list');
-      localStorage.removeItem('pos_catalog_ver');
-      return [];
-    }
-    try {
-      const saved = JSON.parse(localStorage.getItem('pos_products_list') || 'null');
-      if (Array.isArray(saved)) {
-        if (saved.some(p => (p.code === 'P001' && p.name === 'Milk') || p.code === 'P002' || (p.name && p.name.includes('Maggi Noodles')))) {
-          localStorage.removeItem('pos_products_list');
-          return [];
-        }
-        return saved;
+    const CATALOG_VERSION = 'v2026_108_items';
+    const currentVer = localStorage.getItem('pos_catalog_ver');
+    let saved = JSON.parse(localStorage.getItem('pos_products_list') || 'null');
+    
+    // Auto-upgrade if empty or old 8-item default list
+    if (!saved || !Array.isArray(saved) || saved.length <= 8 || currentVer !== CATALOG_VERSION) {
+      const default108 = [
+      {
+            "id": 1,
+            "code": "P001",
+            "name": "Milk",
+            "category": "Dairy",
+            "price": 52.0,
+            "cost": 42.0,
+            "stock": 45,
+            "minStock": 10,
+            "unit": "Ltr",
+            "tax": 0,
+            "icon": "🥛",
+            "barcode": "890100100001",
+            "status": "Active"
+      },
+      {
+            "id": 2,
+            "code": "P002",
+            "name": "Bread",
+            "category": "Bakery",
+            "price": 35.0,
+            "cost": 25.0,
+            "stock": 32,
+            "minStock": 10,
+            "unit": "Pkt",
+            "tax": 0,
+            "icon": "🍞",
+            "barcode": "890100100002",
+            "status": "Active"
+      },
+      {
+            "id": 3,
+            "code": "P003",
+            "name": "Biscuits",
+            "category": "Snacks",
+            "price": 20.0,
+            "cost": 14.0,
+            "stock": 56,
+            "minStock": 10,
+            "unit": "Pkt",
+            "tax": 18,
+            "icon": "🍪",
+            "barcode": "890100100003",
+            "status": "Active"
+      },
+      {
+            "id": 4,
+            "code": "P004",
+            "name": "Maggi Noodles",
+            "category": "Food",
+            "price": 15.0,
+            "cost": 11.0,
+            "stock": 40,
+            "minStock": 10,
+            "unit": "Pkt",
+            "tax": 12,
+            "icon": "🍜",
+            "barcode": "890100100004",
+            "status": "Active"
+      },
+      {
+            "id": 5,
+            "code": "P005",
+            "name": "Soft Drink",
+            "category": "Beverages",
+            "price": 45.0,
+            "cost": 32.0,
+            "stock": 26,
+            "minStock": 10,
+            "unit": "Btl",
+            "tax": 28,
+            "icon": "🥤",
+            "barcode": "890100100005",
+            "status": "Active"
+      },
+      {
+            "id": 6,
+            "code": "P006",
+            "name": "Potato Chips",
+            "category": "Snacks",
+            "price": 25.0,
+            "cost": 18.0,
+            "stock": 35,
+            "minStock": 10,
+            "unit": "Pkt",
+            "tax": 12,
+            "icon": "🍟",
+            "barcode": "890100100006",
+            "status": "Active"
+      },
+      {
+            "id": 7,
+            "code": "P007",
+            "name": "Refined Cooking Oil 1L",
+            "category": "Cooking Oils",
+            "price": 120.0,
+            "cost": 95.0,
+            "stock": 20,
+            "minStock": 5,
+            "unit": "Ltr",
+            "tax": 5,
+            "icon": "🍾",
+            "barcode": "890100100007",
+            "status": "Active"
+      },
+      {
+            "id": 8,
+            "code": "P008",
+            "name": "Basmati Rice 1Kg",
+            "category": "Grains & Staples",
+            "price": 60.0,
+            "cost": 45.0,
+            "stock": 50,
+            "minStock": 15,
+            "unit": "Kg",
+            "tax": 0,
+            "icon": "🍚",
+            "barcode": "890100100008",
+            "status": "Active"
+      },
+      {
+            "id": 9,
+            "code": "P1001",
+            "name": "Amul Taaza Toned Milk 500ml",
+            "category": "Dairy",
+            "price": 27.0,
+            "cost": 24.0,
+            "stock": 60,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🥛",
+            "barcode": "P1001",
+            "status": "Active"
+      },
+      {
+            "id": 10,
+            "code": "P1002",
+            "name": "Amul Gold Full Cream Milk 500ml",
+            "category": "Dairy",
+            "price": 33.0,
+            "cost": 30.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🥛",
+            "barcode": "P1002",
+            "status": "Active"
+      },
+      {
+            "id": 11,
+            "code": "P1003",
+            "name": "Mother Dairy Classic Dahi 400g",
+            "category": "Dairy",
+            "price": 38.0,
+            "cost": 32.0,
+            "stock": 30,
+            "minStock": 8,
+            "unit": "CUP",
+            "tax": 0.0,
+            "icon": "🥛",
+            "barcode": "P1003",
+            "status": "Active"
+      },
+      {
+            "id": 12,
+            "code": "P1004",
+            "name": "Amul Salted Butter 100g",
+            "category": "Dairy",
+            "price": 56.0,
+            "cost": 48.0,
+            "stock": 45,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🥛",
+            "barcode": "P1004",
+            "status": "Active"
+      },
+      {
+            "id": 13,
+            "code": "P1005",
+            "name": "Mother Dairy Fresh Paneer 200g",
+            "category": "Dairy",
+            "price": 90.0,
+            "cost": 75.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🥛",
+            "barcode": "P1005",
+            "status": "Active"
+      },
+      {
+            "id": 14,
+            "code": "P1006",
+            "name": "Amul Processed Cheese Slices 200g",
+            "category": "Dairy",
+            "price": 140.0,
+            "cost": 115.0,
+            "stock": 20,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🥛",
+            "barcode": "P1006",
+            "status": "Active"
+      },
+      {
+            "id": 15,
+            "code": "P1007",
+            "name": "Amul Pure Ghee 1L Tin",
+            "category": "Dairy",
+            "price": 620.0,
+            "cost": 540.0,
+            "stock": 15,
+            "minStock": 3,
+            "unit": "TIN",
+            "tax": 12.0,
+            "icon": "🥛",
+            "barcode": "P1007",
+            "status": "Active"
+      },
+      {
+            "id": 16,
+            "code": "P1008",
+            "name": "Mother Dairy Masti Spiced Chaas 200ml",
+            "category": "Dairy",
+            "price": 15.0,
+            "cost": 12.0,
+            "stock": 50,
+            "minStock": 12,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🥛",
+            "barcode": "P1008",
+            "status": "Active"
+      },
+      {
+            "id": 17,
+            "code": "P1009",
+            "name": "Amul Whipping Fresh Cream 250ml",
+            "category": "Dairy",
+            "price": 70.0,
+            "cost": 58.0,
+            "stock": 18,
+            "minStock": 4,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🥛",
+            "barcode": "P1009",
+            "status": "Active"
+      },
+      {
+            "id": 18,
+            "code": "P1010",
+            "name": "Mother Dairy Sweet Lassi 200ml",
+            "category": "Dairy",
+            "price": 25.0,
+            "cost": 18.0,
+            "stock": 35,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 12.0,
+            "icon": "🥛",
+            "barcode": "P1010",
+            "status": "Active"
+      },
+      {
+            "id": 19,
+            "code": "P1011",
+            "name": "Britannia Premium White Bread 400g",
+            "category": "Bakery",
+            "price": 45.0,
+            "cost": 38.0,
+            "stock": 30,
+            "minStock": 6,
+            "unit": "PCS",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1011",
+            "status": "Active"
+      },
+      {
+            "id": 20,
+            "code": "P1012",
+            "name": "Harvest Gold 100% Atta Bread 450g",
+            "category": "Bakery",
+            "price": 55.0,
+            "cost": 44.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "PCS",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1012",
+            "status": "Active"
+      },
+      {
+            "id": 21,
+            "code": "P1013",
+            "name": "English Oven Brown Bread 400g",
+            "category": "Bakery",
+            "price": 50.0,
+            "cost": 42.0,
+            "stock": 20,
+            "minStock": 4,
+            "unit": "PCS",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1013",
+            "status": "Active"
+      },
+      {
+            "id": 22,
+            "code": "P1014",
+            "name": "Britannia Toastea Premium Rusk 200g",
+            "category": "Bakery",
+            "price": 38.0,
+            "cost": 30.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1014",
+            "status": "Active"
+      },
+      {
+            "id": 23,
+            "code": "P1015",
+            "name": "Harvest Gold Bombay Pav (6 Pcs)",
+            "category": "Bakery",
+            "price": 25.0,
+            "cost": 20.0,
+            "stock": 35,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1015",
+            "status": "Active"
+      },
+      {
+            "id": 24,
+            "code": "P1016",
+            "name": "Britannia Gobbles Choco Muffin 35g",
+            "category": "Bakery",
+            "price": 15.0,
+            "cost": 12.0,
+            "stock": 60,
+            "minStock": 12,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍞",
+            "barcode": "P1016",
+            "status": "Active"
+      },
+      {
+            "id": 25,
+            "code": "P1017",
+            "name": "Winkies Classic Vanilla Cake 150g",
+            "category": "Bakery",
+            "price": 50.0,
+            "cost": 40.0,
+            "stock": 22,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍞",
+            "barcode": "P1017",
+            "status": "Active"
+      },
+      {
+            "id": 26,
+            "code": "P1018",
+            "name": "Pillsbury Choco Lava Cake 30g",
+            "category": "Bakery",
+            "price": 30.0,
+            "cost": 25.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍞",
+            "barcode": "P1018",
+            "status": "Active"
+      },
+      {
+            "id": 27,
+            "code": "P1019",
+            "name": "English Oven Burger Buns (2 Pcs)",
+            "category": "Bakery",
+            "price": 28.0,
+            "cost": 22.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🍞",
+            "barcode": "P1019",
+            "status": "Active"
+      },
+      {
+            "id": 28,
+            "code": "P1020",
+            "name": "Britannia Fruit Roll Cake 120g",
+            "category": "Bakery",
+            "price": 45.0,
+            "cost": 35.0,
+            "stock": 30,
+            "minStock": 6,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍞",
+            "barcode": "P1020",
+            "status": "Active"
+      },
+      {
+            "id": 29,
+            "code": "P1021",
+            "name": "Maggi 2-Minute Masala Noodles 70g",
+            "category": "Snacks",
+            "price": 14.0,
+            "cost": 11.5,
+            "stock": 120,
+            "minStock": 20,
+            "unit": "PCS",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1021",
+            "status": "Active"
+      },
+      {
+            "id": 30,
+            "code": "P1022",
+            "name": "Yippee Magic Masala Noodles 65g",
+            "category": "Snacks",
+            "price": 12.0,
+            "cost": 10.0,
+            "stock": 80,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1022",
+            "status": "Active"
+      },
+      {
+            "id": 31,
+            "code": "P1023",
+            "name": "Parle-G Gold Glucose Biscuits 250g",
+            "category": "Snacks",
+            "price": 30.0,
+            "cost": 24.0,
+            "stock": 90,
+            "minStock": 15,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🍿",
+            "barcode": "P1023",
+            "status": "Active"
+      },
+      {
+            "id": 32,
+            "code": "P1024",
+            "name": "Britannia Good Day Butter Cookies 200g",
+            "category": "Snacks",
+            "price": 40.0,
+            "cost": 32.0,
+            "stock": 75,
+            "minStock": 12,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍿",
+            "barcode": "P1024",
+            "status": "Active"
+      },
+      {
+            "id": 33,
+            "code": "P1025",
+            "name": "Oreo Original Vanilla Creme Biscuits 120g",
+            "category": "Snacks",
+            "price": 35.0,
+            "cost": 28.0,
+            "stock": 65,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍿",
+            "barcode": "P1025",
+            "status": "Active"
+      },
+      {
+            "id": 34,
+            "code": "P1026",
+            "name": "Haldiram Aloo Bhujia 150g",
+            "category": "Snacks",
+            "price": 50.0,
+            "cost": 42.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1026",
+            "status": "Active"
+      },
+      {
+            "id": 35,
+            "code": "P1027",
+            "name": "Haldiram Moong Dal Fried Namkeen 200g",
+            "category": "Snacks",
+            "price": 55.0,
+            "cost": 45.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1027",
+            "status": "Active"
+      },
+      {
+            "id": 36,
+            "code": "P1028",
+            "name": "Lays India Magic Masala Chips 50g",
+            "category": "Snacks",
+            "price": 20.0,
+            "cost": 16.0,
+            "stock": 100,
+            "minStock": 20,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1028",
+            "status": "Active"
+      },
+      {
+            "id": 37,
+            "code": "P1029",
+            "name": "Kurkure Masala Munch 85g",
+            "category": "Snacks",
+            "price": 20.0,
+            "cost": 16.0,
+            "stock": 100,
+            "minStock": 20,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1029",
+            "status": "Active"
+      },
+      {
+            "id": 38,
+            "code": "P1030",
+            "name": "Doritos Cheese Nachos 60g",
+            "category": "Snacks",
+            "price": 30.0,
+            "cost": 24.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🍿",
+            "barcode": "P1030",
+            "status": "Active"
+      },
+      {
+            "id": 39,
+            "code": "P1031",
+            "name": "Sunfeast Dark Fantasy Choco Fills 75g",
+            "category": "Snacks",
+            "price": 40.0,
+            "cost": 30.0,
+            "stock": 60,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍿",
+            "barcode": "P1031",
+            "status": "Active"
+      },
+      {
+            "id": 40,
+            "code": "P1032",
+            "name": "Haldiram Roasted Salted Kaju 100g",
+            "category": "Snacks",
+            "price": 210.0,
+            "cost": 160.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🍿",
+            "barcode": "P1032",
+            "status": "Active"
+      },
+      {
+            "id": 41,
+            "code": "P1033",
+            "name": "Coca Cola Original Taste 750ml",
+            "category": "Beverages",
+            "price": 40.0,
+            "cost": 34.0,
+            "stock": 60,
+            "minStock": 12,
+            "unit": "BOTTLE",
+            "tax": 28.0,
+            "icon": "🧃",
+            "barcode": "P1033",
+            "status": "Active"
+      },
+      {
+            "id": 42,
+            "code": "P1034",
+            "name": "Thums Up Charged Carbonated Drink 750ml",
+            "category": "Beverages",
+            "price": 40.0,
+            "cost": 34.0,
+            "stock": 70,
+            "minStock": 15,
+            "unit": "BOTTLE",
+            "tax": 28.0,
+            "icon": "🧃",
+            "barcode": "P1034",
+            "status": "Active"
+      },
+      {
+            "id": 43,
+            "code": "P1035",
+            "name": "Sprite Lime Flavored Drink 750ml",
+            "category": "Beverages",
+            "price": 40.0,
+            "cost": 34.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "BOTTLE",
+            "tax": 28.0,
+            "icon": "🧃",
+            "barcode": "P1035",
+            "status": "Active"
+      },
+      {
+            "id": 44,
+            "code": "P1036",
+            "name": "Frooti Mango Drink 200ml Tetra",
+            "category": "Beverages",
+            "price": 15.0,
+            "cost": 12.0,
+            "stock": 80,
+            "minStock": 15,
+            "unit": "TETRA",
+            "tax": 12.0,
+            "icon": "🧃",
+            "barcode": "P1036",
+            "status": "Active"
+      },
+      {
+            "id": 45,
+            "code": "P1037",
+            "name": "Real Fruit Power Mixed Fruit Juice 1L",
+            "category": "Beverages",
+            "price": 130.0,
+            "cost": 100.0,
+            "stock": 30,
+            "minStock": 6,
+            "unit": "TETRA",
+            "tax": 12.0,
+            "icon": "🧃",
+            "barcode": "P1037",
+            "status": "Active"
+      },
+      {
+            "id": 46,
+            "code": "P1038",
+            "name": "Red Bull Energy Drink 250ml Can",
+            "category": "Beverages",
+            "price": 125.0,
+            "cost": 98.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "CAN",
+            "tax": 28.0,
+            "icon": "🧃",
+            "barcode": "P1038",
+            "status": "Active"
+      },
+      {
+            "id": 47,
+            "code": "P1039",
+            "name": "Bisleri Mineral Water 1 Litre Bottle",
+            "category": "Beverages",
+            "price": 20.0,
+            "cost": 14.0,
+            "stock": 150,
+            "minStock": 25,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧃",
+            "barcode": "P1039",
+            "status": "Active"
+      },
+      {
+            "id": 48,
+            "code": "P1040",
+            "name": "Nescafe Classic Instant Coffee Jar 50g",
+            "category": "Beverages",
+            "price": 175.0,
+            "cost": 140.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "JAR",
+            "tax": 18.0,
+            "icon": "🧃",
+            "barcode": "P1040",
+            "status": "Active"
+      },
+      {
+            "id": 49,
+            "code": "P1041",
+            "name": "Tata Tea Premium Desh Ki Chai 500g",
+            "category": "Beverages",
+            "price": 260.0,
+            "cost": 210.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🧃",
+            "barcode": "P1041",
+            "status": "Active"
+      },
+      {
+            "id": 50,
+            "code": "P1042",
+            "name": "Bournvita Chocolate Nutrition Drink 500g",
+            "category": "Beverages",
+            "price": 240.0,
+            "cost": 195.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "JAR",
+            "tax": 18.0,
+            "icon": "🧃",
+            "barcode": "P1042",
+            "status": "Active"
+      },
+      {
+            "id": 51,
+            "code": "P1043",
+            "name": "Aashirvaad Sharbati Shudh Chakki Atta 5kg",
+            "category": "Grains & Staples",
+            "price": 285.0,
+            "cost": 240.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "BAG",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1043",
+            "status": "Active"
+      },
+      {
+            "id": 52,
+            "code": "P1044",
+            "name": "Fortune Special Biryani Basmati Rice 1kg",
+            "category": "Grains & Staples",
+            "price": 155.0,
+            "cost": 120.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌾",
+            "barcode": "P1044",
+            "status": "Active"
+      },
+      {
+            "id": 53,
+            "code": "P1045",
+            "name": "India Gate Feast Rozzana Basmati Rice 5kg",
+            "category": "Grains & Staples",
+            "price": 475.0,
+            "cost": 390.0,
+            "stock": 20,
+            "minStock": 4,
+            "unit": "BAG",
+            "tax": 5.0,
+            "icon": "🌾",
+            "barcode": "P1045",
+            "status": "Active"
+      },
+      {
+            "id": 54,
+            "code": "P1046",
+            "name": "Tata Sampann Unpolished Toor Dal 1kg",
+            "category": "Grains & Staples",
+            "price": 175.0,
+            "cost": 140.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1046",
+            "status": "Active"
+      },
+      {
+            "id": 55,
+            "code": "P1047",
+            "name": "Tata Sampann Moong Dal Dhuli 1kg",
+            "category": "Grains & Staples",
+            "price": 160.0,
+            "cost": 130.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1047",
+            "status": "Active"
+      },
+      {
+            "id": 56,
+            "code": "P1048",
+            "name": "Fortune Besan Superfine 500g",
+            "category": "Grains & Staples",
+            "price": 65.0,
+            "cost": 50.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1048",
+            "status": "Active"
+      },
+      {
+            "id": 57,
+            "code": "P1049",
+            "name": "Rajdhani Sooji / Semolina 500g",
+            "category": "Grains & Staples",
+            "price": 42.0,
+            "cost": 32.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1049",
+            "status": "Active"
+      },
+      {
+            "id": 58,
+            "code": "P1050",
+            "name": "Rajdhani Maida Refined Flour 500g",
+            "category": "Grains & Staples",
+            "price": 38.0,
+            "cost": 28.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1050",
+            "status": "Active"
+      },
+      {
+            "id": 59,
+            "code": "P1051",
+            "name": "Tata Sampann High Fibre Poha 500g",
+            "category": "Grains & Staples",
+            "price": 55.0,
+            "cost": 42.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌾",
+            "barcode": "P1051",
+            "status": "Active"
+      },
+      {
+            "id": 60,
+            "code": "P1052",
+            "name": "Tata Sampann Kabuli Chana Premium 500g",
+            "category": "Grains & Staples",
+            "price": 95.0,
+            "cost": 75.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1052",
+            "status": "Active"
+      },
+      {
+            "id": 61,
+            "code": "P1053",
+            "name": "Tata Sampann Rajma Red 500g",
+            "category": "Grains & Staples",
+            "price": 90.0,
+            "cost": 70.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 0.0,
+            "icon": "🌾",
+            "barcode": "P1053",
+            "status": "Active"
+      },
+      {
+            "id": 62,
+            "code": "P1054",
+            "name": "Loose Sugar M-30 Grade 1kg",
+            "category": "Grains & Staples",
+            "price": 46.0,
+            "cost": 40.0,
+            "stock": 150,
+            "minStock": 25,
+            "unit": "KG",
+            "tax": 5.0,
+            "icon": "🌾",
+            "barcode": "P1054",
+            "status": "Active"
+      },
+      {
+            "id": 63,
+            "code": "P1055",
+            "name": "Fortune Sunlite Refined Sunflower Oil 1L Pouch",
+            "category": "Cooking Oils",
+            "price": 148.0,
+            "cost": 125.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1055",
+            "status": "Active"
+      },
+      {
+            "id": 64,
+            "code": "P1056",
+            "name": "Dhara Kachi Ghani Mustard Oil 1L Bottle",
+            "category": "Cooking Oils",
+            "price": 172.0,
+            "cost": 145.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1056",
+            "status": "Active"
+      },
+      {
+            "id": 65,
+            "code": "P1057",
+            "name": "Saffola Gold Pro Healthy Heart Oil 1L Pouch",
+            "category": "Cooking Oils",
+            "price": 195.0,
+            "cost": 160.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1057",
+            "status": "Active"
+      },
+      {
+            "id": 66,
+            "code": "P1058",
+            "name": "Fortune Soyabean Refined Oil 1L Pouch",
+            "category": "Cooking Oils",
+            "price": 132.0,
+            "cost": 110.0,
+            "stock": 60,
+            "minStock": 12,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1058",
+            "status": "Active"
+      },
+      {
+            "id": 67,
+            "code": "P1059",
+            "name": "Parachute 100% Pure Coconut Cooking Oil 500ml",
+            "category": "Cooking Oils",
+            "price": 175.0,
+            "cost": 140.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "BOTTLE",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1059",
+            "status": "Active"
+      },
+      {
+            "id": 68,
+            "code": "P1060",
+            "name": "Borges Extra Virgin Olive Oil 500ml",
+            "category": "Cooking Oils",
+            "price": 680.0,
+            "cost": 520.0,
+            "stock": 12,
+            "minStock": 3,
+            "unit": "BOTTLE",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1060",
+            "status": "Active"
+      },
+      {
+            "id": 69,
+            "code": "P1061",
+            "name": "Patanjali Cow Ghee 500ml Pouch",
+            "category": "Cooking Oils",
+            "price": 310.0,
+            "cost": 270.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 12.0,
+            "icon": "🛢️",
+            "barcode": "P1061",
+            "status": "Active"
+      },
+      {
+            "id": 70,
+            "code": "P1062",
+            "name": "Dalda Vanaspati Ghee 1L Pouch",
+            "category": "Cooking Oils",
+            "price": 115.0,
+            "cost": 95.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🛢️",
+            "barcode": "P1062",
+            "status": "Active"
+      },
+      {
+            "id": 71,
+            "code": "P1063",
+            "name": "Tata Salt Vacuum Evaporated Iodized 1kg",
+            "category": "Spices & Staples",
+            "price": 28.0,
+            "cost": 22.0,
+            "stock": 100,
+            "minStock": 20,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1063",
+            "status": "Active"
+      },
+      {
+            "id": 72,
+            "code": "P1064",
+            "name": "MDH Deggi Mirch Powder 100g Box",
+            "category": "Spices & Staples",
+            "price": 90.0,
+            "cost": 72.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1064",
+            "status": "Active"
+      },
+      {
+            "id": 73,
+            "code": "P1065",
+            "name": "Catch Turmeric / Haldi Powder 200g",
+            "category": "Spices & Staples",
+            "price": 58.0,
+            "cost": 45.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1065",
+            "status": "Active"
+      },
+      {
+            "id": 74,
+            "code": "P1066",
+            "name": "Everest Garam Masala 100g Box",
+            "category": "Spices & Staples",
+            "price": 85.0,
+            "cost": 68.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1066",
+            "status": "Active"
+      },
+      {
+            "id": 75,
+            "code": "P1067",
+            "name": "Catch Coriander / Dhaniya Powder 200g",
+            "category": "Spices & Staples",
+            "price": 62.0,
+            "cost": 48.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "PACKET",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1067",
+            "status": "Active"
+      },
+      {
+            "id": 76,
+            "code": "P1068",
+            "name": "MDH Asafoetida / Hing Compounded 50g",
+            "category": "Spices & Staples",
+            "price": 105.0,
+            "cost": 80.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "BOTTLE",
+            "tax": 5.0,
+            "icon": "🌶️",
+            "barcode": "P1068",
+            "status": "Active"
+      },
+      {
+            "id": 77,
+            "code": "P1069",
+            "name": "Kissan Fresh Tomato Ketchup 950g Squeezo",
+            "category": "Spices & Staples",
+            "price": 145.0,
+            "cost": 110.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "BOTTLE",
+            "tax": 12.0,
+            "icon": "🌶️",
+            "barcode": "P1069",
+            "status": "Active"
+      },
+      {
+            "id": 78,
+            "code": "P1070",
+            "name": "Dr Oetker Funfoods Veg Mayonnaise 250g",
+            "category": "Spices & Staples",
+            "price": 60.0,
+            "cost": 45.0,
+            "stock": 30,
+            "minStock": 6,
+            "unit": "BOTTLE",
+            "tax": 12.0,
+            "icon": "🌶️",
+            "barcode": "P1070",
+            "status": "Active"
+      },
+      {
+            "id": 79,
+            "code": "P1071",
+            "name": "Ching Secret Schezwan Chutney 250g Bottle",
+            "category": "Spices & Staples",
+            "price": 85.0,
+            "cost": 65.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "BOTTLE",
+            "tax": 12.0,
+            "icon": "🌶️",
+            "barcode": "P1071",
+            "status": "Active"
+      },
+      {
+            "id": 80,
+            "code": "P1072",
+            "name": "Tops Mixed Fruit Jam 500g Jar",
+            "category": "Spices & Staples",
+            "price": 150.0,
+            "cost": 115.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "JAR",
+            "tax": 12.0,
+            "icon": "🌶️",
+            "barcode": "P1072",
+            "status": "Active"
+      },
+      {
+            "id": 81,
+            "code": "P1073",
+            "name": "Dettol Original Germ Protection Soap 125g",
+            "category": "Personal Care",
+            "price": 52.0,
+            "cost": 42.0,
+            "stock": 80,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1073",
+            "status": "Active"
+      },
+      {
+            "id": 82,
+            "code": "P1074",
+            "name": "Lifebuoy Total Germ Protection Soap 125g",
+            "category": "Personal Care",
+            "price": 38.0,
+            "cost": 30.0,
+            "stock": 70,
+            "minStock": 12,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1074",
+            "status": "Active"
+      },
+      {
+            "id": 83,
+            "code": "P1075",
+            "name": "Dove Deep Moisture Bathing Bar 100g",
+            "category": "Personal Care",
+            "price": 68.0,
+            "cost": 55.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1075",
+            "status": "Active"
+      },
+      {
+            "id": 84,
+            "code": "P1076",
+            "name": "Colgate Strong Teeth Toothpaste 200g",
+            "category": "Personal Care",
+            "price": 120.0,
+            "cost": 95.0,
+            "stock": 60,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1076",
+            "status": "Active"
+      },
+      {
+            "id": 85,
+            "code": "P1077",
+            "name": "Sensodyne Rapid Relief Toothpaste 80g",
+            "category": "Personal Care",
+            "price": 215.0,
+            "cost": 170.0,
+            "stock": 30,
+            "minStock": 5,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1077",
+            "status": "Active"
+      },
+      {
+            "id": 86,
+            "code": "P1078",
+            "name": "Head & Shoulders Anti-Dandruff Shampoo 180ml",
+            "category": "Personal Care",
+            "price": 185.0,
+            "cost": 145.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1078",
+            "status": "Active"
+      },
+      {
+            "id": 87,
+            "code": "P1079",
+            "name": "Parachute 100% Coconut Hair Oil 200ml Bottle",
+            "category": "Personal Care",
+            "price": 98.0,
+            "cost": 78.0,
+            "stock": 45,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1079",
+            "status": "Active"
+      },
+      {
+            "id": 88,
+            "code": "P1080",
+            "name": "Bajaj Almond Drops Non-Sticky Hair Oil 100ml",
+            "category": "Personal Care",
+            "price": 75.0,
+            "cost": 60.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1080",
+            "status": "Active"
+      },
+      {
+            "id": 89,
+            "code": "P1081",
+            "name": "Dettol Liquid Handwash Refill Pouch 675ml",
+            "category": "Personal Care",
+            "price": 109.0,
+            "cost": 85.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1081",
+            "status": "Active"
+      },
+      {
+            "id": 90,
+            "code": "P1082",
+            "name": "Nivea Soft Light Moisturising Cream 100ml",
+            "category": "Personal Care",
+            "price": 199.0,
+            "cost": 150.0,
+            "stock": 25,
+            "minStock": 5,
+            "unit": "JAR",
+            "tax": 18.0,
+            "icon": "🧴",
+            "barcode": "P1082",
+            "status": "Active"
+      },
+      {
+            "id": 91,
+            "code": "P1083",
+            "name": "Surf Excel Easy Wash Detergent Powder 1kg",
+            "category": "Household & Cleaning",
+            "price": 145.0,
+            "cost": 118.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1083",
+            "status": "Active"
+      },
+      {
+            "id": 92,
+            "code": "P1084",
+            "name": "Ariel Matic Top Load Detergent Powder 1kg",
+            "category": "Household & Cleaning",
+            "price": 245.0,
+            "cost": 195.0,
+            "stock": 30,
+            "minStock": 6,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1084",
+            "status": "Active"
+      },
+      {
+            "id": 93,
+            "code": "P1085",
+            "name": "Vim Dishwash Bar with Lemon 300g Pack",
+            "category": "Household & Cleaning",
+            "price": 26.0,
+            "cost": 20.0,
+            "stock": 90,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1085",
+            "status": "Active"
+      },
+      {
+            "id": 94,
+            "code": "P1086",
+            "name": "Vim Pure Lemon Dishwash Gel Bottle 250ml",
+            "category": "Household & Cleaning",
+            "price": 60.0,
+            "cost": 45.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1086",
+            "status": "Active"
+      },
+      {
+            "id": 95,
+            "code": "P1087",
+            "name": "Harpic Power Plus Toilet Cleaner Original 500ml",
+            "category": "Household & Cleaning",
+            "price": 99.0,
+            "cost": 78.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1087",
+            "status": "Active"
+      },
+      {
+            "id": 96,
+            "code": "P1088",
+            "name": "Lizol Citrus Surface Disinfectant Floor Cleaner 500ml",
+            "category": "Household & Cleaning",
+            "price": 110.0,
+            "cost": 88.0,
+            "stock": 40,
+            "minStock": 8,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1088",
+            "status": "Active"
+      },
+      {
+            "id": 97,
+            "code": "P1089",
+            "name": "Colin Advanced Glass and Surface Cleaner 500ml",
+            "category": "Household & Cleaning",
+            "price": 104.0,
+            "cost": 82.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1089",
+            "status": "Active"
+      },
+      {
+            "id": 98,
+            "code": "P1090",
+            "name": "Good Knight Gold Flash Mosquito Liquid Refill (45ml)",
+            "category": "Household & Cleaning",
+            "price": 85.0,
+            "cost": 65.0,
+            "stock": 60,
+            "minStock": 12,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1090",
+            "status": "Active"
+      },
+      {
+            "id": 99,
+            "code": "P1091",
+            "name": "Scotch Brite Heavy Duty Scrub Pad (3 Pcs Pack)",
+            "category": "Household & Cleaning",
+            "price": 45.0,
+            "cost": 35.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1091",
+            "status": "Active"
+      },
+      {
+            "id": 100,
+            "code": "P1092",
+            "name": "Comfort After Wash Fabric Morning Fresh Conditioner 220ml",
+            "category": "Household & Cleaning",
+            "price": 62.0,
+            "cost": 48.0,
+            "stock": 35,
+            "minStock": 6,
+            "unit": "BOTTLE",
+            "tax": 18.0,
+            "icon": "🧼",
+            "barcode": "P1092",
+            "status": "Active"
+      },
+      {
+            "id": 101,
+            "code": "P1093",
+            "name": "Cadbury Dairy Milk Silk Chocolate 60g",
+            "category": "Chocolates & Sweets",
+            "price": 80.0,
+            "cost": 65.0,
+            "stock": 60,
+            "minStock": 12,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1093",
+            "status": "Active"
+      },
+      {
+            "id": 102,
+            "code": "P1094",
+            "name": "Nestle KitKat 4 Finger Crispy Wafer 38g",
+            "category": "Chocolates & Sweets",
+            "price": 28.0,
+            "cost": 22.0,
+            "stock": 75,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1094",
+            "status": "Active"
+      },
+      {
+            "id": 103,
+            "code": "P1095",
+            "name": "Cadbury 5 Star Chocolate Bar 40g",
+            "category": "Chocolates & Sweets",
+            "price": 20.0,
+            "cost": 16.0,
+            "stock": 80,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1095",
+            "status": "Active"
+      },
+      {
+            "id": 104,
+            "code": "P1096",
+            "name": "Snickers Peanut Caramel Chocolate Bar 45g",
+            "category": "Chocolates & Sweets",
+            "price": 50.0,
+            "cost": 38.0,
+            "stock": 50,
+            "minStock": 10,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1096",
+            "status": "Active"
+      },
+      {
+            "id": 105,
+            "code": "P1097",
+            "name": "Nestle Munch Crunchy Wafer Bar 22g",
+            "category": "Chocolates & Sweets",
+            "price": 10.0,
+            "cost": 8.0,
+            "stock": 100,
+            "minStock": 20,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1097",
+            "status": "Active"
+      },
+      {
+            "id": 106,
+            "code": "P1098",
+            "name": "Cadbury Perk Chocolate Coated Wafer 28g",
+            "category": "Chocolates & Sweets",
+            "price": 10.0,
+            "cost": 8.0,
+            "stock": 90,
+            "minStock": 18,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1098",
+            "status": "Active"
+      },
+      {
+            "id": 107,
+            "code": "P1099",
+            "name": "Center Fresh Spearmint Chewing Gum (Pack of 20)",
+            "category": "Chocolates & Sweets",
+            "price": 20.0,
+            "cost": 15.0,
+            "stock": 70,
+            "minStock": 15,
+            "unit": "PACKET",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1099",
+            "status": "Active"
+      },
+      {
+            "id": 108,
+            "code": "P1100",
+            "name": "Mentos Mint Roll Candy 37g",
+            "category": "Chocolates & Sweets",
+            "price": 10.0,
+            "cost": 8.0,
+            "stock": 80,
+            "minStock": 15,
+            "unit": "PCS",
+            "tax": 18.0,
+            "icon": "🍫",
+            "barcode": "P1100",
+            "status": "Active"
       }
-    } catch (e) {}
-    return [];
+];
+      if (saved && Array.isArray(saved) && saved.length > 8) {
+        // Merge user custom items if any existed
+        const codeMap = new Map();
+        default108.forEach(p => codeMap.set(p.code, p));
+        saved.forEach(p => {
+          if (p.code && !codeMap.has(p.code)) {
+            default108.push(p);
+          }
+        });
+      }
+      saved = default108;
+      localStorage.setItem('pos_products_list', JSON.stringify(saved));
+      localStorage.setItem('pos_catalog_ver', CATALOG_VERSION);
+    }
+    return saved;
   })(),
 
   // Categories Catalog (11 Categories Auto-Synced)
@@ -220,13 +1808,11 @@ const posState = {
   // Customers Directory & Balances (Persisted in localStorage)
   customers: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_customers_list') || 'null');
-    if (saved && Array.isArray(saved) && saved.some(c => c.name === 'Rahul Sharma' || c.name === 'Amit Verma' || c.name === 'Priya Patel')) {
-      localStorage.removeItem('pos_customers_list');
-      saved = null;
-    }
     if (!saved || !Array.isArray(saved) || saved.length === 0) {
       saved = [
-        { id: 1, name: 'Walk-in Customer', mobile: '9999999999', email: '', gstin: 'Unregistered', balance: 0.00, due: 0.00, creditLimit: 0, status: 'Active' }
+        { id: 1, name: 'Walk-in Customer', mobile: '9999999999', email: '', gstin: 'Unregistered', balance: 0.00, due: 0.00, creditLimit: 0, status: 'Active' },
+        { id: 2, name: 'Rahul Sharma', mobile: '9811223344', email: 'rahul@example.com', gstin: '07AAAAA0000A1Z5', balance: 450.00, creditLimit: 5000, status: 'Active' },
+        { id: 3, name: 'Priya Patel', mobile: '9822334455', email: 'priya@example.com', gstin: 'Unregistered', balance: 0.00, creditLimit: 3000, status: 'Active' }
       ];
       localStorage.setItem('pos_customers_list', JSON.stringify(saved));
     }
@@ -236,12 +1822,12 @@ const posState = {
   // Suppliers Directory & Payables (Persisted in localStorage)
   suppliers: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_suppliers_list') || 'null');
-    if (saved && Array.isArray(saved) && saved.some(s => s.name === 'ABC Distributors' || s.name === 'Mother Dairy Delhi Ltd')) {
-      localStorage.removeItem('pos_suppliers_list');
-      saved = null;
-    }
-    if (!saved || !Array.isArray(saved)) {
-      saved = [];
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, name: 'Mother Dairy Delhi Ltd', contact: 'Ramesh Gupta', mobile: '9876500001', email: 'sales@motherdairy.com', gstin: '07AAACM1234F1Z1', balance: 4200.00, status: 'Active' },
+        { id: 2, name: 'Britannia Wholesale Agency', contact: 'Sunil Kumar', mobile: '9876500002', email: 'orders@britannia-agency.com', gstin: '07AABCB5678G1Z2', balance: 1850.00, status: 'Active' },
+        { id: 3, name: 'Nestle India Distribution', contact: 'Deepak Joshi', mobile: '9876500003', email: 'delhi@nestle.com', gstin: '07AAACN9012H1Z3', balance: 0.00, status: 'Active' }
+      ];
       localStorage.setItem('pos_suppliers_list', JSON.stringify(saved));
     }
     return saved;
@@ -311,21 +1897,12 @@ const posState = {
   // Past Sales History (Persisted in localStorage)
   salesHistory: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_sales_history') || 'null');
-    if (saved && Array.isArray(saved) && saved.some(s => s.customer === 'Rahul Sharma' || s.customer === 'Priya Patel' || (s.items && s.items.some(i => i.name === 'Milk' || i.name === 'Bread')))) {
-      localStorage.removeItem('pos_sales_history');
-      localStorage.setItem('pos_next_invoice_seq', '1');
-      saved = [];
-    }
     return Array.isArray(saved) ? saved : [];
   })(),
 
   // Purchase Master (Persisted in localStorage)
   purchases: (() => {
     let saved = JSON.parse(localStorage.getItem('pos_purchases_list') || 'null');
-    if (saved && Array.isArray(saved) && saved.some(p => p.supplier === 'Mother Dairy Delhi Ltd' || p.supplier === 'Britannia Wholesale Agency' || p.supplier === 'ABC Distributors')) {
-      localStorage.removeItem('pos_purchases_list');
-      saved = [];
-    }
     return Array.isArray(saved) ? saved : [];
   })(),
 
@@ -556,6 +2133,12 @@ function openModal(modalId) {
 }
 
 function closeModal(modalId) {
+  if (modalId === 'modal-license-activation' && window._isSystemHardwareLicensed === false) {
+    if (typeof showToast === 'function') {
+      showToast('🔒 Software is locked. Commercial activation is required.', 'warning');
+    }
+    return;
+  }
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.remove('active');
@@ -1534,6 +3117,7 @@ function renderProductMaster() {
         <td><span style="font-weight:700">${p.stock}</span> ${p.unit}</td>
         <td><span class="badge ${p.stock <= p.minStock ? 'badge-warning' : 'badge-success'}">${p.stock <= 0 ? 'Out of Stock' : p.stock <= p.minStock ? 'Low Stock' : 'Active'}</span></td>
         <td>
+          <button class="btn btn-outline btn-sm" onclick="openBarcodePrintModal(${p.id})" title="Print Barcode Labels" style="margin-right:4px;">🏷️ Print</button>
           <button class="btn btn-outline btn-sm" onclick="openProductAuditModal(${p.id})" title="View price & stock change timeline" style="margin-right:4px;">📜 History</button>
           <button class="btn btn-outline btn-sm" onclick="openEditProductModal(${p.id})" title="Edit product details">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" title="Delete product">🗑️</button>
@@ -4299,6 +5883,120 @@ function renderPosProducts() {
     container.appendChild(card);
   });
 }
+
+
+// =============================================================================
+// HARDWARE BARCODE SCANNER ENGINE & AUDIO BEEP FEEDBACK
+// =============================================================================
+function playBarcodeBeep(isSuccess = true) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (isSuccess) {
+      // Classic supermarket laser scanner beep: 1760Hz (A6 note)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1760, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } else {
+      // Low warning buzz: 280Hz
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.22);
+    }
+  } catch (err) {
+    // AudioContext blocked or not supported - silent fallback
+  }
+}
+
+function handlePosBarcodeScan(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+
+  const inputEl = document.getElementById('pos-search-input');
+  if (!inputEl) return;
+  const rawVal = (inputEl.value || '').trim();
+  if (!rawVal) return;
+
+  const query = rawVal.toLowerCase();
+
+  // 1. Prioritize exact match on barcode or SKU code
+  let match = posState.products.find(p => 
+    (p.barcode && String(p.barcode).trim().toLowerCase() === query) ||
+    (p.code && String(p.code).trim().toLowerCase() === query)
+  );
+
+  // 2. If no exact barcode, check single matching filtered item
+  if (!match) {
+    const candidates = posState.products.filter(p => {
+      const matchCat = (activeCategoryFilter === 'ALL' || p.category.toLowerCase() === activeCategoryFilter.toLowerCase());
+      const matchQuery = p.name.toLowerCase().includes(query) || 
+                         p.code.toLowerCase().includes(query) || 
+                         (p.barcode && String(p.barcode).includes(query));
+      return matchCat && matchQuery;
+    });
+    if (candidates.length === 1) {
+      match = candidates[0];
+    }
+  }
+
+  if (match) {
+    addToCart(match.id);
+    playBarcodeBeep(true);
+    inputEl.value = '';
+    renderPosProducts();
+    inputEl.focus();
+  } else {
+    playBarcodeBeep(false);
+    showToast(`⚠️ No product found for barcode: "${rawVal}"`, 'danger');
+  }
+}
+
+// Global Hardware Barcode Gun Buffer (Catches scans even if input is not focused)
+let _globalBcBuffer = '';
+let _lastBcCharTime = 0;
+
+window.addEventListener('keydown', (e) => {
+  if (posState.activeScreen !== 'pos') return;
+
+  // Don't intercept if user is typing in another modal or form input
+  const activeEl = document.activeElement;
+  const tag = activeEl ? activeEl.tagName.toLowerCase() : '';
+  const id = activeEl ? activeEl.id : '';
+  if (tag === 'input' && id !== 'pos-search-input') return;
+  if (tag === 'textarea' || tag === 'select') return;
+
+  const now = Date.now();
+
+  if (e.key === 'Enter') {
+    if (_globalBcBuffer.length >= 2) {
+      const scannedCode = _globalBcBuffer.trim();
+      _globalBcBuffer = '';
+      const inputEl = document.getElementById('pos-search-input');
+      if (inputEl) inputEl.value = scannedCode;
+      handlePosBarcodeScan({ key: 'Enter', preventDefault: () => {} });
+    }
+    _globalBcBuffer = '';
+  } else if (e.key.length === 1) {
+    // Hardware scanners send characters < 60ms apart
+    if (now - _lastBcCharTime > 120) {
+      _globalBcBuffer = '';
+    }
+    _globalBcBuffer += e.key;
+    _lastBcCharTime = now;
+  }
+});
 
 function addToCart(productId) {
   const prod = posState.products.find(p => p.id === productId);
@@ -7470,19 +9168,22 @@ async function checkLicenseAndSyncSqlite() {
       return true;
     }
   } catch (err) {
-    // Standalone / Offline Testing Mode: Direct index.html without server runs smoothly
-    console.log('[BrainShop Testing] Direct index.html offline mode active.');
-    window._isSystemHardwareLicensed = true;
-    isSqliteBackendActive = false;
-    closeModal('modal-license-activation');
+    // CLIENT COMMERCIAL ENFORCEMENT: Direct index.html cannot bypass software licensing
+    console.warn('[Security Lock] BrainShop Client Commercial Protection Active.');
+    window._isSystemHardwareLicensed = false;
+    openModal('modal-license-activation');
     const loginBtn = document.getElementById('btn-login-submit');
     if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.innerHTML = 'Sign In to System';
-      loginBtn.style.background = '';
-      loginBtn.style.cursor = 'pointer';
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '🔒 System Locked - License Required';
+      loginBtn.style.background = '#e11d48';
+      loginBtn.style.cursor = 'not-allowed';
     }
-    return true;
+    const licInput = document.getElementById('lic-machine-id');
+    if (licInput) {
+      licInput.value = 'PLEASE RUN Start_POS.bat TO ACTIVATE';
+    }
+    return false;
   }
 }
 
@@ -10708,3 +12409,283 @@ function aiFixEntity(actionType, entityId, btnElement) {
 
 
 
+
+// =============================================================================
+// PURE SVG CODE 128 BARCODE GENERATOR & LABEL PRINTING ENGINE
+// =============================================================================
+const CODE128_PATTERNS = [
+  "212222","222122","222221","121223","121322","131222","122213","122312","132212","221213",
+  "221312","231212","112232","122132","122231","113222","123122","123221","223211","221132",
+  "221231","213212","223112","312131","311222","321122","321221","312212","322112","322211",
+  "212123","212321","232121","111323","131123","131321","112313","132113","132311","211313",
+  "231113","231311","112133","112331","132131","113123","113321","133121","313121","211331",
+  "231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
+  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214",
+  "112412","122114","122411","142112","142211","241211","221114","413111","241112","134111",
+  "111242","121142","121241","114212","124112","124211","411212","421112","421211","212141",
+  "214121","412121","111143","111341","131141","114113","114311","411113","411311","113141",
+  "114131","311141","411131","211412","211214","211232","2331112"
+];
+
+function generateCode128Svg(text, height = 36) {
+  if (!text) text = "890100100001";
+  const clean = String(text).trim();
+  const codes = [104]; // Start B
+  let checksum = 104;
+
+  for (let i = 0; i < clean.length; i++) {
+    const code = clean.charCodeAt(i) - 32;
+    const safeCode = (code >= 0 && code <= 95) ? code : 0;
+    codes.push(safeCode);
+    checksum += safeCode * (i + 1);
+  }
+  codes.push(checksum % 103);
+  codes.push(106); // Stop
+
+  let x = 8;
+  const rects = [];
+  codes.forEach(c => {
+    const pattern = CODE128_PATTERNS[c] || "212222";
+    let isBar = true;
+    for (let j = 0; j < pattern.length; j++) {
+      const width = parseInt(pattern[j], 10);
+      if (isBar) {
+        rects.push(`<rect x="${x}" y="0" width="${width}" height="${height}" fill="#000" />`);
+      }
+      x += width;
+      isBar = !isBar;
+    }
+  });
+
+  const totalWidth = x + 8;
+  return `<svg viewBox="0 0 ${totalWidth} ${height}" width="100%" height="${height}px" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin:0 auto;">${rects.join('')}</svg>`;
+}
+
+let _currentBarcodePrintProdId = null;
+
+function openBarcodePrintModal(productId = null) {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  if (!selectEl) return;
+
+  selectEl.innerHTML = '';
+  posState.products.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} - ₹${p.price.toFixed(2)} (${p.code} / ${p.barcode || 'No Barcode'})`;
+    selectEl.appendChild(opt);
+  });
+
+  if (productId) {
+    selectEl.value = productId;
+    _currentBarcodePrintProdId = productId;
+  } else if (posState.products.length > 0) {
+    selectEl.value = posState.products[0].id;
+    _currentBarcodePrintProdId = posState.products[0].id;
+  }
+
+  updateBarcodePreview();
+  openModal('modal-barcode-print');
+}
+
+function onBarcodeProductSelectChange() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  if (selectEl) {
+    _currentBarcodePrintProdId = parseInt(selectEl.value, 10);
+  }
+  updateBarcodePreview();
+}
+
+function setBarcodeQty(qty) {
+  const input = document.getElementById('bc-print-qty');
+  if (input) {
+    input.value = qty;
+  }
+  updateBarcodePreview();
+}
+
+function updateBarcodePreview() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  const previewBox = document.getElementById('bc-live-preview-box');
+  if (!selectEl || !previewBox) return;
+
+  const prodId = parseInt(selectEl.value, 10);
+  const prod = posState.products.find(p => p.id === prodId) || posState.products[0];
+  if (!prod) {
+    previewBox.innerHTML = '<span style="color:#64748b;">No product selected</span>';
+    return;
+  }
+
+  const showStore = document.getElementById('bc-opt-store')?.checked ?? true;
+  const showName = document.getElementById('bc-opt-name')?.checked ?? true;
+  const showPrice = document.getElementById('bc-opt-price')?.checked ?? true;
+  const showDigits = document.getElementById('bc-opt-digits')?.checked ?? true;
+
+  const storeName = (posState.settings && posState.settings.storeName) ? posState.settings.storeName : 'BrainShop Retail';
+  const barcodeValue = prod.barcode || prod.code || '890100100001';
+  const svgBarcode = generateCode128Svg(barcodeValue, 32);
+
+  previewBox.innerHTML = `
+    ${showStore ? `<div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#0f172a; margin-bottom:2px; letter-spacing:0.5px;">★ ${escapeHtml(storeName)} ★</div>` : ''}
+    ${showName ? `<div style="font-size:0.8rem; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px;">${escapeHtml(prod.name)}</div>` : ''}
+    <div style="margin:2px 0;">${svgBarcode}</div>
+    ${showDigits ? `<div style="font-size:0.72rem; font-family:monospace; font-weight:800; color:#334155; letter-spacing:1px; margin-top:1px;">${escapeHtml(barcodeValue)}</div>` : ''}
+    ${showPrice ? `<div style="font-size:0.92rem; font-weight:900; color:#0f172a; margin-top:2px;">M.R.P. : ₹ ${prod.price.toFixed(2)}</div>` : ''}
+  `;
+}
+
+function printBarcodeLabels() {
+  const selectEl = document.getElementById('bc-print-prod-select');
+  const qtyInput = document.getElementById('bc-print-qty');
+  const layoutSelect = document.getElementById('bc-print-layout');
+  if (!selectEl) return;
+
+  const prodId = parseInt(selectEl.value, 10);
+  const prod = posState.products.find(p => p.id === prodId);
+  if (!prod) {
+    showToast('Please select a valid product.', 'warning');
+    return;
+  }
+
+  const qty = parseInt(qtyInput ? qtyInput.value : '10', 10) || 10;
+  const layout = layoutSelect ? layoutSelect.value : '50x25';
+  const showStore = document.getElementById('bc-opt-store')?.checked ?? true;
+  const showName = document.getElementById('bc-opt-name')?.checked ?? true;
+  const showPrice = document.getElementById('bc-opt-price')?.checked ?? true;
+  const showDigits = document.getElementById('bc-opt-digits')?.checked ?? true;
+
+  const storeName = (posState.settings && posState.settings.storeName) ? posState.settings.storeName : 'BrainShop Retail';
+  const barcodeValue = prod.barcode || prod.code || '890100100001';
+  const svgBarcode = generateCode128Svg(barcodeValue, 32);
+
+  const singleStickerHtml = `
+    <div class="barcode-sticker">
+      ${showStore ? `<div class="st-store">★ ${escapeHtml(storeName)} ★</div>` : ''}
+      ${showName ? `<div class="st-name">${escapeHtml(prod.name)}</div>` : ''}
+      <div class="st-barcode">${svgBarcode}</div>
+      ${showDigits ? `<div class="st-digits">${escapeHtml(barcodeValue)}</div>` : ''}
+      ${showPrice ? `<div class="st-price">M.R.P. : ₹ ${prod.price.toFixed(2)}</div>` : ''}
+    </div>
+  `;
+
+  let stickersHtml = '';
+  for (let i = 0; i < qty; i++) {
+    stickersHtml += singleStickerHtml;
+  }
+
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) {
+    showToast('Pop-up blocked! Please allow popups to print barcode labels.', 'danger');
+    return;
+  }
+
+  const isRoll = (layout === '50x25' || layout === '38x25');
+  const rollWidth = (layout === '38x25') ? '38mm' : '50mm';
+  const rollHeight = '25mm';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Print Barcode Labels - ${escapeHtml(prod.name)}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; color: #000; }
+        
+        ${isRoll ? `
+          @page {
+            size: ${rollWidth} ${rollHeight};
+            margin: 0;
+          }
+          .container {
+            width: ${rollWidth};
+          }
+          .barcode-sticker {
+            width: ${rollWidth};
+            height: ${rollHeight};
+            padding: 1.5mm 1mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+          }
+        ` : `
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+          .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2mm 3mm;
+            width: 100%;
+          }
+          .barcode-sticker {
+            height: 33mm;
+            border: 1px dashed #bbb;
+            padding: 2mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+          }
+        `}
+
+        .st-store {
+          font-size: 7.5pt;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          margin-bottom: 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 95%;
+        }
+        .st-name {
+          font-size: 8pt;
+          font-weight: 700;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 95%;
+          margin-bottom: 2px;
+        }
+        .st-barcode {
+          width: 90%;
+          margin: 1px 0;
+        }
+        .st-digits {
+          font-size: 7pt;
+          font-family: monospace;
+          font-weight: 800;
+          letter-spacing: 1px;
+          margin-top: 1px;
+        }
+        .st-price {
+          font-size: 8.5pt;
+          font-weight: 900;
+          margin-top: 1px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        ${stickersHtml}
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(function() { window.close(); }, 800);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
