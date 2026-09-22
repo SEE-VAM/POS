@@ -3,79 +3,8 @@
    Full Forms, Modals, State Management, Real-Time Calculations & Exports
    ============================================================================= */
 
-// --- 1. CORE APPLICATION STATE ---
-const posState = {
-  isAuthenticated: false,
-  currentUser: { username: 'admin', role: 'ADMIN', name: 'System Administrator' },
-  activeScreen: 'login',
-  selectedBranch: 'Main Branch',
-  nextInvoiceSeq: (() => {
-    const saved = parseInt(localStorage.getItem('pos_next_invoice_seq'), 10);
-    if (!isNaN(saved) && saved >= 1) return saved;
-    return 1;
-  })(),
-  nextPurchaseSeq: 125,
-  editingProductId: null,
-  editingCategoryId: null,
-  editingCustomerId: null,
-  editingSupplierId: null,
-  editingBranchId: null,
-
-  // Company Settings (Persisted in localStorage)
-  settings: (() => {
-    let saved = JSON.parse(localStorage.getItem('pos_settings') || 'null');
-    // Auto-clean any old demo ABC store
-    if (saved && (saved.storeName === 'ABC Retail Store' || saved.legalName === 'ABC Supermarkets India Pvt Ltd' || saved.gstin === '07ABCDE1234F1Z5')) {
-      localStorage.removeItem('pos_settings');
-      saved = null;
-    }
-    if (!saved || typeof saved !== 'object') {
-      saved = {
-        companyCode: 'COMP001',
-        storeName: 'My Retail Store',
-        legalName: '',
-        gstin: '',
-        address: '',
-        phone: '',
-        invoicePrefix: 'INV',
-        currency: '₹',
-        allowNegativeStock: false
-      };
-      localStorage.setItem('pos_settings', JSON.stringify(saved));
-    }
-    if (!saved.companyCode) {
-      saved.companyCode = 'COMP001';
-      localStorage.setItem('pos_settings', JSON.stringify(saved));
-    }
-    return saved;
-  })(),
-
-  // Branches Directory (Persisted in localStorage)
-  branches: (() => {
-    let saved = JSON.parse(localStorage.getItem('pos_branches_list') || 'null');
-    // Auto-clean any old demo branches (Noida/Gurgaon)
-    if (saved && Array.isArray(saved) && saved.some(b => b.name && (b.name.includes('Noida') || b.name.includes('Gurgaon')))) {
-      localStorage.removeItem('pos_branches_list');
-      saved = null;
-    }
-    if (!saved || !Array.isArray(saved) || saved.length === 0) {
-      saved = [
-        { id: 1, code: 'B001', name: 'Main Branch', address: '', phone: '', status: 'Active' }
-      ];
-      localStorage.setItem('pos_branches_list', JSON.stringify(saved));
-    }
-    return saved;
-  })(),
-
-  // Master Product Catalog (108 Commercial Items with Automatic Sync & Upgrade)
-  products: (() => {
-    const CATALOG_VERSION = 'v2026_108_items';
-    const currentVer = localStorage.getItem('pos_catalog_ver');
-    let saved = JSON.parse(localStorage.getItem('pos_products_list') || 'null');
-    
-    // Auto-upgrade if empty or old 8-item default list
-    if (!saved || !Array.isArray(saved) || saved.length <= 8 || currentVer !== CATALOG_VERSION) {
-      const default108 = [
+// --- 0. MASTER PRODUCT CATALOG DEFAULTS (108 COMMERCIAL ITEMS) ---
+const MASTER_DEFAULT_PRODUCTS = [
       {
             "id": 1,
             "code": "P001",
@@ -1697,6 +1626,98 @@ const posState = {
             "status": "Active"
       }
 ];
+
+function ensureDefaultProductsLoaded() {
+  if (!posState.products || !Array.isArray(posState.products) || posState.products.length < 100) {
+    console.log('[BrainShop AutoSync] Ensuring all 108 products are active in posState...');
+    posState.products = JSON.parse(JSON.stringify(MASTER_DEFAULT_PRODUCTS));
+    try {
+      localStorage.setItem('pos_products_list', JSON.stringify(posState.products));
+      localStorage.setItem('pos_catalog_ver', 'v2026_108_items_v4');
+    } catch(e) {}
+  }
+}
+window.ensureDefaultProductsLoaded = ensureDefaultProductsLoaded;
+
+// --- 1. CORE APPLICATION STATE ---
+const posState = {
+  isAuthenticated: false,
+  currentUser: { username: 'admin', role: 'ADMIN', name: 'System Administrator' },
+  activeScreen: 'login',
+  selectedBranch: 'Main Branch',
+  nextInvoiceSeq: (() => {
+    const saved = parseInt(localStorage.getItem('pos_next_invoice_seq'), 10);
+    if (!isNaN(saved) && saved >= 1) return saved;
+    return 1;
+  })(),
+  nextPurchaseSeq: 125,
+  editingProductId: null,
+  editingCategoryId: null,
+  editingCustomerId: null,
+  editingSupplierId: null,
+  editingBranchId: null,
+
+  // Company Settings (Persisted in localStorage)
+  settings: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_settings') || 'null');
+    // Auto-clean any old demo ABC store
+    if (saved && (saved.storeName === 'ABC Retail Store' || saved.legalName === 'ABC Supermarkets India Pvt Ltd' || saved.gstin === '07ABCDE1234F1Z5')) {
+      localStorage.removeItem('pos_settings');
+      saved = null;
+    }
+    if (!saved || typeof saved !== 'object') {
+      saved = {
+        companyCode: 'COMP001',
+        storeName: 'My Retail Store',
+        legalName: '',
+        gstin: '',
+        address: '',
+        phone: '',
+        invoicePrefix: 'INV',
+        currency: '₹',
+        allowNegativeStock: false
+      };
+      localStorage.setItem('pos_settings', JSON.stringify(saved));
+    }
+    if (!saved.companyCode) {
+      saved.companyCode = 'COMP001';
+      localStorage.setItem('pos_settings', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
+
+  // Branches Directory (Persisted in localStorage)
+  branches: (() => {
+    let saved = JSON.parse(localStorage.getItem('pos_branches_list') || 'null');
+    // Auto-clean any old demo branches (Noida/Gurgaon)
+    if (saved && Array.isArray(saved) && saved.some(b => b.name && (b.name.includes('Noida') || b.name.includes('Gurgaon')))) {
+      localStorage.removeItem('pos_branches_list');
+      saved = null;
+    }
+    if (!saved || !Array.isArray(saved) || saved.length === 0) {
+      saved = [
+        { id: 1, code: 'B001', name: 'Main Branch', address: '', phone: '', status: 'Active' }
+      ];
+      localStorage.setItem('pos_branches_list', JSON.stringify(saved));
+    }
+    return saved;
+  })(),
+
+  // Master Product Catalog (108 Commercial Items with Automatic Sync & Upgrade)
+  products: (() => {
+    const CATALOG_VERSION = 'v2026_108_items_v4';
+    let currentVer = null;
+    let saved = null;
+    try {
+      currentVer = localStorage.getItem('pos_catalog_ver');
+      saved = JSON.parse(localStorage.getItem('pos_products_list') || 'null');
+    } catch(e) {
+      saved = null;
+    }
+    
+    // Auto-upgrade if empty or old list (< 100 items) or version mismatch
+    if (!saved || !Array.isArray(saved) || saved.length < 100 || currentVer !== CATALOG_VERSION) {
+      const default108 = JSON.parse(JSON.stringify(MASTER_DEFAULT_PRODUCTS));
       if (saved && Array.isArray(saved) && saved.length > 8) {
         // Merge user custom items if any existed
         const codeMap = new Map();
@@ -1708,8 +1729,10 @@ const posState = {
         });
       }
       saved = default108;
-      localStorage.setItem('pos_products_list', JSON.stringify(saved));
-      localStorage.setItem('pos_catalog_ver', CATALOG_VERSION);
+      try {
+        localStorage.setItem('pos_products_list', JSON.stringify(saved));
+        localStorage.setItem('pos_catalog_ver', CATALOG_VERSION);
+      } catch(e) {}
     }
     return saved;
   })(),
@@ -2625,6 +2648,7 @@ function isSameCalendarDay(d1, d2) {
 }
 
 function renderDashboard() {
+  ensureDefaultProductsLoaded();
   const dashScreen = document.getElementById('screen-dashboard');
   if (!dashScreen) return;
 
@@ -3089,6 +3113,7 @@ function refreshProductMaster(showToastFlag = true) {
 window.refreshProductMaster = refreshProductMaster;
 
 function renderProductMaster() {
+  ensureDefaultProductsLoaded();
   const tbody = document.getElementById('product-master-table-body');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -5852,6 +5877,7 @@ function filterCategory(catName) {
 }
 
 function renderPosProducts() {
+  ensureDefaultProductsLoaded();
   const container = document.getElementById('pos-product-grid');
   if (!container) return;
 
@@ -6846,6 +6872,7 @@ function resetInventoryFilters() {
 }
 
 function renderInventory() {
+  ensureDefaultProductsLoaded();
   const tbody = document.getElementById('inventory-table-body');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -9159,6 +9186,19 @@ async function checkLicenseAndSyncSqlite() {
         loginBtn.style.cursor = 'pointer';
       }
       await loadStateFromSqlite();
+      return true;
+    } else {
+      // GitHub Pages or static web hosting (Local backend API returns 404)
+      window._isSystemHardwareLicensed = true;
+      isSqliteBackendActive = false;
+      closeModal('modal-license-activation');
+      const loginBtn = document.getElementById('btn-login-submit');
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = 'Sign In to System';
+        loginBtn.style.background = '';
+        loginBtn.style.cursor = 'pointer';
+      }
       return true;
     }
   } catch (err) {
